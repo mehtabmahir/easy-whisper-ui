@@ -46,7 +46,7 @@ if /i not "%ext%"=="mp3" (
 echo Processing %input% ...
 
 REM Run whisper-cli.exe with tuned parameters
-"%~dp0whisper-cli.exe" -m "%~dp0models\ggml-large-v3.bin" -f "%input%" -otxt -ovtt -osrt -l en -tp 0.0 -mc 128 -et 3.0
+"%~dp0whisper-cli.exe" -m "%~dp0models\ggml-large-v3.bin" -f "%input%" -otxt -l en -tp 0.0 -mc 64 -et 3.0
 
 echo Transcription complete.
 
