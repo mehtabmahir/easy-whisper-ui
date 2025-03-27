@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     }
 
     MainWindow w;
-    w.setFileToOpen(filePath); // Pass the file path to MainWindow
+    w.processAudioFile(filePath); // Pass the file path to MainWindow
     w.show();
 
     return a.exec();

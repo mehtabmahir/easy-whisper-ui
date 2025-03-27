@@ -2,7 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QFileDialog>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -18,11 +17,10 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     // Add a method to store the file path passed from main.cpp
-    void setFileToOpen(const QString &filePath);
+    void processAudioFile(const QString &filePath);
 
 private slots:
     void onOpenFileClicked();
-    void openFinalFile(const QString &filePath);
 
 private:
     Ui::MainWindow *ui;
