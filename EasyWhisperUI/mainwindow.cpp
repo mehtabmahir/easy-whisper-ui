@@ -42,66 +42,67 @@ void MainWindow::onOpenFileClicked()
     }
 }
 
-#include <QFileInfo>
-#include <QProcess>
-#include <QThread>
-#include <QCoreApplication>
-
 void MainWindow::processAudioFile(const QString &inputFilePath)
 {
-    // 1. Check if an audio file was provided
+    // 1. Validate input file.
     if (inputFilePath.isEmpty()) {
         ui->console->appendPlainText("No audio file specified. Please drag and drop a file or use 'Open With'.");
         return;
     }
-
-    // 2. Resolve full path and verify file exists
     QFileInfo inputInfo(inputFilePath);
     if (!inputInfo.exists()) {
         ui->console->appendPlainText("Error: File not found.");
         return;
     }
-    // Store the full input file path in our member variable
     m_filePath = inputInfo.absoluteFilePath();
     ui->console->appendPlainText("Input file: " + m_filePath);
 
-    // 3. Determine output file names (for transcription and MP3 conversion)
+    // 2. Define output filenames.
     QString outputFile = inputInfo.absolutePath() + "/" + inputInfo.completeBaseName() + ".txt";
     QString mp3File = inputInfo.absolutePath() + "/" + inputInfo.completeBaseName() + ".mp3";
-
-    // 4. Determine file extension (in lowercase)
     QString ext = inputInfo.suffix().toLower();
 
-    // Define a lambda to start the whisper-cli process.
-    // It uses m_filePath (which may have been updated to the MP3 version) and the selected model.
-    auto startWhisperProcess = [this, outputFile]() {
-        // Get model parameter from the QComboBox named "model"
-        QString modelParam = ui->model->currentText();
+    auto runWhisper = [this, outputFile, mp3File]() {
+        // Build the model filename from the combo box.
+        QString modelParam = "ggml-" + ui->model->currentText() + ".bin";
         QString exeDir = QCoreApplication::applicationDirPath();
-        QString modelPath = exeDir + "/models/" + "ggml-"+modelParam+".bin";
+        QString modelPath = exeDir + "/models/" + modelParam;
         QString whisperCliPath = exeDir + "/whisper-cli.exe";
 
+        // Build the arguments.
         QStringList whisperArgs;
         whisperArgs << "-m" << modelPath
-                    << "-f" << m_filePath
+                    << "-f" << mp3File   // explicitly use the converted MP3 file
                     << "-otxt"
                     << "-l" << "en"
                     << "-tp" << "0.0"
                     << "-mc" << "64"
                     << "-et" << "3.0";
 
-        ui->console->appendPlainText("Starting whisper-cli with model " + modelParam + "...");
+        // Log the full command to the console.
+        QString commandLine = whisperCliPath + " " + whisperArgs.join(" ");
+        ui->console->appendPlainText("Running: " + commandLine);
+
+        // Create and configure the process.
         QProcess *whisperProcess = new QProcess(this);
         whisperProcess->setProcessChannelMode(QProcess::MergedChannels);
+
+        // Log all output from the process to the console.
         connect(whisperProcess, &QProcess::readyRead, this, [this, whisperProcess]() {
             QByteArray data = whisperProcess->readAll();
             ui->console->appendPlainText(QString::fromLocal8Bit(data));
         });
+
+        // Log any errors that occur.
+        connect(whisperProcess, &QProcess::errorOccurred, this, [this, whisperProcess]() {
+            ui->console->appendPlainText("Whisper process error: " + whisperProcess->errorString());
+        });
+
+        // When finished, check the exit code and then open the output file.
         connect(whisperProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
                 this, [this, outputFile, whisperProcess](int exitCode, QProcess::ExitStatus exitStatus) {
                     if (exitStatus == QProcess::NormalExit && exitCode == 0) {
                         ui->console->appendPlainText("Whisper processing complete.");
-                        // After a 2-second delay, open the transcription file in Notepad
                         QTimer::singleShot(2000, [outputFile]() {
                             QProcess::startDetached("notepad.exe", QStringList() << outputFile);
                         });
@@ -110,31 +111,77 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                     }
                     whisperProcess->deleteLater();
                 });
+
+        // Start the whisper-cli process.
         whisperProcess->start(whisperCliPath, whisperArgs);
     };
 
-    // 5. If the input file is not already an MP3, convert it asynchronously using FFmpeg.
+
+
+    // Lambda to check and download model (Step 2).
+    auto checkAndDownloadModel = [this, runWhisper]() {
+        QString modelParam = "ggml-" + ui->model->currentText() + ".bin";
+        QString exeDir = QCoreApplication::applicationDirPath();
+        QString modelsDir = exeDir + "/models/";
+        QDir dir(modelsDir);
+        if (!dir.exists() && !dir.mkpath(modelsDir)) {
+            ui->console->appendPlainText("Failed to create models directory: " + modelsDir);
+            return;
+        }
+        QString modelPath = modelsDir + modelParam;
+        // Use the "resolve" endpoint instead of "raw"
+        QString baseUrl = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/";
+        QUrl modelUrl(baseUrl + modelParam);
+
+        if (QFile::exists(modelPath)) {
+            ui->console->appendPlainText("Model file exists: " + modelPath);
+            runWhisper();
+        } else {
+            ui->console->appendPlainText("Model file not found: " + modelPath);
+            ui->console->appendPlainText("Downloading model from " + modelUrl.toString());
+            QProcess *downloadProcess = new QProcess(this);
+            downloadProcess->setProcessChannelMode(QProcess::MergedChannels);
+            QStringList downloadArgs;
+            downloadArgs << "-L" << modelUrl.toString() << "-o" << modelPath;
+            connect(downloadProcess, &QProcess::readyRead, this, [this, downloadProcess]() {
+                ui->console->appendPlainText(QString::fromLocal8Bit(downloadProcess->readAll()));
+            });
+            connect(downloadProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                    this, [this, modelPath, runWhisper, downloadProcess](int exitCode, QProcess::ExitStatus exitStatus) {
+                        if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+                            QFileInfo fi(modelPath);
+                            // Check file size; if it's unexpectedly small, warn the user.
+                            if (fi.size() < 10 * 1024) { // e.g., less than 10 KB
+                                ui->console->appendPlainText("Downloaded model appears to be too small (" + QString::number(fi.size()) + " bytes).");
+                            } else {
+                                ui->console->appendPlainText("Model downloaded successfully: " + modelPath);
+                                runWhisper();
+                            }
+                        } else {
+                            ui->console->appendPlainText("Failed to download model. Exit code: " + QString::number(exitCode));
+                        }
+                        downloadProcess->deleteLater();
+                    });
+            downloadProcess->start("curl", downloadArgs);
+        }
+    };
+
+    // Step 1: Convert audio if needed.
     if (ext != "mp3") {
         ui->console->appendPlainText("Converting " + m_filePath + " to MP3...");
         QStringList ffmpegArgs;
-        ffmpegArgs << "-n"
-                   << "-i" << m_filePath
-                   << "-q:a" << "2"
-                   << mp3File;
+        ffmpegArgs << "-n" << "-i" << m_filePath << "-q:a" << "2" << mp3File;
         QProcess *ffmpegProcess = new QProcess(this);
         ffmpegProcess->setProcessChannelMode(QProcess::MergedChannels);
         connect(ffmpegProcess, &QProcess::readyRead, this, [this, ffmpegProcess]() {
-            QByteArray data = ffmpegProcess->readAll();
-            ui->console->appendPlainText(QString::fromLocal8Bit(data));
+            ui->console->appendPlainText(QString::fromLocal8Bit(ffmpegProcess->readAll()));
         });
         connect(ffmpegProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-                this, [this, mp3File, ffmpegProcess, startWhisperProcess](int exitCode, QProcess::ExitStatus exitStatus) {
+                this, [this, mp3File, ffmpegProcess, checkAndDownloadModel](int exitCode, QProcess::ExitStatus exitStatus) {
                     if (exitStatus == QProcess::NormalExit && exitCode == 0) {
                         ui->console->appendPlainText("FFmpeg conversion successful.");
-                        // Update the member m_filePath to use the new MP3 file for transcription.
                         m_filePath = mp3File;
-                        // Now start the whisper-cli process.
-                        startWhisperProcess();
+                        checkAndDownloadModel();
                     } else {
                         ui->console->appendPlainText("FFmpeg conversion failed. Exit code: " + QString::number(exitCode));
                     }
@@ -142,9 +189,12 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                 });
         ffmpegProcess->start("ffmpeg", ffmpegArgs);
     } else {
-        // If already MP3, start whisper immediately.
-        startWhisperProcess();
+        // Already MP3; proceed directly.
+        checkAndDownloadModel();
     }
 }
+
+
+
 
 
