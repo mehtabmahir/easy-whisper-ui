@@ -58,8 +58,9 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
     ui->console->appendPlainText("Input file: " + m_filePath);
 
     // 2. Define output filenames.
-    QString outputFile = inputInfo.absolutePath() + "/" + inputInfo.completeBaseName() + ".txt";
     QString mp3File = inputInfo.absolutePath() + "/" + inputInfo.completeBaseName() + ".mp3";
+    QString outputFile = mp3File + ".txt";
+
     QString ext = inputInfo.suffix().toLower();
 
     auto runWhisper = [this, outputFile, mp3File]() {
