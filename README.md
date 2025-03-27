@@ -26,12 +26,11 @@ A fast, native desktop UI for transcribing audio using Whisper — built entirel
 
 ## Setup
 
-1. **Download or build** `EasyWhisperUI.exe`.
-2. **Place** `whisper-cli.exe` and `ffmpeg.exe` next to it.
-3. **Run** the application.
-4. **Load** any audio file via drag & drop or "Open With".
-5. **Select** your model from the dropdown (downloads automatically if missing).
-6. **View** the transcription in the console, and open it directly in Notepad.
+1. **Download** the latest build.
+2. **Run** the application.
+3. **Load** any audio file via drag & drop or "Open With" or with the button.
+4. **Select** your model from the dropdown (downloads automatically if it's missing).
+5. **View** the transcription in the console, it will open directly in Notepad once finished.
 
 ---
 
