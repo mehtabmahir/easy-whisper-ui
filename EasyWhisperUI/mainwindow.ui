@@ -91,6 +91,11 @@
       <string>base</string>
      </property>
     </item>
+    <item>
+     <property name="text">
+      <string>base.en</string>
+     </property>
+    </item>
    </widget>
    <widget class="QLabel" name="modeltext">
     <property name="geometry">
