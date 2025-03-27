@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>EasyWhisperUI</class>
+ <widget class="QMainWindow" name="EasyWhisperUI">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -19,7 +19,7 @@
      <rect>
       <x>20</x>
       <y>20</y>
-      <width>131</width>
+      <width>151</width>
       <height>41</height>
      </rect>
     </property>
@@ -42,7 +42,7 @@
      <rect>
       <x>60</x>
       <y>70</y>
-      <width>91</width>
+      <width>111</width>
       <height>22</height>
      </rect>
     </property>
@@ -53,7 +53,42 @@
     </item>
     <item>
      <property name="text">
+      <string>large-v3-turbo</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>medium</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>medium.en</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>small</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>small.en</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
       <string>tiny</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>tiny.en</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>base</string>
      </property>
     </item>
    </widget>

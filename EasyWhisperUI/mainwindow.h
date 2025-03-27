@@ -5,7 +5,7 @@
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
-class MainWindow;
+class EasyWhisperUI;
 }
 QT_END_NAMESPACE
 
@@ -23,7 +23,7 @@ private slots:
     void onOpenFileClicked();
 
 private:
-    Ui::MainWindow *ui;
+    Ui::EasyWhisperUI *ui;
     // Store the file path for later use
     QString m_filePath;
 };
