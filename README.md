@@ -2,7 +2,8 @@
 
 A fast, native desktop UI for transcribing audio using Whisper — built entirely in modern C++ and Qt.
 
----
+<img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/preview.png"/>
+
 
 ## Features
 
