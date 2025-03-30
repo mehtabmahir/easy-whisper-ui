@@ -22,10 +22,11 @@ var
   TotalSteps: Integer;
   WhisperZip: string;
   WhisperExtracted: string;
+  SkipFfmpegInstall: Boolean;
 
 procedure InitializeWizard;
 begin
-  TotalSteps := 13;
+  TotalSteps := 15;
   WizardForm.StatusLabel.Top := WizardForm.ProgressGauge.Top - 30;
   WizardForm.StatusLabel.Font.Style := [fsBold];
 end;
@@ -57,6 +58,7 @@ begin
     StepIndex := 0;
     WhisperZip := ExpandConstant('{tmp}') + '\whisper.zip';
     WhisperExtracted := ExpandConstant('{app}') + '\whisper.cpp';
+    SkipFfmpegInstall := False;
 
     // Check that Git is installed
     if not Exec(ExpandConstant('{cmd}'), '/C git --version >nul 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
@@ -65,18 +67,39 @@ begin
       ExitProcess(1);
     end;
 
-    RunStep('Checking/Installing CMake',
-      'cmake --version >nul 2>&1 || powershell -Command "winget install --id Kitware.CMake -e --accept-source-agreements --accept-package-agreements"');
-
+    RunStep('Removing existing folder',
+      'powershell -Command "if (Test-Path ''' + ExpandConstant('{app}') + ''' ) { Remove-Item -LiteralPath ''' + ExpandConstant('{app}') + ''' -Recurse -Force }"');
+      
     RunStep('Checking/Installing Vulkan SDK',
       'powershell -Command "winget install --id KhronosGroup.VulkanSDK -e --accept-source-agreements --accept-package-agreements"');
 
     RunStep('Setting VULKAN_SDK environment variable',
       'powershell -Command "$v = Get-ItemProperty -Path ''HKLM:\\SOFTWARE\\Khronos\\Vulkan\\RT''; $env:VULKAN_SDK = $v.VulkanSDK; [System.Environment]::SetEnvironmentVariable(''VULKAN_SDK'', $v.VulkanSDK, ''Process'')"');
 
-    RunStep('Checking/Installing FFmpeg',
-      'ffmpeg -version >nul 2>&1 || powershell -Command "winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements"');
+    RunStep('Checking for FFmpeg',
+      'ffmpeg -version >nul 2>&1');
 
+    if ResultCode = 0 then
+      SkipFfmpegInstall := True;
+
+    if not SkipFfmpegInstall then
+      RunStep('Installing FFmpeg manually',
+        'powershell -Command "' +
+        '$ffmpegUrl = \"https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-7.0.2-essentials_build.zip\"; ' +
+        '$outFile = \"$env:TEMP\\ffmpeg.zip\"; ' +
+        '$dest = \"' + ExpandConstant('{userappdata}\ffmpeg') + '\"; ' +
+        'Invoke-WebRequest -Uri $ffmpegUrl -OutFile $outFile; ' +
+        'Expand-Archive -Path $outFile -DestinationPath $dest -Force; ' +
+        '$binPath = Get-ChildItem $dest -Directory | Where-Object { $_.Name -like \"ffmpeg-*\" } | Select-Object -First 1 | ForEach-Object { $_.FullName + \"\\bin\" }; ' +
+        '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
+        'if ($userPath -notlike \"*\" + $binPath + \"*\") { ' +
+        '[Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $binPath, \"User\") }"');
+
+    RunStep('Installing Visual Studio Community 2022',
+      'powershell -Command "winget install --id Microsoft.VisualStudio.2022.Community --override \"--add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --passive\" -e --accept-source-agreements --accept-package-agreements; ' +
+      'Write-Host Waiting for Visual Studio to finish...; ' +
+      'do { Start-Sleep -Seconds 10 } while (Get-Process | Where-Object { $_.ProcessName -like ''vs_installer'' -or $_.ProcessName -like ''setup'' })"');
+    
     RunStep('Downloading whisper.cpp ZIP',
       'powershell -Command "Invoke-WebRequest -Uri https://github.com/ggerganov/whisper.cpp/archive/refs/heads/master.zip -OutFile ''' + WhisperZip + '''"');
 
@@ -85,9 +108,6 @@ begin
 
     RunStep('Renaming extracted folder to whisper.cpp',
       'powershell -Command "Rename-Item -Path ''' + ExpandConstant('{app}') + '\whisper.cpp-master'' -NewName ''whisper.cpp''"');
-
-    RunStep('Installing Visual Studio Community 2022',
-      'powershell -Command "winget install --id Microsoft.VisualStudio.2022.Community --override \"--add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --wait\" -e --accept-source-agreements --accept-package-agreements"');
 
     RunStep('Configuring whisper.cpp build',
       'cd /d "' + WhisperExtracted + '" && cmake -B build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release');
@@ -99,3 +119,12 @@ begin
       'xcopy /y "' + WhisperExtracted + '\build\bin\Release\*" "' + ExpandConstant('{app}') + '\\"');
   end;
 end;
+
+[Tasks]
+Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional icons:"; Flags: unchecked
+
+[Icons]
+Name: "{userdesktop}\Whisper UI"; Filename: "{app}\EasyWhisperUI.exe"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\EasyWhisperUI.exe"; Description: "Launch Whisper UI"; Flags: nowait postinstall skipifsilent
