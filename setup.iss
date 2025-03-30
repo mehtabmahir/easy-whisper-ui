@@ -11,7 +11,7 @@ DisableDirPage=no
 UsePreviousAppDir=yes
 
 [Files]
-Source: "C:\Users\mehta\OneDrive\easy-whisper-ui\EasyWhisperUI\build\Final\*"; DestDir: "{app}"; Flags: recursesubdirs
+Source: "C:\Users\mehta\OneDrive\easy-whisper-ui\build\Final\*"; DestDir: "{app}"; Flags: recursesubdirs
 
 [Code]
 procedure ExitProcess(uExitCode: Integer);
@@ -76,29 +76,39 @@ begin
     RunStep('Setting VULKAN_SDK environment variable',
       'powershell -Command "$v = Get-ItemProperty -Path ''HKLM:\\SOFTWARE\\Khronos\\Vulkan\\RT''; $env:VULKAN_SDK = $v.VulkanSDK; [System.Environment]::SetEnvironmentVariable(''VULKAN_SDK'', $v.VulkanSDK, ''Process'')"');
 
-    RunStep('Checking for FFmpeg',
-      'ffmpeg -version >nul 2>&1');
+    // Check for FFmpeg presence
+    if Exec(ExpandConstant('{cmd}'), '/C ffmpeg -version >nul 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0) then
+      begin
+        SkipFfmpegInstall := True;
+        WizardForm.StatusLabel.Caption := '✅ FFmpeg already installed';
+      end
+    else
+      begin
+        SkipFfmpegInstall := False;
+        RunStep('Installing FFmpeg and adding to PATH',
+          'powershell -Command "' +
+          '$ffmpegUrl = \"https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-7.0.2-essentials_build.zip\"; ' +
+          '$outFile = \"$env:TEMP\\ffmpeg.zip\"; ' +
+          '$dest = \"' + ExpandConstant('{userappdata}\ffmpeg') + '\"; ' +
+          'Invoke-WebRequest -Uri $ffmpegUrl -OutFile $outFile; ' +
+          'Expand-Archive -Path $outFile -DestinationPath $dest -Force; ' +
+          '$binPath = Get-ChildItem $dest -Directory | Where-Object { $_.Name -like \"ffmpeg-*\" } | Select-Object -First 1 | ForEach-Object { $_.FullName + \"\\bin\" }; ' +
+          '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
+          'if ($userPath -notlike \"*\" + $binPath + \"*\") { ' +
+          '[Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $binPath, \"User\") }"');
+      end;
 
-    if ResultCode = 0 then
-      SkipFfmpegInstall := True;
-
-    if not SkipFfmpegInstall then
-      RunStep('Installing FFmpeg manually',
-        'powershell -Command "' +
-        '$ffmpegUrl = \"https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-7.0.2-essentials_build.zip\"; ' +
-        '$outFile = \"$env:TEMP\\ffmpeg.zip\"; ' +
-        '$dest = \"' + ExpandConstant('{userappdata}\ffmpeg') + '\"; ' +
-        'Invoke-WebRequest -Uri $ffmpegUrl -OutFile $outFile; ' +
-        'Expand-Archive -Path $outFile -DestinationPath $dest -Force; ' +
-        '$binPath = Get-ChildItem $dest -Directory | Where-Object { $_.Name -like \"ffmpeg-*\" } | Select-Object -First 1 | ForEach-Object { $_.FullName + \"\\bin\" }; ' +
-        '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
-        'if ($userPath -notlike \"*\" + $binPath + \"*\") { ' +
-        '[Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $binPath, \"User\") }"');
 
     RunStep('Installing Visual Studio Community 2022',
       'powershell -Command "winget install --id Microsoft.VisualStudio.2022.Community --override \"--add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --passive\" -e --accept-source-agreements --accept-package-agreements; ' +
       'Write-Host Waiting for Visual Studio to finish...; ' +
       'do { Start-Sleep -Seconds 10 } while (Get-Process | Where-Object { $_.ProcessName -like ''vs_installer'' -or $_.ProcessName -like ''setup'' })"');
+      
+    RunStep('Adding CMake to PATH',
+      'powershell -Command "$cmakePath = ''C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin''; ' +
+      '$userPath = [Environment]::GetEnvironmentVariable(''Path'', ''User''); ' +
+      'if ($userPath -notlike ''*'' + $cmakePath + ''*'') { ' +
+      '[Environment]::SetEnvironmentVariable(''Path'', $userPath + '';'' + $cmakePath, ''User'') }"');
     
     RunStep('Downloading whisper.cpp ZIP',
       'powershell -Command "Invoke-WebRequest -Uri https://github.com/ggerganov/whisper.cpp/archive/refs/heads/master.zip -OutFile ''' + WhisperZip + '''"');
