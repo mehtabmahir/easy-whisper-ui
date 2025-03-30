@@ -133,6 +133,3 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 
 [Icons]
 Name: "{userdesktop}\Whisper UI"; Filename: "{app}\EasyWhisperUI.exe"; Tasks: desktopicon
-
-[Run]
-Filename: "{app}\EasyWhisperUI.exe"; Description: "Launch Whisper UI"; Flags: nowait postinstall skipifsilent
