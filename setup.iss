@@ -103,12 +103,6 @@ begin
       'powershell -Command "winget install --id Microsoft.VisualStudio.2022.Community --override \"--add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --passive\" -e --accept-source-agreements --accept-package-agreements; ' +
       'Write-Host Waiting for Visual Studio to finish...; ' +
       'do { Start-Sleep -Seconds 10 } while (Get-Process | Where-Object { $_.ProcessName -like ''vs_installer'' -or $_.ProcessName -like ''setup'' })"');
-      
-    RunStep('Adding CMake to PATH',
-      'powershell -Command "$cmakePath = ''C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin''; ' +
-      '$userPath = [Environment]::GetEnvironmentVariable(''Path'', ''User''); ' +
-      'if ($userPath -notlike ''*'' + $cmakePath + ''*'') { ' +
-      '[Environment]::SetEnvironmentVariable(''Path'', $userPath + '';'' + $cmakePath, ''User'') }"');
     
     RunStep('Downloading whisper.cpp ZIP',
       'powershell -Command "Invoke-WebRequest -Uri https://github.com/ggerganov/whisper.cpp/archive/refs/heads/master.zip -OutFile ''' + WhisperZip + '''"');
@@ -120,10 +114,14 @@ begin
       'powershell -Command "Rename-Item -Path ''' + ExpandConstant('{app}') + '\whisper.cpp-master'' -NewName ''whisper.cpp''"');
 
     RunStep('Configuring whisper.cpp build',
-      'cd /d "' + WhisperExtracted + '" && cmake -B build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release');
+      'cd /d "' + WhisperExtracted + '" && "' +
+      'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe' +
+      '" -B build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release');
 
     RunStep('Building whisper.cpp',
-      'cd /d "' + WhisperExtracted + '" && cmake --build build --config Release');
+      'cd /d "' + WhisperExtracted + '" && "' +
+      'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe' +
+      '" --build build --config Release');
 
     RunStep('Copying compiled binaries',
       'xcopy /y "' + WhisperExtracted + '\build\bin\Release\*" "' + ExpandConstant('{app}') + '\\"');
