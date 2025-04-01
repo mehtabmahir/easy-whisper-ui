@@ -98,7 +98,33 @@ begin
       'powershell -Command "if (Test-Path ''' + ExpandConstant('{app}') + ''' ) { Remove-Item -LiteralPath ''' + ExpandConstant('{app}') + ''' -Recurse -Force }"');
     
     RunStep('Installing Git',
-    'powershell -Command "winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements"');
+      'powershell -Command "' +
+      'try { git --version | Out-Null; $gitExists = $true } catch { $gitExists = $false }; ' +
+      'if (-not $gitExists) { ' +
+        '$url = ''https://github.com/git-for-windows/git/releases/download/v2.49.0.windows.1/PortableGit-2.49.0-64-bit.7z.exe''; ' +
+        '$installer = \"$env:TEMP\\PortableGit-2.49.0-64-bit.7z.exe\"; ' +
+        '$dest = \"' + ExpandConstant('{userappdata}') + '\GitPortable\"; ' +
+        'curl.exe -L -o $installer $url; ' +
+        'Start-Process -FilePath $installer -ArgumentList ''-y -o\"' + ExpandConstant('{userappdata}') + '\GitPortable\"'' -Wait -NoNewWindow; ' +
+
+        '$pathsToAdd = @(' +
+          '\"' + ExpandConstant('{userappdata}') + '\GitPortable\cmd\", ' +
+          '\"' + ExpandConstant('{userappdata}') + '\GitPortable\bin\", ' +
+          '\"' + ExpandConstant('{userappdata}') + '\GitPortable\usr\bin\" ' +
+        '); ' +
+        '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
+        'foreach ($p in $pathsToAdd) { if ($userPath -notlike \"*\" + $p + \"*\") { $userPath += \";\" + $p } }; ' +
+        '[Environment]::SetEnvironmentVariable(\"Path\", $userPath, \"User\"); ' +
+
+        '$home = [Environment]::GetFolderPath(\"UserProfile\"); ' +
+        '[Environment]::SetEnvironmentVariable(\"HOME\", $home, \"User\"); ' +
+
+        '$execPath = \"' + ExpandConstant('{userappdata}') + '\GitPortable\libexec\git-core\"; ' +
+        '$templatePath = \"' + ExpandConstant('{userappdata}') + '\GitPortable\share\git-core\templates\"; ' +
+        '[Environment]::SetEnvironmentVariable(\"GIT_EXEC_PATH\", $execPath, \"User\"); ' +
+        '[Environment]::SetEnvironmentVariable(\"GIT_TEMPLATE_DIR\", $templatePath, \"User\") ' +
+      '}"');
+
       
     RunStep('Installing Vulkan SDK',
       'powershell -Command "winget install --id KhronosGroup.VulkanSDK -e --accept-source-agreements --accept-package-agreements"');
