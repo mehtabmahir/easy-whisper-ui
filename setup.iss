@@ -125,14 +125,28 @@ begin
         '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
         'if ($userPath -notlike \"*\" + $binPath + \"*\") { [Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $binPath, \"User\") }"');
     end;
-    RunStep('Installing Visual Studio Community 2022',
-      'powershell -Command "winget install --id Microsoft.VisualStudio.2022.Community --override \"--add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended --passive\" -e --accept-source-agreements --accept-package-agreements; ' +
-      'Write-Host Waiting for Visual Studio to finish...; ' +
-      'do { Start-Sleep -Seconds 10 } while (Get-Process | Where-Object { $_.ProcessName -like ''vs_installer'' -or $_.ProcessName -like ''setup'' })"');
+    
+    RunStep('Installing MSYS2 compiler.',
+      'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "' +
+      'winget install -e --id MSYS2.MSYS2 --silent --accept-package-agreements --accept-source-agreements; ' +
+      'while (-not (Test-Path ''C:\\msys64\\usr\\bin\\pacman.exe'')) { Start-Sleep -Seconds 1 }; ' +
+      'while (Get-Process -Name msys2 -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 }; ' +
+      'C:\\msys64\\usr\\bin\\pacman.exe -Syu --noconfirm; ' +
+      'C:\\msys64\\usr\\bin\\pacman.exe -S --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake make; ' +
+      '$mingwBin = ''C:\\msys64\\mingw64\\bin''; ' +
+      '$env:Path += '';'' + $mingwBin; ' +
+      '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
+      'if ($userPath -notlike \"*\" + $mingwBin + \"*\") { [Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $mingwBin, \"User\") }"');
+
+
+
+      
     RunStep('Downloading whisper.cpp ZIP',
       'powershell -Command "Invoke-WebRequest -Uri https://github.com/ggerganov/whisper.cpp/archive/refs/heads/master.zip -OutFile ''' + WhisperZip + '''"');
+    
     RunStep('Extracting whisper.cpp ZIP',
       'powershell -Command "Expand-Archive -Path ''' + WhisperZip + ''' -DestinationPath ''' + ExpandConstant('{app}') + ''' -Force"');
+    
     RunStep('Renaming extracted folder to whisper.cpp',
       'powershell -Command "Rename-Item -Path ''' + ExpandConstant('{app}') + '\\whisper.cpp-master'' -NewName ''whisper.cpp''"');
   end
