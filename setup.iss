@@ -126,21 +126,23 @@ begin
         'if ($userPath -notlike \"*\" + $binPath + \"*\") { [Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $binPath, \"User\") }"');
     end;
     
-    RunStep('Installing MSYS2 compiler.',
+    RunStep('Installing MSYS2 compiler silently.',
       'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "' +
-      'winget install -e --id MSYS2.MSYS2 --silent --accept-package-agreements --accept-source-agreements; ' +
-      'while (-not (Test-Path ''C:\\msys64\\usr\\bin\\pacman.exe'')) { Start-Sleep -Seconds 1 }; ' +
-      'while (Get-Process -Name msys2 -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 }; ' +
-      'C:\\msys64\\usr\\bin\\pacman.exe -Syu --noconfirm; ' +
-      'C:\\msys64\\usr\\bin\\pacman.exe -S --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake make; ' +
-      '$mingwBin = ''C:\\msys64\\mingw64\\bin''; ' +
-      '$env:Path += '';'' + $mingwBin; ' +
+      '$url = ''https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe''; ' +
+      '$installer = \"$env:TEMP\\msys2.sfx.exe\"; ' +
+      '$dest = ''C:\\msys64''; ' +
+      'curl.exe -L -o $installer $url; ' +
+      'Start-Process -FilePath $installer -ArgumentList ''-y -oC:\\'' -Wait -NoNewWindow; ' +
+      'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"exit\"'' -Wait -NoNewWindow; ' +
+      'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"pacman -Sy --noconfirm\"'' -Wait -NoNewWindow; ' +
+      'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"pacman -S --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake make\"'' -Wait -NoNewWindow; ' +
+      '$binPath = \"$dest\\mingw64\\bin\"; ' +
       '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
-      'if ($userPath -notlike \"*\" + $mingwBin + \"*\") { [Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $mingwBin, \"User\") }"');
+      'if ($userPath -notlike \"*\" + $binPath + \"*\") { ' +
+      '[Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $binPath, \"User\") }"');
 
 
 
-      
     RunStep('Downloading whisper.cpp ZIP',
       'powershell -Command "Invoke-WebRequest -Uri https://github.com/ggerganov/whisper.cpp/archive/refs/heads/master.zip -OutFile ''' + WhisperZip + '''"');
     
