@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
     }
 
     MainWindow w;
+    w.setWindowTitle("Whisper UI");
     w.processAudioFile(filePath); // Pass the file path to MainWindow
     w.show();
 

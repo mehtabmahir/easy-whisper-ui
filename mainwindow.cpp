@@ -19,6 +19,13 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::onOpenFileClicked);
     ui->console->setReadOnly(true);
 
+    connect(ui->txtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
+        // Handle the change here, for example:
+        txtFlag = ui->txtCheckbox->isChecked() ? "-otxt" : QString();
+    });
+
+    ui->txtCheckbox->setChecked(true);
+
 }
 
 MainWindow::~MainWindow()
@@ -74,8 +81,8 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         QStringList whisperArgs;
         whisperArgs << "-m" << modelPath
                     << "-f" << mp3File   // explicitly use the converted MP3 file
-                    << "-otxt"
-                    << "-l" << "en"
+                    << txtFlag
+                    << "-l" << ui->language->currentText()
                     << "-tp" << "0.0"
                     << "-mc" << "64"
                     << "-et" << "3.0";
@@ -102,8 +109,10 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         // When finished, check the exit code and then open the output file.
         connect(whisperProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
                 this, [this, outputFile, whisperProcess](int exitCode, QProcess::ExitStatus exitStatus) {
-                    if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+                    if (!ui->txtCheckbox->isChecked())
                         ui->console->appendPlainText("Whisper processing complete.");
+                    else if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+                        ui->console->appendPlainText("Whisper processing complete. Opening file in Notepad.");
                         QTimer::singleShot(2000, [outputFile]() {
                             QProcess::startDetached("notepad.exe", QStringList() << outputFile);
                         });

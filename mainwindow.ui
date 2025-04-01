@@ -31,18 +31,18 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>150</y>
+      <y>180</y>
       <width>571</width>
-      <height>331</height>
+      <height>301</height>
      </rect>
     </property>
    </widget>
    <widget class="QComboBox" name="model">
     <property name="geometry">
      <rect>
-      <x>60</x>
+      <x>90</x>
       <y>70</y>
-      <width>111</width>
+      <width>81</width>
       <height>22</height>
      </rect>
     </property>
@@ -102,19 +102,19 @@
      <rect>
       <x>20</x>
       <y>70</y>
-      <width>37</width>
+      <width>61</width>
       <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string>Model:</string>
+     <string>     Model:</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label">
+   <widget class="QLabel" name="outputLabel">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>119</y>
+      <x>10</x>
+      <y>150</y>
       <width>37</width>
       <height>31</height>
      </rect>
@@ -122,6 +122,97 @@
     <property name="text">
      <string>Output:</string>
     </property>
+   </widget>
+   <widget class="QCheckBox" name="txtCheckbox">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>130</y>
+      <width>151</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Output .txt File</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="languageLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>100</y>
+      <width>61</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Language:</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="language">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>100</y>
+      <width>81</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>en</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>es</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>fr</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>de</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>zh</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ja</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ko</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ru</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>pt</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ar</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string/>
+     </property>
+    </item>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

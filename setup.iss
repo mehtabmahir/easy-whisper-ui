@@ -93,15 +93,12 @@ begin
     WhisperZip := ExpandConstant('{tmp}\whisper.zip');
     WhisperExtracted := ExpandConstant('{app}\whisper.cpp');
     SkipFfmpegInstall := False;
-    if not Exec(ExpandConstant('{cmd}'), '/C git --version >nul 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
-       or (ResultCode <> 0) then
-    begin
-      MsgBox('Git is required to compile whisper.cpp. Please install Git for Windows and run this installer again.', mbError, MB_OK);
-      ExitProcess(1);
-    end;
     
     RunStep('Removing existing folder',
       'powershell -Command "if (Test-Path ''' + ExpandConstant('{app}') + ''' ) { Remove-Item -LiteralPath ''' + ExpandConstant('{app}') + ''' -Recurse -Force }"');
+    
+    RunStep('Installing Git',
+    'powershell -Command "winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements"');
       
     RunStep('Checking/Installing Vulkan SDK',
       'powershell -Command "winget install --id KhronosGroup.VulkanSDK -e --accept-source-agreements --accept-package-agreements"');

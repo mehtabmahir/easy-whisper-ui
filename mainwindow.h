@@ -26,5 +26,6 @@ private:
     Ui::EasyWhisperUI *ui;
     // Store the file path for later use
     QString m_filePath;
+    QString txtFlag;
 };
 #endif // MAINWINDOW_H
