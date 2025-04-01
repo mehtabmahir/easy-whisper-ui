@@ -4,9 +4,10 @@ A fast, native desktop UI for transcribing audio using Whisper — built entirel
 
 <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/preview.png"/>
 
+---
 
 ## Features
-
+- Installer handles everything for you using Inno Setup — from downloading dependencies to compiling Whisper for your specific hardware.
 - Fully C++ implementation — no Python!
 - Uses Vulkan for cross-platform GPU acceleration.
 - Drag & drop or use “Open With” to load audio.
@@ -21,24 +22,34 @@ A fast, native desktop UI for transcribing audio using Whisper — built entirel
 
 ## Requirements
 
-- Windows 10 or later
+- Windows 10 or later  
+- AMD, Intel, or NVIDIA Graphics Card
 
 ---
 
 ## Setup
 
-1. **Download** the latest build.
+1. **Download** the latest installer.  
 2. **Run** the application.
-3. **Load** any audio file via drag & drop or "Open With" or with the button.
-4. **Select** your model from the dropdown (downloads automatically if it's missing).
-5. **View** the transcription in the console, it will open directly in Notepad once finished.
+
+---
+
+## Donate
+
+This project takes **tons of hours of work** — ensuring everything works smoothly across systems takes a LOT of time testing. It's all built in my free time, and I’m not getting paid for it.
+
+If you’ve found EasyWhisper UI useful, please consider supporting its development:
+
+👉 [**Donate via PayPal**](https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD)
+
+Your support truly helps and is greatly appreciated!
 
 ---
 
 ## License
 
 ```
-Copyright (c) 2025 [Mehtab Mahir]
+Copyright (c) 2025 Mehtab Mahir
 All rights reserved.
 
 This software is proprietary and may not be copied, modified, distributed,
@@ -48,26 +59,34 @@ This application includes the following open-source components:
 
 ---
 
-whisper.cpp by Georgi Gerganov
-License: MIT
+whisper.cpp by Georgi Gerganov  
+License: MIT  
 https://github.com/ggerganov/whisper.cpp
 
 ---
 
-FFmpeg
-License: LGPL 2.1
-https://ffmpeg.org
+FFmpeg  
+License: LGPL 2.1  
+https://ffmpeg.org  
 Windows builds by: https://www.gyan.dev/ffmpeg/
 
 The FFmpeg binary is provided as a separate file and may be replaced with a compatible version.
 
 ---
 
-Qt Framework
-License: LGPL 3.0
+Qt Framework  
+License: LGPL 3.0  
 https://www.qt.io
 
 The Qt libraries are dynamically linked and may be replaced with compatible versions.
+
+---
+
+Installer built with Inno Setup  
+License: Free for commercial and non-commercial use  
+https://jrsoftware.org/isinfo.php
+
+Huge thanks to Jordan Russell and all contributors to Inno Setup.
 ```
 
 ---
@@ -76,4 +95,6 @@ The Qt libraries are dynamically linked and may be replaced with compatible vers
 
 - [whisper.cpp](https://github.com/ggerganov/whisper.cpp) by Georgi Gerganov  
 - [FFmpeg Windows builds](https://www.gyan.dev/ffmpeg/) by Gyan.dev  
-- Built with [Qt](https://www.qt.io)
+- Built with [Qt](https://www.qt.io)  
+- Installer created using [Inno Setup](https://jrsoftware.org/isinfo.php)
+
