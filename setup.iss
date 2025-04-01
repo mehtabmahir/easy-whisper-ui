@@ -100,7 +100,7 @@ begin
     RunStep('Installing Git',
     'powershell -Command "winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements"');
       
-    RunStep('Checking/Installing Vulkan SDK',
+    RunStep('Installing Vulkan SDK',
       'powershell -Command "winget install --id KhronosGroup.VulkanSDK -e --accept-source-agreements --accept-package-agreements"');
       
     RunStep('Setting VULKAN_SDK environment variable',
@@ -113,38 +113,44 @@ begin
     end
     else
     begin
-      SkipFfmpegInstall := False;
-      RunStep('Installing FFmpeg and adding to PATH',
-        'powershell -Command "' +
+    SkipFfmpegInstall := False;
+      RunStep('Installing FFmpeg',
+        'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "' +
         '$ffmpegUrl = \"https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-7.0.2-essentials_build.zip\"; ' +
         '$outFile = \"$env:TEMP\\ffmpeg.zip\"; ' +
         '$dest = \"' + ExpandConstant('{userappdata}\ffmpeg') + '\"; ' +
-        'Invoke-WebRequest -Uri $ffmpegUrl -OutFile $outFile; ' +
+        'curl.exe -L -o $outFile $ffmpegUrl; ' +
         'Expand-Archive -Path $outFile -DestinationPath $dest -Force; ' +
         '$binPath = Get-ChildItem $dest -Directory | Where-Object { $_.Name -like \"ffmpeg-*\" } | Select-Object -First 1 | ForEach-Object { $_.FullName + \"\\bin\" }; ' +
         '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
         'if ($userPath -notlike \"*\" + $binPath + \"*\") { [Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $binPath, \"User\") }"');
     end;
-    
-    RunStep('Installing MSYS2 compiler silently.',
-      'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "' +
-      '$url = ''https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe''; ' +
-      '$installer = \"$env:TEMP\\msys2.sfx.exe\"; ' +
-      '$dest = ''C:\\msys64''; ' +
-      'curl.exe -L -o $installer $url; ' +
-      'Start-Process -FilePath $installer -ArgumentList ''-y -oC:\\'' -Wait -NoNewWindow; ' +
-      'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"exit\"'' -Wait -NoNewWindow; ' +
-      'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"pacman -Sy --noconfirm\"'' -Wait -NoNewWindow; ' +
-      'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"pacman -S --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake make\"'' -Wait -NoNewWindow; ' +
-      '$binPath = \"$dest\\mingw64\\bin\"; ' +
-      '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
-      'if ($userPath -notlike \"*\" + $binPath + \"*\") { ' +
-      '[Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $binPath, \"User\") }"');
 
+    
+    RunStep('Installing MSYS2 compiler.',
+      'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "' +
+      'if (-not (Test-Path ''C:\\msys64\\usr\\bin\\pacman.exe'') -or ' +
+              '-not (Test-Path ''C:\\msys64\\mingw64\\bin\\cmake.exe'')) { ' +
+
+        '$url = ''https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe''; ' +
+        '$installer = \"$env:TEMP\\msys2.sfx.exe\"; ' +
+        '$dest = ''C:\\msys64''; ' +
+
+        'curl.exe -L -o $installer $url; ' +
+        'Start-Process -FilePath $installer -ArgumentList ''-y -oC:\\'' -Wait -NoNewWindow; ' +
+
+        'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"pacman -Sy --noconfirm\"'' -Wait -NoNewWindow; ' +
+        'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"pacman -S --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake make\"'' -Wait -NoNewWindow; ' +
+
+        '$binPath = \"$dest\\mingw64\\bin\"; ' +
+        '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
+        'if ($userPath -notlike \"*\" + $binPath + \"*\") { ' +
+        '[Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $binPath, \"User\") } ' +
+      '}"');
 
 
     RunStep('Downloading whisper.cpp ZIP',
-      'powershell -Command "Invoke-WebRequest -Uri https://github.com/ggerganov/whisper.cpp/archive/refs/heads/master.zip -OutFile ''' + WhisperZip + '''"');
+      'powershell -Command "curl.exe -L -o \"' + WhisperZip + '\" https://github.com/ggerganov/whisper.cpp/archive/refs/heads/master.zip"');
     
     RunStep('Extracting whisper.cpp ZIP',
       'powershell -Command "Expand-Archive -Path ''' + WhisperZip + ''' -DestinationPath ''' + ExpandConstant('{app}') + ''' -Force"');
