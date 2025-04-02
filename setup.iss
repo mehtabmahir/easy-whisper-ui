@@ -153,26 +153,39 @@ begin
     end;
 
     
-    RunStep('Installing MSYS2 compiler.',
-      'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "' +
-      'if (-not (Test-Path ''C:\\msys64\\usr\\bin\\pacman.exe'') -or ' +
-              '-not (Test-Path ''C:\\msys64\\mingw64\\bin\\cmake.exe'')) { ' +
+RunStep('Installing MSYS2 compiler.',
+  'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "' +
+  'if (-not (Test-Path ''C:\\msys64\\usr\\bin\\pacman.exe'') -or ' +
+          '-not (Test-Path ''C:\\msys64\\mingw64\\bin\\cmake.exe'')) { ' +
 
-        '$url = ''https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe''; ' +
-        '$installer = \"$env:TEMP\\msys2.sfx.exe\"; ' +
-        '$dest = ''C:\\msys64''; ' +
+    '$url = ''https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe''; ' +
+    '$installer = \"$env:TEMP\\msys2.sfx.exe\"; ' +
+    '$dest = ''C:\\msys64''; ' +
 
-        'curl.exe -L -o $installer $url; ' +
-        'Start-Process -FilePath $installer -ArgumentList ''-y -oC:\\'' -Wait -NoNewWindow; ' +
+    'curl.exe -L -o $installer $url; ' +
+    'Start-Process -FilePath $installer -ArgumentList ''-y -oC:\\'' -Wait -NoNewWindow; ' +
 
-        'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"pacman -Sy --noconfirm\"'' -Wait -NoNewWindow; ' +
-        'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"pacman -S --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake make\"'' -Wait -NoNewWindow; ' +
+    'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"pacman -Sy --noconfirm\"'' -Wait -NoNewWindow; ' +
+    'Start-Process -FilePath \"$dest\\usr\\bin\\bash.exe\" -ArgumentList ''--login -c \"pacman -S --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake make\"'' -Wait -NoNewWindow; ' +
+  '} ' +
 
-        '$binPath = \"$dest\\mingw64\\bin\"; ' +
-        '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
-        'if ($userPath -notlike \"*\" + $binPath + \"*\") { ' +
-        '[Environment]::SetEnvironmentVariable(\"Path\", $userPath + \";\" + $binPath, \"User\") } ' +
-      '}"');
+  '$msysBin = \"C:\\msys64\\mingw64\\bin\"; ' +
+  '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
+  '$pathParts = $userPath -split \";\" | Where-Object { $_ -ne \"\" }; ' +
+  '$filteredParts = @(); ' +
+  'foreach ($part in $pathParts) { ' +
+    'try { ' +
+      '$resolved = (Resolve-Path $part -ErrorAction Stop).Path; ' +
+      'if ((Test-Path \"$resolved\\cmake.exe\") -and ($resolved -match \"mingw\") -and ($resolved -notmatch \"msys2\")) { continue } ' +
+      '$filteredParts += $part ' +
+    '} catch { $filteredParts += $part } ' +
+  '} ' +
+  '$filteredParts += $msysBin; ' +
+  '$newPath = ($filteredParts -join \";\"); ' +
+  '[Environment]::SetEnvironmentVariable(\"Path\", $newPath, \"User\")' +
+  '"');
+
+
 
 
     RunStep('Downloading whisper.cpp ZIP',

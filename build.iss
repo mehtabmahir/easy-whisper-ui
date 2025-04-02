@@ -38,10 +38,10 @@ begin
     WhisperExtracted := ExpandConstant('{app}') + '\whisper.cpp';
 
     RunStep('Configuring whisper.cpp build',
-      'cd /d "' + WhisperExtracted + '" && cmake -B build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release');
+      'cd /d "' + WhisperExtracted + '" && C:\msys64\mingw64\bin\cmake.exe -B build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release');
 
     RunStep('Building whisper.cpp',
-      'cd /d "' + WhisperExtracted + '" && cmake --build build --config Release');
+      'cd /d "' + WhisperExtracted + '" && C:\msys64\mingw64\bin\cmake.exe --build build --config Release');
 
     RunStep('Copying compiled binaries',
       'xcopy /y "' + WhisperExtracted + '\build\bin\*" "' + ExpandConstant('{app}') + '\\"');
