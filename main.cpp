@@ -14,6 +14,9 @@ int main(int argc, char *argv[])
 
     MainWindow w;
     w.setWindowTitle("Whisper UI");
+    QIcon appIcon(":resources/icon.ico");
+    w.setWindowIcon(appIcon);
+
     w.processAudioFile(filePath); // Pass the file path to MainWindow
     w.show();
 
