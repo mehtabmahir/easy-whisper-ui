@@ -56,16 +56,11 @@ begin
   StepIndex := StepIndex + 1;
 end;
 
-// IsOtherInstallerRunning: Checks if any process contains the keyword "whisper" 
-// or "setup" (case-insensitive) but excludes "WhisperUIInstaller.exe".
-// It uses "tasklist" piped to "findstr" with a regex pattern.
 function IsOtherInstallerRunning: Boolean;
 var
   ResCode: Integer;
 begin
   Result := False;
-  // /R /I "whisper|setup" searches for lines containing either "whisper" or "setup"
-  // then /I /V excludes any line with "WhisperUIInstaller.exe"
   if Exec(
     ExpandConstant('{cmd}'),
     '/C tasklist | findstr /R /I "WhisperUIBuildOnlyInstall"',
@@ -184,10 +179,7 @@ RunStep('Installing MSYS2 compiler.',
   '$newPath = ($filteredParts -join \";\"); ' +
   '[Environment]::SetEnvironmentVariable(\"Path\", $newPath, \"User\")' +
   '"');
-
-
-
-
+  
     RunStep('Downloading whisper.cpp ZIP',
       'powershell -Command "curl.exe -L -o \"' + WhisperZip + '\" https://github.com/ggerganov/whisper.cpp/archive/refs/heads/master.zip"');
     
@@ -199,29 +191,16 @@ RunStep('Installing MSYS2 compiler.',
   end
   else if CurStep = ssPostInstall then
   begin
-    // SCHEDULED TASK: Build command line using {app} dir, /VERYSILENT before /DIR
+    // STATIC BATCH FILE: Run the included build launcher
     TaskCmd :=
-      '"' + ExpandConstant('{app}') + '\WhisperUIBuildOnlyInstaller.exe" ' +
-      '/VERYSILENT /DIR="' + ExpandConstant('{app}') + '"';
-    WizardForm.StatusLabel.Caption := 'Scheduling & running second installer...';
-    Exec(
-      ExpandConstant('{cmd}'),
-      '/C schtasks /create /TN "WhisperSecondPart" /SC ONCE /ST 23:59 /F /TR "' + TaskCmd + '"',
-      '',
-      SW_HIDE,
-      ewWaitUntilTerminated,
-      ResultCode
-    );
-    Exec(
-      ExpandConstant('{cmd}'),
-      '/C schtasks /run /TN "WhisperSecondPart"',
-      '',
-      SW_HIDE,
-      ewWaitUntilTerminated,
-      ResultCode
-    );
+      '"' + ExpandConstant('{app}') + '\build.bat"';
+
+    WizardForm.StatusLabel.Caption := 'Launching second installer in fresh environment...';
+    Exec(ExpandConstant('{cmd}'), '/C start "" /min "' + ExpandConstant('{app}') + '\build.bat"', '', SW_HIDE, ewNoWait, ResultCode);
+
     // Add a small delay to allow the process to start
     Sleep(2000);
+
     // FAKE LOADING BAR: Check every 0.5 sec up to 100 sec (200 loops)
     WizardForm.StatusLabel.Caption := 'Building whisper.cpp';
     WizardForm.ProgressGauge.Position := 0;
@@ -229,7 +208,7 @@ RunStep('Installing MSYS2 compiler.',
     // Poll using the new function IsOtherInstallerRunning.
     for I := 0 to MaxLoops do
     begin
-      WizardForm.ProgressGauge.Position := I*4;
+      WizardForm.ProgressGauge.Position := I*5;
       WizardForm.Update;
       Sleep(100);
       if not IsOtherInstallerRunning then
@@ -237,27 +216,12 @@ RunStep('Installing MSYS2 compiler.',
     end;
     WizardForm.ProgressGauge.Position := 1250;
     WizardForm.StatusLabel.Caption := '✅ whisper.cpp build complete';
-    // DELETE THE TASK
-    if not IsOtherInstallerRunning then
-    begin
-      Exec(
-        ExpandConstant('{cmd}'),
-        '/C schtasks /delete /TN "WhisperSecondPart" /F',
-        '',
-        SW_HIDE,
-        ewWaitUntilTerminated,
-        ResultCode
-      );
-    end;
-    // Optionally, automatically exit the installer:
-    //ExitProcess(0);
   end
   else
   begin
     WizardForm.StatusLabel.Caption := '❌ whisper.cpp build failed or was not launched';
-  end;
+  end
 end;
-
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional icons:"; Flags: unchecked
 
