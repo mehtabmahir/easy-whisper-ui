@@ -7,12 +7,13 @@ A fast, native desktop UI for transcribing audio using Whisper — built entirel
 ---
 
 ## Features
-- Installer handles everything for you using Inno Setup — from downloading dependencies to compiling Whisper for your specific hardware.
+- Installer handles everything for you — from downloading dependencies to compiling/optimizing Whisper for your specific hardware.
+- Choice of .txt files, or .srt files with timestamps!
 - Fully C++ implementation — no Python!
 - Uses Vulkan for cross-platform GPU acceleration.
 - Drag & drop or use “Open With” to load audio.
 - Automatically converts audio to `.mp3` if needed using FFmpeg.
-- Dropdown menu to select the model (e.g. `tiny`, `base`, `large-v3`).
+- Dropdown menu to select the model (e.g. `tiny`, `medium-en`, `large-v3`).
 - Automatically downloads the chosen model if missing.
 - Runs whisper with the selected model.
 - Shows all output in a console box.
@@ -23,7 +24,7 @@ A fast, native desktop UI for transcribing audio using Whisper — built entirel
 ## Requirements
 
 - Windows 10 or later  
-- AMD, Intel, or NVIDIA Graphics Card
+- AMD, Intel, or NVIDIA Graphics Card with Vulkan support. (99%)
 
 ---
 
@@ -52,8 +53,10 @@ Your support truly helps and is greatly appreciated!
 Copyright (c) 2025 Mehtab Mahir
 All rights reserved.
 
-This software is proprietary and may not be copied, modified, distributed,
-or used for commercial purposes without explicit permission from the author.
+This software is proprietary and the following is not allowed for commercial purposes:
+it may not be copied, modified, distributed, or used without explicit permission from the author.
+
+Those actions are permitted for personal use ONLY.
 
 This application includes the following open-source components:
 
@@ -86,7 +89,6 @@ Installer built with Inno Setup
 License: Free for commercial and non-commercial use  
 https://jrsoftware.org/isinfo.php
 
-Huge thanks to Jordan Russell and all contributors to Inno Setup.
 ```
 
 ---
