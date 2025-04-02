@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>591</width>
-    <height>511</height>
+    <height>533</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,10 +17,10 @@
    <widget class="QPushButton" name="openFile">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>20</y>
-      <width>151</width>
-      <height>41</height>
+      <x>10</x>
+      <y>10</y>
+      <width>201</width>
+      <height>51</height>
      </rect>
     </property>
     <property name="text">
@@ -31,9 +31,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>180</y>
+      <y>150</y>
       <width>571</width>
-      <height>301</height>
+      <height>371</height>
      </rect>
     </property>
    </widget>
@@ -42,7 +42,7 @@
      <rect>
       <x>90</x>
       <y>70</y>
-      <width>81</width>
+      <width>121</width>
       <height>22</height>
      </rect>
     </property>
@@ -113,10 +113,10 @@
    <widget class="QLabel" name="outputLabel">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>150</y>
+      <x>20</x>
+      <y>130</y>
       <width>37</width>
-      <height>31</height>
+      <height>21</height>
      </rect>
     </property>
     <property name="text">
@@ -126,10 +126,10 @@
    <widget class="QCheckBox" name="txtCheckbox">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>130</y>
-      <width>151</width>
-      <height>18</height>
+      <x>220</x>
+      <y>100</y>
+      <width>101</width>
+      <height>20</height>
      </rect>
     </property>
     <property name="text">
@@ -154,7 +154,7 @@
      <rect>
       <x>90</x>
       <y>100</y>
-      <width>81</width>
+      <width>121</width>
       <height>22</height>
      </rect>
     </property>
@@ -214,6 +214,45 @@
      </property>
     </item>
    </widget>
+   <widget class="QLabel" name="argumentsLabel">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>10</y>
+      <width>71</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>  Arguments:</string>
+    </property>
+   </widget>
+   <widget class="QPlainTextEdit" name="arguments">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>30</y>
+      <width>361</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="plainText">
+     <string>-tp 0.0 -mc 64 -et 3.0</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="srtCheckbox">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>100</y>
+      <width>231</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Output File with Timestamps (.srt)</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -225,7 +264,6 @@
     </rect>
    </property>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>

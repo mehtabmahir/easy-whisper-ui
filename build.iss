@@ -44,7 +44,7 @@ begin
       'cd /d "' + WhisperExtracted + '" && cmake --build build --config Release');
 
     RunStep('Copying compiled binaries',
-      'xcopy /y "' + WhisperExtracted + '\build\bin\Release\*" "' + ExpandConstant('{app}') + '\\"');
+      'xcopy /y "' + WhisperExtracted + '\build\bin\*" "' + ExpandConstant('{app}') + '\\"');
   end;
 end;
 

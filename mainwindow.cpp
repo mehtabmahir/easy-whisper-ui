@@ -21,7 +21,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->txtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
         // Handle the change here, for example:
-        txtFlag = ui->txtCheckbox->isChecked() ? "-otxt" : QString();
+        txtFlag = ui->txtCheckbox->isChecked() ? "-otxt" : NULL;
+    });
+
+    connect(ui->srtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
+        // Handle the change here, for example:
+        srtFlag = ui->srtCheckbox->isChecked() ? "-osrt" : NULL;
     });
 
     ui->txtCheckbox->setChecked(true);
@@ -77,15 +82,16 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         QString modelPath = exeDir + "/models/" + modelParam;
         QString whisperCliPath = exeDir + "/whisper-cli.exe";
 
+        QString extraArgs = ui->arguments->toPlainText();
+        QStringList parsedArgs = QProcess::splitCommand(extraArgs);
+
         // Build the arguments.
         QStringList whisperArgs;
         whisperArgs << "-m" << modelPath
                     << "-f" << mp3File   // explicitly use the converted MP3 file
-                    << txtFlag
+                    << txtFlag << srtFlag
                     << "-l" << ui->language->currentText()
-                    << "-tp" << "0.0"
-                    << "-mc" << "64"
-                    << "-et" << "3.0";
+                    << parsedArgs;
 
         // Log the full command to the console.
         QString commandLine = whisperCliPath + " " + whisperArgs.join(" ");
