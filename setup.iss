@@ -208,14 +208,20 @@ RunStep('Installing MSYS2 compiler.',
     // Poll using the new function IsOtherInstallerRunning.
     for I := 0 to MaxLoops do
     begin
-      WizardForm.ProgressGauge.Position := I*5;
+      WizardForm.ProgressGauge.Position := I*12;
       WizardForm.Update;
-      Sleep(100);
+      Sleep(250);
       if not IsOtherInstallerRunning then
         break;
     end;
     WizardForm.ProgressGauge.Position := 1250;
     WizardForm.StatusLabel.Caption := '✅ whisper.cpp build complete';
+    
+    RunStep('Cleaning up',
+      'rm ' + ExpandConstant('{app}') + '\build.bat && ' +
+      'rm ' + ExpandConstant('{app}') + '\WhisperUIBuildOnlyInstaller.exe &&' +
+      'rm -rf ' + ExpandConstant('{app}') + '\whisper.cpp'
+    );
   end
   else
   begin

@@ -44,8 +44,8 @@ begin
       'cd /d "' + WhisperExtracted + '" && C:\msys64\mingw64\bin\cmake.exe --build build --config Release');
 
     RunStep('Copying compiled binaries',
-      'xcopy /y "' + WhisperExtracted + '\build\bin\*" "' + ExpandConstant('{app}') + '\\"');
-  end;
+      'xcopy /y "' + WhisperExtracted + '\build\bin\whisper-cli.exe" "' + ExpandConstant('{app}') + '\\"');
+  end;  
 end;
 
 
