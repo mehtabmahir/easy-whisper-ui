@@ -94,7 +94,14 @@ begin
     WizardForm.ReadyMemo.Lines.Add('• Extract WhisperUI files.');
     WizardForm.ReadyMemo.Lines.Add('• Compile whisper.cpp with Vulkan for your specific hardware.');
   end;
+  if CurPageID = wpSelectDir then
+  begin
+    // Override the disk space label
+    WizardForm.DiskSpaceLabel.Caption :=
+      'Estimated space required: ~1 GB (if no components are installed).';
+  end;
 end;
+
 
 
 // CurStepChanged: Main installation logic.
