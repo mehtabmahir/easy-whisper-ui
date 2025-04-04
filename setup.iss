@@ -9,6 +9,8 @@ SolidCompression=yes
 PrivilegesRequired=lowest
 DisableDirPage=no
 UsePreviousAppDir=yes
+SetupIconFile=icon.ico
+WizardSmallImageFile=icon.bmp
 
 [Files]
 Source: "C:\Users\mehta\OneDrive\easy-whisper-ui\build\Final\*"; DestDir: "{app}"; Flags: recursesubdirs
@@ -208,9 +210,9 @@ RunStep('Installing MSYS2 compiler.',
     // Poll using the new function IsOtherInstallerRunning.
     for I := 0 to MaxLoops do
     begin
-      WizardForm.ProgressGauge.Position := I*12;
+      WizardForm.ProgressGauge.Position := I*10;
       WizardForm.Update;
-      Sleep(250);
+      Sleep(150);
       if not IsOtherInstallerRunning then
         break;
     end;
