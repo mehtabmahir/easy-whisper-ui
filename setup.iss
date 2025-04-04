@@ -1,5 +1,5 @@
 [Setup]
-AppName=Whisper UI Application
+AppName=WhisperUI
 AppVersion=1.0
 DefaultDirName={userappdata}\WhisperUI
 DefaultGroupName=Whisper UI
