@@ -76,6 +76,27 @@ begin
     Result := False;
 end;
 
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if CurPageID = wpReady then
+  begin
+    WizardForm.ReadyMemo.Lines.Clear;
+    WizardForm.ReadyMemo.Lines.Add('Whisper UI will be installed in:');
+    WizardForm.ReadyMemo.Lines.Add('  ' + ExpandConstant('{app}'));
+    WizardForm.ReadyMemo.Lines.Add('');
+    WizardForm.ReadyMemo.Lines.Add('The installer will automatically download and install the following:');
+    WizardForm.ReadyMemo.Lines.Add('• Git for Windows (if needed)');
+    WizardForm.ReadyMemo.Lines.Add('• Vulkan SDK (if needed)');
+    WizardForm.ReadyMemo.Lines.Add('• FFmpeg (if needed)');
+    WizardForm.ReadyMemo.Lines.Add('• MSYS2 Compiler (if needed)');
+    WizardForm.ReadyMemo.Lines.Add('• Latest whisper.cpp build');
+    WizardForm.ReadyMemo.Lines.Add('Installation:');
+    WizardForm.ReadyMemo.Lines.Add('• Extract WhisperUI files.');
+    WizardForm.ReadyMemo.Lines.Add('• Compile whisper.cpp with Vulkan for your specific hardware.');
+  end;
+end;
+
+
 // CurStepChanged: Main installation logic.
 
 procedure CurStepChanged(CurStep: TSetupStep);
