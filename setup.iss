@@ -198,11 +198,13 @@ RunStep('Installing MSYS2 compiler.',
       '"' + ExpandConstant('{app}') + '\build.bat"';
 
     WizardForm.StatusLabel.Caption := 'Launching second installer in fresh environment...';
-    Exec(ExpandConstant('{cmd}'), '/C start "" /min "' + ExpandConstant('{app}') + '\build.bat"', '', SW_HIDE, ewNoWait, ResultCode);
+    Exec('explorer.exe', ExpandConstant('{app}') + '\build.bat"', '', SW_HIDE, ewNoWait, ResultCode);
 
     // Add a small delay to allow the process to start
-    Sleep(2000);
-
+    Sleep(10000);
+    BringToFrontAndRestore;
+    
+    WizardForm.Show;
     // FAKE LOADING BAR: Check every 0.5 sec up to 100 sec (200 loops)
     WizardForm.StatusLabel.Caption := 'Building whisper.cpp';
     WizardForm.ProgressGauge.Position := 0;
@@ -210,9 +212,9 @@ RunStep('Installing MSYS2 compiler.',
     // Poll using the new function IsOtherInstallerRunning.
     for I := 0 to MaxLoops do
     begin
-      WizardForm.ProgressGauge.Position := I*10;
+      WizardForm.ProgressGauge.Position := I*12
       WizardForm.Update;
-      Sleep(150);
+      Sleep(500);
       if not IsOtherInstallerRunning then
         break;
     end;
@@ -223,7 +225,7 @@ RunStep('Installing MSYS2 compiler.',
       'rm ' + ExpandConstant('{app}') + '\build.bat && ' +
       'rm ' + ExpandConstant('{app}') + '\WhisperUIBuildOnlyInstaller.exe &&' +
       'rm -rf ' + ExpandConstant('{app}') + '\whisper.cpp'
-    );
+   );
   end
   else
   begin

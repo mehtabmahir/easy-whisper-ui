@@ -41,8 +41,8 @@ begin
       'cd /d "' + WhisperExtracted + '" && C:\msys64\mingw64\bin\cmake.exe -B build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release');
 
     RunStep('Building whisper.cpp',
-      'cd /d "' + WhisperExtracted + '" && C:\msys64\mingw64\bin\cmake.exe --build build --config Release');
-
+      'cd /d "' + WhisperExtracted + '" && C:\msys64\mingw64\bin\cmake.exe --build build --config Release -j8');
+      
     RunStep('Copying compiled binaries',
       'xcopy /y "' + WhisperExtracted + '\build\bin\whisper-cli.exe" "' + ExpandConstant('{app}') + '\\"');
   end;  
@@ -50,4 +50,4 @@ end;
 
 
 [Run]
-Filename: "{app}\EasyWhisperUI.exe"; Description: "Launch Whisper UI"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\EasyWhisperUI.exe"; Description: "Launch Whisper UI"; Flags: nowait postinstall
