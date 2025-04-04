@@ -10,249 +10,277 @@
     <height>533</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="openFile">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>201</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Open File</string>
-    </property>
-   </widget>
-   <widget class="QPlainTextEdit" name="console">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>150</y>
-      <width>571</width>
-      <height>371</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="model">
-    <property name="geometry">
-     <rect>
-      <x>90</x>
-      <y>70</y>
-      <width>121</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <item>
-     <property name="text">
-      <string>large-v3</string>
-     </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QPushButton" name="openFile">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Open File</string>
+      </property>
+     </widget>
     </item>
-    <item>
-     <property name="text">
-      <string>large-v3-turbo</string>
-     </property>
+    <item row="0" column="1" rowspan="2">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QLabel" name="argumentsLabel">
+        <property name="text">
+         <string>  Arguments:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="arguments">
+        <property name="plainText">
+         <string>-tp 0.0 -mc 64 -et 3.0</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
-    <item>
-     <property name="text">
-      <string>medium</string>
-     </property>
+    <item row="1" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="modeltext">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>     Model:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="model">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <item>
+         <property name="text">
+          <string>large-v3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>large-v3-turbo</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>medium</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>medium.en</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>small</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>small.en</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>tiny</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>tiny.en</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>base</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>base.en</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
     </item>
-    <item>
-     <property name="text">
-      <string>medium.en</string>
-     </property>
+    <item row="2" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QLabel" name="languageLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Language:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="language">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <item>
+         <property name="text">
+          <string>en</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>es</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>fr</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>de</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>zh</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>ja</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>ko</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>ru</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>pt</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>ar</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string/>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
     </item>
-    <item>
-     <property name="text">
-      <string>small</string>
-     </property>
+    <item row="2" column="1">
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QCheckBox" name="txtCheckbox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>150</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Output .txt File</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="srtCheckbox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Output File with Timestamps (.srt)</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
-    <item>
-     <property name="text">
-      <string>small.en</string>
-     </property>
+    <item row="3" column="0" colspan="2">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QLabel" name="outputLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Output:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="console">
+        <property name="minimumSize">
+         <size>
+          <width>571</width>
+          <height>371</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
-    <item>
-     <property name="text">
-      <string>tiny</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>tiny.en</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>base</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>base.en</string>
-     </property>
-    </item>
-   </widget>
-   <widget class="QLabel" name="modeltext">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>70</y>
-      <width>61</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>     Model:</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="outputLabel">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>130</y>
-      <width>37</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Output:</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="txtCheckbox">
-    <property name="geometry">
-     <rect>
-      <x>220</x>
-      <y>100</y>
-      <width>101</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Output .txt File</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="languageLabel">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>100</y>
-      <width>61</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Language:</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="language">
-    <property name="geometry">
-     <rect>
-      <x>90</x>
-      <y>100</y>
-      <width>121</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <item>
-     <property name="text">
-      <string>en</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>es</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>fr</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>de</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>zh</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>ja</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>ko</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>ru</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>pt</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>ar</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string/>
-     </property>
-    </item>
-   </widget>
-   <widget class="QLabel" name="argumentsLabel">
-    <property name="geometry">
-     <rect>
-      <x>220</x>
-      <y>10</y>
-      <width>71</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>  Arguments:</string>
-    </property>
-   </widget>
-   <widget class="QPlainTextEdit" name="arguments">
-    <property name="geometry">
-     <rect>
-      <x>220</x>
-      <y>30</y>
-      <width>361</width>
-      <height>61</height>
-     </rect>
-    </property>
-    <property name="plainText">
-     <string>-tp 0.0 -mc 64 -et 3.0</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="srtCheckbox">
-    <property name="geometry">
-     <rect>
-      <x>340</x>
-      <y>100</y>
-      <width>231</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Output File with Timestamps (.srt)</string>
-    </property>
-   </widget>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
