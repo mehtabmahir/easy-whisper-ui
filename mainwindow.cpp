@@ -19,6 +19,8 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::onOpenFileClicked);
     ui->console->setReadOnly(true);
 
+    ui->model->setCurrentIndex(3);
+
     connect(ui->txtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
         // Handle the change here, for example:
         txtFlag = ui->txtCheckbox->isChecked() ? "-otxt" : NULL;
