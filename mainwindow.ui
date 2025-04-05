@@ -30,10 +30,22 @@
     <item row="0" column="0">
      <widget class="QPushButton" name="openFile">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>180</width>
+        <height>60</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>180</width>
+        <height>60</height>
+       </size>
       </property>
       <property name="text">
        <string>Open File</string>
@@ -44,6 +56,24 @@
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QLabel" name="argumentsLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>15</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>15</height>
+         </size>
+        </property>
         <property name="text">
          <string>  Arguments:</string>
         </property>
@@ -51,6 +81,24 @@
       </item>
       <item>
        <widget class="QPlainTextEdit" name="arguments">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>65</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>65</height>
+         </size>
+        </property>
         <property name="plainText">
          <string>-tp 0.0 -mc 64 -et 3.0</string>
         </property>
@@ -58,162 +106,172 @@
       </item>
      </layout>
     </item>
-    <item row="1" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout">
+    <item row="1" column="0" rowspan="2">
+     <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
-       <widget class="QLabel" name="modeltext">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>     Model:</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QLabel" name="modeltext">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>     Model:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="model">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>22</height>
+           </size>
+          </property>
+          <item>
+           <property name="text">
+            <string>large-v3</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>large-v3-turbo</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>medium</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>medium.en</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>small</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>small.en</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>tiny</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>tiny.en</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>base</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>base.en</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
-       <widget class="QComboBox" name="model">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <property name="text">
-          <string>large-v3</string>
-         </property>
+         <widget class="QLabel" name="languageLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Language:</string>
+          </property>
+         </widget>
         </item>
         <item>
-         <property name="text">
-          <string>large-v3-turbo</string>
-         </property>
+         <widget class="QComboBox" name="language">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <item>
+           <property name="text">
+            <string>en</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>es</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>fr</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>de</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>zh</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>ja</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>ko</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>ru</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>pt</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>ar</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string/>
+           </property>
+          </item>
+         </widget>
         </item>
-        <item>
-         <property name="text">
-          <string>medium</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>medium.en</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>small</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>small.en</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>tiny</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>tiny.en</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>base</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>base.en</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="2" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <item>
-       <widget class="QLabel" name="languageLabel">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Language:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="language">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <item>
-         <property name="text">
-          <string>en</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>es</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>fr</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>de</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>zh</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>ja</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>ko</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>ru</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>pt</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>ar</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string/>
-         </property>
-        </item>
-       </widget>
+       </layout>
       </item>
      </layout>
     </item>
@@ -229,7 +287,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>150</width>
+          <width>100</width>
           <height>16777215</height>
          </size>
         </property>
