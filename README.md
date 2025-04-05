@@ -14,6 +14,8 @@ A fast, native desktop UI for transcribing audio using Whisper — built entirel
 - Drag & drop or use “Open With” to load audio.
 - Automatically converts audio to `.mp3` if needed using FFmpeg.
 - Dropdown menu to select the model (e.g. `tiny`, `medium-en`, `large-v3`).
+- Dropdown to select lanaguage (e.g. `en` for English)
+- Textbox for additional arguments
 - Automatically downloads the chosen model if missing.
 - Runs whisper with the selected model.
 - Shows all output in a console box.
