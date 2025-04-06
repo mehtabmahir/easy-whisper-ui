@@ -45,9 +45,9 @@ void MainWindow::onOpenFileClicked()
     // Open a file dialog to pick any audio file
     QString filePath = QFileDialog::getOpenFileName(
         this,
-        tr("Open Audio File"),
+        tr("Open Audio/Video File"),
         QString(),
-        tr("Audio Files (*.mp3 *.m4a *.wav *.ogg *.flac *.aac *.wma *.opus);;All Files (*)")
+        tr("Audio/Video Files (*.mp3 *.mp4 *.m4a *.mkv *.wav *.mov *.avi *.ogg *.flac *.aac *.wma *.opus);; All Files (*)")
         );
 
     // If the user selected a file (did not cancel)
@@ -60,7 +60,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
 {
     // 1. Validate input file.
     if (inputFilePath.isEmpty()) {
-        ui->console->appendPlainText("No audio file specified. Please drag and drop a file or use 'Open With'.");
+        ui->console->appendPlainText("No media file specified. Please drag and drop a file or use 'Open With'.");
         return;
     }
     QFileInfo inputInfo(inputFilePath);

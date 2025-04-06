@@ -1,6 +1,6 @@
 # EasyWhisper UI
 
-A fast, native desktop UI for transcribing audio using Whisper — built entirely in modern C++ and Qt.
+A fast, native desktop UI for transcribing media using Whisper — built entirely in modern C++ and Qt.
 
 <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/preview.png"/>
 
@@ -11,8 +11,8 @@ A fast, native desktop UI for transcribing audio using Whisper — built entirel
 - Choice of .txt files, or .srt files with timestamps!
 - Fully C++ implementation — no Python!
 - Uses Vulkan for cross-platform GPU acceleration.
-- Drag & drop or use “Open With” to load audio.
-- Automatically converts audio to `.mp3` if needed using FFmpeg.
+- Drag & drop or use “Open With” to load media.
+- Automatically converts media to `.mp3` if needed using FFmpeg.
 - Dropdown menu to select the model (e.g. `tiny`, `medium-en`, `large-v3`).
 - Automatically downloads the chosen model if missing.
 - Runs whisper with the selected model.
