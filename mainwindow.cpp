@@ -35,7 +35,6 @@ MainWindow::MainWindow(QWidget *parent)
         srtFlag = ui->srtCheckbox->isChecked() ? "-osrt" : NULL;
     });
 
-    ui->txtCheckbox->setChecked(true);
     setAcceptDrops(true);
 }
 
@@ -59,17 +58,19 @@ void MainWindow::dropEvent(QDropEvent *event)
     }
 }
 
+void MainWindow::saveSettings()
+{
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setValue("model", ui->model->currentIndex());
+    settings.setValue("language", ui->language->currentIndex());
+    settings.setValue("txtFile", ui->txtCheckbox->isChecked());
+    settings.setValue("srtFile", ui->srtCheckbox->isChecked());
+    settings.setValue("args", ui->arguments->toPlainText());
+}
+
 void MainWindow::loadSettings()
 {
-    // Get the directory where the executable is located
-    QString appDir = QCoreApplication::applicationDirPath();
-
-    // Construct the full path to settings.ini
-    QString settingsFilePath = QString("%1/settings.ini").arg(appDir);
-
-    // Load settings using the full path
-    QSettings settings(settingsFilePath, QSettings::IniFormat);
-
+    QSettings settings("settings.ini", QSettings::IniFormat);
     if (settings.value("model").toString() == "")
         ui->model->setCurrentIndex(3);
     else
@@ -177,13 +178,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
 
         // Start the whisper-cli process.
         whisperProcess->start(whisperCliPath, whisperArgs);
-        // Save settings to file
-        QSettings settings("settings.ini", QSettings::IniFormat);
-        settings.setValue("model", ui->model->currentIndex());
-        settings.setValue("language", ui->language->currentIndex());
-        settings.setValue("txtFile", ui->txtCheckbox->isChecked());
-        settings.setValue("srtFile", ui->srtCheckbox->isChecked());
-        settings.setValue("args", ui->arguments->toPlainText());
+
     };
 
 
@@ -262,6 +257,8 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         // Already MP3; proceed directly.
         checkAndDownloadModel();
     }
+
+    saveSettings();
 }
 
 

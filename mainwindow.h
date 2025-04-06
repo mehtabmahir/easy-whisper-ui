@@ -16,7 +16,6 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    // Add a method to store the file path passed from main.cpp
     void processAudioFile(const QString &filePath);
 
 private slots:
@@ -24,10 +23,10 @@ private slots:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
     void loadSettings();
+    void saveSettings();
 
 private:
     Ui::EasyWhisperUI *ui;
-    // Store the file path for later use
     QString m_filePath;
     QString txtFlag;
     QString srtFlag;
