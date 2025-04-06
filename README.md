@@ -37,6 +37,25 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 
 ---
 
+## Build Steps
+
+1. **Install [Qt Creator](https://www.qt.io/product/development-tools)**  
+   – Use a kit with a compatible C++ compiler (e.g. MinGW).
+2. **Install [Inno Setup](https://jrsoftware.org/isdl.php)**  
+   – Required to build the installer.
+3. **Clone this repository**
+   ```bash
+   git clone https://github.com/mehtabmahir/easy-whisper-ui.git
+   ```
+4. **Open `CMakeLists.txt` in Qt Creator**  
+   – Located in the root of the cloned folder.
+5. **Use a build kit with a C++ compiler and CMake**
+6. **Build the project**  
+   – Press `Ctrl + B` or click the Build button.
+7. Installer and build will be in `build\Installer` and `build\Final` respectively.
+
+---
+
 ## Donate
 
 This project takes **tons of hours of work** — ensuring everything works smoothly across systems takes a LOT of time testing. It's all built in my free time, and I’m not getting paid for it.

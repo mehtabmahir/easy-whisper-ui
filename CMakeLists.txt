@@ -46,6 +46,42 @@ endif()
 
 target_link_libraries(EasyWhisperUI PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
+find_program(WINDEPLOYQT_EXECUTABLE windeployqt REQUIRED)
+
+add_custom_command(TARGET EasyWhisperUI POST_BUILD
+    # Make output folder
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/build/Final"
+
+    # Copy the built .exe to Final/
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:EasyWhisperUI>"
+            "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.exe"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/build.bat"
+        "${CMAKE_SOURCE_DIR}/build/Final/build.bat"
+
+    # Run windeployqt on the copied .exe
+    COMMAND ${WINDEPLOYQT_EXECUTABLE}
+                --no-opengl-sw                # Don't include software OpenGL fallback
+                --no-opengl                   # Skip OpenGL entirely
+                --no-quick                    # No QML/Quick files
+                --no-translations             # No i18n
+                --no-system-d3d-compiler      # Skip optional D3D compiler dependency
+                --no-svg                      # Skip SVG module
+                --no-network                  # Skip network dlls
+            "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.exe"
+
+    # Delete unnecessary files
+    COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_SOURCE_DIR}/build/Final/imageformats"
+    COMMAND ${CMAKE_COMMAND} -E rm -f "${CMAKE_SOURCE_DIR}/build/Final/dxcompiler.dll"
+
+    # Compile the installer with Inno Setup
+    COMMENT "Compiling Installer"
+    COMMAND "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" "${CMAKE_SOURCE_DIR}/setup.iss"
+)
+
+
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.

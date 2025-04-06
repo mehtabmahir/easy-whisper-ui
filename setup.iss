@@ -3,6 +3,7 @@ AppName=WhisperUI
 AppVersion=1.0
 DefaultDirName={userappdata}\WhisperUI
 DefaultGroupName=Whisper UI
+OutputDir=build\Installer
 OutputBaseFilename=WhisperUIInstaller
 Compression=lzma
 SolidCompression=yes
@@ -250,7 +251,7 @@ RunStep('Installing MSYS2 compiler.',
     
     RunStep('Cleaning up',
       'rm ' + ExpandConstant('{app}') + '\build.bat && ' +
-      'rm -rf ' + ExpandConstant('{app}') + '\whisper.cpp\build'
+      'rm -rf ' + ExpandConstant('{app}') + '\whisper.cpp'
    );
   end
   else
