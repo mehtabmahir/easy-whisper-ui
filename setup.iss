@@ -14,7 +14,7 @@ SetupIconFile=icon.ico
 WizardSmallImageFile=icon.bmp
 
 [UninstallDelete]
-Type: filesanddirs; Name: "{app}"
+Name: "{app}"; Type: filesandordirs
 
 [Files]
 Source: "C:\Users\mehta\OneDrive\easy-whisper-ui\build\Final\*"; DestDir: "{app}"; Flags: recursesubdirs
@@ -122,8 +122,11 @@ begin
     WhisperExtracted := ExpandConstant('{app}\whisper.cpp');
     SkipFfmpegInstall := False;
     
-    RunStep('Removing existing folder',
-      'powershell -Command "if (Test-Path ''' + ExpandConstant('{app}') + ''' ) { Remove-Item -LiteralPath ''' + ExpandConstant('{app}') + ''' -Recurse -Force }"');
+    RunStep('Cleaning install folder (excluding models)',
+      'powershell -Command "if (Test-Path ''' + ExpandConstant('{app}') + ''' ) {' +
+      ' Get-ChildItem -LiteralPath ''' + ExpandConstant('{app}') + ''' -Force | ' +
+      ' Where-Object { $_.Name -ne ''models'' } | ' +
+      ' Remove-Item -Recurse -Force }"');
     
     RunStep('Installing Git',
       'powershell -Command "' +
