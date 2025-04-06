@@ -122,6 +122,10 @@ begin
     WhisperExtracted := ExpandConstant('{app}\whisper.cpp');
     SkipFfmpegInstall := False;
     
+    RunStep('Removing old uninstall entries',
+      'powershell -Command "Remove-Item -Path ''HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Whisper UI Application_is1'' -Recurse -Force -ErrorAction SilentlyContinue; ' +
+      'Remove-Item -Path ''HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Whisper UI Build_is1'' -Recurse -Force -ErrorAction SilentlyContinue"');
+
     RunStep('Cleaning install folder (excluding models)',
       'powershell -Command "if (Test-Path ''' + ExpandConstant('{app}') + ''' ) {' +
       ' Get-ChildItem -LiteralPath ''' + ExpandConstant('{app}') + ''' -Force | ' +
