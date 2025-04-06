@@ -77,7 +77,12 @@ void MainWindow::loadSettings()
         ui->model->setCurrentIndex(settings.value("model").toInt());
 
     ui->language->setCurrentIndex(settings.value("language").toInt());
-    ui->txtCheckbox->setChecked(settings.value("txtFile").toBool());
+
+    if (settings.value("txtFile").toString() == "")
+        ui->txtCheckbox->setChecked(true);
+    else
+        ui->txtCheckbox->setChecked(settings.value("txtFile").toBool());
+
     ui->srtCheckbox->setChecked(settings.value("srtFile").toBool());
 
     if (settings.value("args").toString() == "")
