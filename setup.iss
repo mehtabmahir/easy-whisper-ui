@@ -14,7 +14,6 @@ WizardSmallImageFile=icon.bmp
 
 [Files]
 Source: "C:\Users\mehta\OneDrive\easy-whisper-ui\build\Final\*"; DestDir: "{app}"; Flags: recursesubdirs
-Source: "C:\Users\mehta\OneDrive\easy-whisper-ui\Output\WhisperUIBuildOnlyInstaller.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Code]
 // ExitProcess: Ends the installer process immediately.
@@ -58,14 +57,14 @@ begin
   StepIndex := StepIndex + 1;
 end;
 
-function IsOtherInstallerRunning: Boolean;
+function IsCompilerRunning: Boolean;
 var
   ResCode: Integer;
 begin
   Result := False;
   if Exec(
     ExpandConstant('{cmd}'),
-    '/C tasklist | findstr /R /I "WhisperUIBuildOnlyInstall"',
+    '/C tasklist | findstr /R /I "cmake"',
     '',
     SW_HIDE,
     ewWaitUntilTerminated,
@@ -225,7 +224,7 @@ RunStep('Installing MSYS2 compiler.',
     TaskCmd :=
       '"' + ExpandConstant('{app}') + '\build.bat"';
 
-    WizardForm.StatusLabel.Caption := 'Launching second installer in fresh environment...';
+    WizardForm.StatusLabel.Caption := 'Launching build process in fresh environment...';
     Exec('explorer.exe', ExpandConstant('{app}') + '\build.bat"', '', SW_HIDE, ewNoWait, ResultCode);
 
     // Add a small delay to allow the process to start
@@ -237,22 +236,21 @@ RunStep('Installing MSYS2 compiler.',
     WizardForm.StatusLabel.Caption := 'Building whisper.cpp';
     WizardForm.ProgressGauge.Position := 0;
     MaxLoops := 1600;
-    // Poll using the new function IsOtherInstallerRunning.
     for I := 0 to MaxLoops do
     begin
       WizardForm.ProgressGauge.Position := I*12
       WizardForm.Update;
       Sleep(500);
-      if not IsOtherInstallerRunning then
+      if not IsCompilerRunning then
         break;
     end;
     WizardForm.ProgressGauge.Position := 1250;
     WizardForm.StatusLabel.Caption := '✅ whisper.cpp build complete';
+    BringToFrontAndRestore;
     
     RunStep('Cleaning up',
       'rm ' + ExpandConstant('{app}') + '\build.bat && ' +
-      'rm ' + ExpandConstant('{app}') + '\WhisperUIBuildOnlyInstaller.exe &&' +
-      'rm -rf ' + ExpandConstant('{app}') + '\whisper.cpp'
+      'rm -rf ' + ExpandConstant('{app}') + '\whisper.cpp\build'
    );
   end
   else
