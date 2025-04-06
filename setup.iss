@@ -13,6 +13,9 @@ UsePreviousAppDir=yes
 SetupIconFile=icon.ico
 WizardSmallImageFile=icon.bmp
 
+[UninstallDelete]
+Type: filesanddirs; Name: "{app}"
+
 [Files]
 Source: "C:\Users\mehta\OneDrive\easy-whisper-ui\build\Final\*"; DestDir: "{app}"; Flags: recursesubdirs
 
