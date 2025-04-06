@@ -21,6 +21,8 @@ public:
 
 private slots:
     void onOpenFileClicked();
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
 private:
     Ui::EasyWhisperUI *ui;

@@ -8,6 +8,7 @@
 #include <QFileDialog>
 #include <QThread>
 #include <QTimer>
+#include <QMimeData>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -32,12 +33,27 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     ui->txtCheckbox->setChecked(true);
-
+    setAcceptDrops(true);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasUrls())
+        event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    QList<QUrl> urls = event->mimeData()->urls();
+    if (!urls.isEmpty()) {
+        QString filePath = urls.first().toLocalFile();
+        processAudioFile(filePath);
+    }
 }
 
 void MainWindow::onOpenFileClicked()
