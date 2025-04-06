@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>591</width>
-    <height>533</height>
+    <height>540</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -100,7 +100,7 @@
          </size>
         </property>
         <property name="plainText">
-         <string>-tp 0.0 -mc 64 -et 3.0</string>
+         <string/>
         </property>
        </widget>
       </item>

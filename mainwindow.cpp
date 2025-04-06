@@ -9,6 +9,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QMimeData>
+#include <QSettings>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -21,6 +22,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->console->setReadOnly(true);
 
     ui->model->setCurrentIndex(3);
+
+    loadSettings();
 
     connect(ui->txtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
         // Handle the change here, for example:
@@ -54,6 +57,32 @@ void MainWindow::dropEvent(QDropEvent *event)
         QString filePath = urls.first().toLocalFile();
         processAudioFile(filePath);
     }
+}
+
+void MainWindow::loadSettings()
+{
+    // Get the directory where the executable is located
+    QString appDir = QCoreApplication::applicationDirPath();
+
+    // Construct the full path to settings.ini
+    QString settingsFilePath = QString("%1/settings.ini").arg(appDir);
+
+    // Load settings using the full path
+    QSettings settings(settingsFilePath, QSettings::IniFormat);
+
+    if (settings.value("model").toString() == "")
+        ui->model->setCurrentIndex(3);
+    else
+        ui->model->setCurrentIndex(settings.value("model").toInt());
+
+    ui->language->setCurrentIndex(settings.value("language").toInt());
+    ui->txtCheckbox->setChecked(settings.value("txtFile").toBool());
+    ui->srtCheckbox->setChecked(settings.value("srtFile").toBool());
+
+    if (settings.value("args").toString() == "")
+        ui->arguments->setPlainText("-tp 0.0 -mc 64 -et 3.0");
+    else
+        ui->arguments->setPlainText(settings.value("args").toString());
 }
 
 void MainWindow::onOpenFileClicked()
@@ -148,6 +177,13 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
 
         // Start the whisper-cli process.
         whisperProcess->start(whisperCliPath, whisperArgs);
+        // Save settings to file
+        QSettings settings("settings.ini", QSettings::IniFormat);
+        settings.setValue("model", ui->model->currentIndex());
+        settings.setValue("language", ui->language->currentIndex());
+        settings.setValue("txtFile", ui->txtCheckbox->isChecked());
+        settings.setValue("srtFile", ui->srtCheckbox->isChecked());
+        settings.setValue("args", ui->arguments->toPlainText());
     };
 
 
