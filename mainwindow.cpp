@@ -23,19 +23,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->model->setCurrentIndex(3);
 
-    loadSettings();
-
     connect(ui->txtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
         // Handle the change here, for example:
-        txtFlag = ui->txtCheckbox->isChecked() ? "-otxt" : NULL;
+        txtFlag = ui->txtCheckbox->isChecked() ? "-otxt" : "";
     });
 
     connect(ui->srtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
         // Handle the change here, for example:
-        srtFlag = ui->srtCheckbox->isChecked() ? "-osrt" : NULL;
+        srtFlag = ui->srtCheckbox->isChecked() ? "-osrt" : "";
     });
 
     setAcceptDrops(true);
+    loadSettings();
 }
 
 MainWindow::~MainWindow()
