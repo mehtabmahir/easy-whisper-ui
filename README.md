@@ -56,6 +56,35 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 
 ---
 
+## 🛠️ Manual Setup (No Installer)
+
+If you prefer not to use the one-click installer for whatever reason, you can manually set up **EasyWhisper UI** by following these steps:
+
+### 1. **Get the UI Executable**
+You can either:
+- Build it yourself (see the [Build](#build) section), **or**
+- Download the latest prebuilt [`EasyWhisperUI.exe`](https://github.com/mehtabmahir/easy-whisper-ui/releases)
+
+### 2. **Bundle Qt DLLs**
+If you downloaded the standalone `EasyWhisperUI.exe`, use `windeployqt` from `Qt Creator` to gather the required Qt runtime DLLs:
+```bash
+windeployqt EasyWhisperUI.exe
+```
+You can find `windeployqt` in your Qt Creator install directory.
+
+### 3. **Get whisper.cpp**
+- Clone the official [`whisper.cpp`](https://github.com/ggerganov/whisper.cpp) repository
+- Compile it using CMake and a compatible compiler (e.g. MSVC or mingw64):
+```bash
+cmake -B build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release -j8
+```
+
+### 4. **Copy the CLI Binary**
+After building, copy the `whisper-cli.exe` (from the `build/Release` folder) into the same folder as `EasyWhisperUI.exe`.
+
+Once all files are in place, just run `EasyWhisperUI.exe` to get started. No installation required!
+
 ## Donate
 
 This project takes **tons of hours of work** — ensuring everything works smoothly across systems takes a LOT of time testing. It's all built in my free time, and I’m not getting paid for it.
@@ -65,6 +94,14 @@ If you’ve found EasyWhisper UI useful, please consider supporting its developm
 👉 [**Donate via PayPal**](https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD)
 
 Your support truly helps and is greatly appreciated!
+---
+
+## Credits
+
+- [whisper.cpp](https://github.com/ggerganov/whisper.cpp) by Georgi Gerganov  
+- [FFmpeg Windows builds](https://www.gyan.dev/ffmpeg/) by Gyan.dev  
+- Built with [Qt](https://www.qt.io)  
+- Installer created using [Inno Setup](https://jrsoftware.org/isinfo.php)
 
 ---
 
@@ -111,13 +148,4 @@ License: Free for commercial and non-commercial use
 https://jrsoftware.org/isinfo.php
 
 ```
-
----
-
-## Credits
-
-- [whisper.cpp](https://github.com/ggerganov/whisper.cpp) by Georgi Gerganov  
-- [FFmpeg Windows builds](https://www.gyan.dev/ffmpeg/) by Gyan.dev  
-- Built with [Qt](https://www.qt.io)  
-- Installer created using [Inno Setup](https://jrsoftware.org/isinfo.php)
 
