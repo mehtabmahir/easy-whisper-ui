@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
 #include <QFile>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -11,17 +10,19 @@
 #include <QMimeData>
 #include <QSettings>
 
+QList<QProcess*> processList;
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::EasyWhisperUI)
 {
     ui->setupUi(this);
+    ui->console->setReadOnly(true);
 
     connect(ui->openFile, &QPushButton::clicked,
             this, &MainWindow::onOpenFileClicked);
-    ui->console->setReadOnly(true);
-
-    ui->model->setCurrentIndex(3);
+    connect(ui->stop, &QPushButton::clicked,
+            this, &MainWindow::exitProcesses);
 
     connect(ui->txtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
         // Handle the change here, for example:
@@ -103,7 +104,9 @@ void MainWindow::onOpenFileClicked()
     // If the user selected a file (did not cancel)
     if (!filePath.isEmpty()) {
         processAudioFile(filePath);
+        ui->openFile->setText("Stop");
     }
+    ui->openFile->setText("Open File");
 }
 
 void MainWindow::processAudioFile(const QString &inputFilePath)
@@ -151,6 +154,9 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
 
         // Create and configure the process.
         QProcess *whisperProcess = new QProcess(this);
+
+        processList.append(whisperProcess);
+
         whisperProcess->setProcessChannelMode(QProcess::MergedChannels);
 
         // Log all output from the process to the console.
@@ -178,6 +184,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                         ui->console->appendPlainText("Whisper process failed. Exit code: " + QString::number(exitCode));
                     }
                     whisperProcess->deleteLater();
+                    processList.removeOne(whisperProcess);
                 });
 
         // Start the whisper-cli process.
@@ -209,6 +216,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
             ui->console->appendPlainText("Model file not found: " + modelPath);
             ui->console->appendPlainText("Downloading model from " + modelUrl.toString());
             QProcess *downloadProcess = new QProcess(this);
+            processList.append(downloadProcess);
             downloadProcess->setProcessChannelMode(QProcess::MergedChannels);
             QStringList downloadArgs;
             downloadArgs << "-L" << modelUrl.toString() << "-o" << modelPath;
@@ -230,6 +238,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                             ui->console->appendPlainText("Failed to download model. Exit code: " + QString::number(exitCode));
                         }
                         downloadProcess->deleteLater();
+                        processList.removeOne(downloadProcess);
                     });
             downloadProcess->start("curl", downloadArgs);
         }
@@ -241,6 +250,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         QStringList ffmpegArgs;
         ffmpegArgs << "-n" << "-i" << m_filePath << "-q:a" << "2" << mp3File;
         QProcess *ffmpegProcess = new QProcess(this);
+        processList.append(ffmpegProcess);
         ffmpegProcess->setProcessChannelMode(QProcess::MergedChannels);
         connect(ffmpegProcess, &QProcess::readyRead, this, [this, ffmpegProcess]() {
             ui->console->appendPlainText(QString::fromLocal8Bit(ffmpegProcess->readAll()));
@@ -255,14 +265,24 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                         ui->console->appendPlainText("FFmpeg conversion failed. Exit code: " + QString::number(exitCode));
                     }
                     ffmpegProcess->deleteLater();
+                    processList.removeOne(ffmpegProcess);
                 });
         ffmpegProcess->start("ffmpeg", ffmpegArgs);
     } else {
         // Already MP3; proceed directly.
         checkAndDownloadModel();
     }
-
     saveSettings();
+}
+
+void MainWindow::exitProcesses()
+{
+    for (int i = processList.size() - 1; i >= 0; --i) {
+        QProcess* proc = processList[i];
+        proc->kill();                // Safe even if already finished
+        processList.removeAt(i);
+    }
+    ui->console->appendPlainText("The user stopped the process.");
 }
 
 

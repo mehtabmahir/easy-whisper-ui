@@ -24,6 +24,7 @@ private slots:
     void dropEvent(QDropEvent *event) override;
     void loadSettings();
     void saveSettings();
+    void exitProcesses();
 
 private:
     Ui::EasyWhisperUI *ui;
