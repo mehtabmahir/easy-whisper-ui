@@ -228,7 +228,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                         if (exitStatus == QProcess::NormalExit && exitCode == 0) {
                             QFileInfo fi(modelPath);
                             // Check file size; if it's unexpectedly small, warn the user.
-                            if (fi.size() < 10 * 1024) { // e.g., less than 10 KB
+                            if (fi.size() < 1000000) { // e.g., less than 1MB
                                 ui->console->appendPlainText("Downloaded model appears to be too small (" + QString::number(fi.size()) + " bytes).");
                             } else {
                                 ui->console->appendPlainText("Model downloaded successfully: " + modelPath);
@@ -236,6 +236,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                             }
                         } else {
                             ui->console->appendPlainText("Failed to download model. Exit code: " + QString::number(exitCode));
+                            QFile::remove(modelPath);
                         }
                         downloadProcess->deleteLater();
                         processList.removeOne(downloadProcess);
@@ -263,6 +264,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                         checkAndDownloadModel();
                     } else {
                         ui->console->appendPlainText("FFmpeg conversion failed. Exit code: " + QString::number(exitCode));
+                        QFile::remove(mp3File);
                     }
                     ffmpegProcess->deleteLater();
                     processList.removeOne(ffmpegProcess);
