@@ -273,4 +273,6 @@ end;
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional icons:"; Flags: unchecked
 
 [Icons]
-Name: "{userdesktop}\Whisper UI"; Filename: "{app}\EasyWhisperUI.exe"; Tasks: desktopicon
+Name: "{userdesktop}\WhisperUI"; Filename: "{app}\EasyWhisperUI.exe"; Tasks: desktopicon
+Name: "{userstartmenu}\WhisperUI"; Filename: "{app}\EasyWhisperUI.exe"; Tasks: desktopicon
+
