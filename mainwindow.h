@@ -28,6 +28,7 @@ private slots:
     void saveSettings();
     void exitProcesses();
     void startNextInQueue();
+    void clearConsole();
 
 private:
     Ui::EasyWhisperUI *ui;
@@ -36,5 +37,6 @@ private:
     QString srtFlag;
     bool isProcessing = false;
     QQueue<QString> fileQueue;
+
 };
 #endif // MAINWINDOW_H

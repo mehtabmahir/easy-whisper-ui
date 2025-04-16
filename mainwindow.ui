@@ -27,7 +27,7 @@
     </sizepolicy>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
+    <item row="0" column="0" rowspan="2">
      <widget class="QPushButton" name="openFile">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -63,13 +63,13 @@
       <property name="minimumSize">
        <size>
         <width>60</width>
-        <height>60</height>
+        <height>30</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>60</width>
-        <height>60</height>
+        <height>30</height>
        </size>
       </property>
       <property name="text">
@@ -77,7 +77,7 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="2" rowspan="2">
+    <item row="0" column="2" rowspan="3">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QLabel" name="argumentsLabel">
@@ -131,7 +131,32 @@
       </item>
      </layout>
     </item>
-    <item row="1" column="0" rowspan="2" colspan="2">
+    <item row="1" column="1">
+     <widget class="QPushButton" name="clear">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>60</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>60</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Clear</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" rowspan="2" colspan="2">
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout">
@@ -300,7 +325,7 @@
       </item>
      </layout>
     </item>
-    <item row="2" column="2">
+    <item row="3" column="2">
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
        <widget class="QCheckBox" name="txtCheckbox">
@@ -336,7 +361,7 @@
       </item>
      </layout>
     </item>
-    <item row="3" column="0" colspan="3">
+    <item row="4" column="0" colspan="3">
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <widget class="QLabel" name="outputLabel">

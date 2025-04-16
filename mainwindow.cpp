@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::onOpenFileClicked);
     connect(ui->stop, &QPushButton::clicked,
             this, &MainWindow::exitProcesses);
+    connect(ui->clear, &QPushButton::clicked,
+            this, &MainWindow::clearConsole);
 
     connect(ui->txtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
         // Handle the change here, for example:
@@ -316,6 +318,10 @@ void MainWindow::exitProcesses()
     ui->console->appendPlainText("The user stopped the process.");
 }
 
+void MainWindow::clearConsole()
+{
+    ui->console->clear();
+}
 
 
 
