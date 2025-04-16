@@ -7,17 +7,17 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 ---
 
 ## Features
+- Supports batch processing — drag in multiple files or select many at once; they transcribe one by one in a queue.
 - Installer handles everything for you — from downloading dependencies to compiling/optimizing Whisper for your specific hardware.
-- Choice of .txt files, or .srt files with timestamps!
+- Choice of `.txt` files, or `.srt` files with timestamps!
 - Fully C++ implementation — no Python!
 - Uses Vulkan for cross-platform GPU acceleration.
 - Drag & drop or use “Open With” to load media.
 - Automatically converts media to `.mp3` if needed using FFmpeg.
 - Dropdown menu to select the model (e.g. `tiny`, `medium-en`, `large-v3`).
-- Dropdown to select lanaguage (e.g. `en` for English)
-- Textbox for additional arguments
+- Dropdown to select language (e.g. `en` for English).
+- Textbox for additional arguments.
 - Automatically downloads the chosen model if missing.
-- Runs whisper with the selected model.
 - Shows all output in a console box.
 - Opens final transcript in Notepad.
 
@@ -27,6 +27,7 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 
 - Windows 10 or later  
 - AMD, Intel, or NVIDIA Graphics Card with Vulkan support. (99%)
+   - Virtual Machines won't work unless it supports `VulkanSDK` (e.g GPU passthrough)
 
 ---
 
