@@ -7,6 +7,7 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 ---
 
 ## Features
+- Supports translation for 100+ languages.
 - Supports batch processing — drag in multiple files or select many at once; they transcribe one by one in a queue.
 - Installer handles everything for you — from downloading dependencies to compiling/optimizing Whisper for your specific hardware.
 - Choice of `.txt` files, or `.srt` files with timestamps!
