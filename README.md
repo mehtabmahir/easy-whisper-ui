@@ -38,54 +38,6 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 
 ---
 
-## Build Steps
-
-1. **Install [Qt Creator](https://www.qt.io/product/development-tools)**  
-   – Use a kit with a compatible C++ compiler (e.g. MinGW).
-2. **Install [Inno Setup](https://jrsoftware.org/isdl.php)**  
-   – Required to build the installer.
-3. **Clone this repository**
-   ```bash
-   git clone https://github.com/mehtabmahir/easy-whisper-ui.git
-   ```
-4. **Open `CMakeLists.txt` in Qt Creator**  
-   – Located in the root of the cloned folder.
-5. **Use a build kit with a C++ compiler and CMake**
-6. **Build the project**  
-   – Press `Ctrl + B` or click the Build button.
-7. Installer and build will be in `build\Installer` and `build\Final` respectively.
-
----
-
-## 🛠️ Manual Setup (No Installer)
-
-If you prefer not to use the one-click installer for whatever reason, you can manually set up **EasyWhisper UI** by following these steps:
-
-### 1. **Get the UI Executable**
-You can either:
-- Build it yourself (see the [Build](#build) section), **or**
-- Download the latest prebuilt [`EasyWhisperUI.exe`](https://github.com/mehtabmahir/easy-whisper-ui/releases)
-
-### 2. **Bundle Qt DLLs**
-If you downloaded the standalone `EasyWhisperUI.exe`, use `windeployqt` from `Qt Creator` to gather the required Qt runtime DLLs:
-```bash
-windeployqt EasyWhisperUI.exe
-```
-You can find `windeployqt` in your Qt Creator install directory.
-
-### 3. **Get whisper.cpp**
-- Clone the official [`whisper.cpp`](https://github.com/ggerganov/whisper.cpp) repository
-- Compile it using CMake and a compatible compiler (e.g. MSVC or mingw64):
-```bash
-cmake -B build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release -j8
-```
-
-### 4. **Copy the CLI Binary**
-After building, copy the `whisper-cli.exe` (from the `build/Release` folder) into the same folder as `EasyWhisperUI.exe`.
-
-Once all files are in place, just run `EasyWhisperUI.exe` to get started. No installation required!
-
 ## Donate
 
 This project takes **tons of hours of work** — ensuring everything works smoothly across systems takes a LOT of time testing. It's all built in my free time, and I’m not getting paid for it.
@@ -149,4 +101,55 @@ License: Free for commercial and non-commercial use
 https://jrsoftware.org/isinfo.php
 
 ```
+
+---
+
+## Build Steps (I RECOMMEND YOU USE THE INSTALLER AVOVE)
+
+1. **Install [Qt Creator](https://www.qt.io/product/development-tools)**  
+   – Use a kit with a compatible C++ compiler (e.g. MinGW).
+2. **Install [Inno Setup](https://jrsoftware.org/isdl.php)**  
+   – Required to build the installer.
+3. **Clone this repository**
+   ```bash
+   git clone https://github.com/mehtabmahir/easy-whisper-ui.git
+   ```
+4. **Open `CMakeLists.txt` in Qt Creator**  
+   – Located in the root of the cloned folder.
+5. **Use a build kit with a C++ compiler and CMake**
+6. **Build the project**  
+   – Press `Ctrl + B` or click the Build button.
+7. Installer and build will be in `build\Installer` and `build\Final` respectively.
+
+---
+
+## 🛠️ Manual Setup (No Installer)
+
+If you prefer not to use the one-click installer for whatever reason, you can manually set up **EasyWhisper UI** by following these steps:
+
+### 1. **Get the UI Executable**
+You can either:
+- Build it yourself (see the [Build](#build) section), **or**
+- Download the latest prebuilt [`EasyWhisperUI.exe`](https://github.com/mehtabmahir/easy-whisper-ui/releases)
+
+### 2. **Bundle Qt DLLs**
+If you downloaded the standalone `EasyWhisperUI.exe`, use `windeployqt` from `Qt Creator` to gather the required Qt runtime DLLs:
+```bash
+windeployqt EasyWhisperUI.exe
+```
+You can find `windeployqt` in your Qt Creator install directory.
+
+### 3. **Get whisper.cpp**
+- Clone the official [`whisper.cpp`](https://github.com/ggerganov/whisper.cpp) repository
+- Compile it using CMake and a compatible compiler (e.g. MSVC or mingw64):
+```bash
+cmake -B build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release -j8
+```
+
+### 4. **Copy the CLI Binary**
+After building, copy the `whisper-cli.exe` (from the `build/Release` folder) into the same folder as `EasyWhisperUI.exe`.
+
+Once all files are in place, just run `EasyWhisperUI.exe` to get started. No installation required!
+
 
