@@ -98,7 +98,7 @@ void MainWindow::onOpenFileClicked()
         this,
         tr("Open Audio/Video File"),
         QString(),
-        tr("Audio/Video Files (*.mp3 *.mp4 *.m4a *.mkv *.wav *.mov *.avi *.ogg *.flac *.aac *.wma *.opus);; All Files (*)")
+        tr("Audio/Video Files (*.mp3 *.mp4 *.m4a *.mkv *.m4v *.wav *.mov *.avi *.ogg *.flac *.aac *.wma *.opus);; All Files (*)")
         );
 
     // If the user selected a file (did not cancel)
