@@ -52,11 +52,39 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 void MainWindow::dropEvent(QDropEvent *event)
 {
     QList<QUrl> urls = event->mimeData()->urls();
-    if (!urls.isEmpty()) {
-        QString filePath = urls.first().toLocalFile();
-        processAudioFile(filePath);
+    for (const QUrl &url : urls) {
+        QString filePath = url.toLocalFile();
+        if (!filePath.isEmpty()) {
+            fileQueue.enqueue(filePath);
+        }
     }
+
+    if (!isProcessing)
+        startNextInQueue();
 }
+
+void MainWindow::enqueueFilesAndStart(const QStringList &filePaths)
+{
+    for (const QString &filePath : filePaths) {
+        if (!filePath.isEmpty())
+            fileQueue.enqueue(filePath);
+    }
+    if (!isProcessing)
+        startNextInQueue();
+}
+
+void MainWindow::startNextInQueue()
+{
+    if (fileQueue.isEmpty()) {
+        isProcessing = false;
+        return;
+    }
+
+    isProcessing = true;
+    QString nextFile = fileQueue.dequeue();
+    processAudioFile(nextFile);
+}
+
 
 void MainWindow::saveSettings()
 {
@@ -93,20 +121,21 @@ void MainWindow::loadSettings()
 
 void MainWindow::onOpenFileClicked()
 {
-    // Open a file dialog to pick any audio file
-    QString filePath = QFileDialog::getOpenFileName(
+    QStringList filePaths = QFileDialog::getOpenFileNames(
         this,
-        tr("Open Audio/Video File"),
+        tr("Open Audio/Video Files"),
         QString(),
-        tr("Audio/Video Files (*.mp3 *.mp4 *.m4a *.mkv *.m4v *.wav *.mov *.avi *.ogg *.flac *.aac *.wma *.opus);; All Files (*)")
+        tr("Audio/Video Files (*.mp3 *.mp4 *.m4a *.mkv *.m4v *.wav *.mov *.avi *.ogg *.flac *.aac *.wma *.opus);;All Files (*)")
         );
 
-    // If the user selected a file (did not cancel)
-    if (!filePath.isEmpty()) {
-        processAudioFile(filePath);
-        ui->openFile->setText("Stop");
+    for (const QString &filePath : filePaths) {
+        if (!filePath.isEmpty()) {
+            fileQueue.enqueue(filePath);
+        }
     }
-    ui->openFile->setText("Open File");
+
+    if (!isProcessing)
+        startNextInQueue();
 }
 
 void MainWindow::processAudioFile(const QString &inputFilePath)
@@ -168,6 +197,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         // Log any errors that occur.
         connect(whisperProcess, &QProcess::errorOccurred, this, [this, whisperProcess]() {
             ui->console->appendPlainText("Whisper process error: " + whisperProcess->errorString());
+            startNextInQueue();
         });
 
         // When finished, check the exit code and then open the output file.
@@ -185,14 +215,13 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                     }
                     whisperProcess->deleteLater();
                     processList.removeOne(whisperProcess);
+                    startNextInQueue(); // <- this line starts the next file after current one finishes
                 });
 
         // Start the whisper-cli process.
         whisperProcess->start(whisperCliPath, whisperArgs);
 
     };
-
-
 
     // Lambda to check and download model (Step 2).
     auto checkAndDownloadModel = [this, runWhisper]() {

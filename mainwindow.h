@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QQueue>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -17,6 +18,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     void processAudioFile(const QString &filePath);
+    void enqueueFilesAndStart(const QStringList &filePaths);
 
 private slots:
     void onOpenFileClicked();
@@ -25,11 +27,14 @@ private slots:
     void loadSettings();
     void saveSettings();
     void exitProcesses();
+    void startNextInQueue();
 
 private:
     Ui::EasyWhisperUI *ui;
     QString m_filePath;
     QString txtFlag;
     QString srtFlag;
+    bool isProcessing = false;
+    QQueue<QString> fileQueue;
 };
 #endif // MAINWINDOW_H

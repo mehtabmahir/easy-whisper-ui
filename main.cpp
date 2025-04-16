@@ -6,18 +6,24 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    // If the user invoked this via "Open with", argv[1] is typically the file path
-    QString filePath;
-    if (argc > 1) {
-        filePath = argv[1];  // store the file name
-    }
-
     MainWindow w;
     w.setWindowTitle("Whisper UI");
     w.setWindowIcon(QIcon(":resources/icon.png"));
 
-    w.processAudioFile(filePath); // Pass the file path to MainWindow
-    w.show();
+    QStringList fileArgs;
 
+    if (argc > 1) {
+        QStringList fileArgs;
+        for (int i = 1; i < argc; ++i) {
+            QString arg = argv[i];
+            if (!arg.isEmpty())
+                fileArgs << arg;
+        }
+
+        if (!fileArgs.isEmpty())
+            w.enqueueFilesAndStart(fileArgs);
+    }
+
+    w.show();
     return a.exec();
 }
