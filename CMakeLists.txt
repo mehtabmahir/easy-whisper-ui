@@ -18,7 +18,14 @@ set(PROJECT_SOURCES
         mainwindow.h
         mainwindow.ui
         icon.rc
+        icon.icns
 )
+
+# Add Mac icon
+if (APPLE)
+  set(MACOSX_BUNDLE_ICON_FILE icon.icns)
+  set_source_files_properties("${CMAKE_SOURCE_DIR}/icon.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(EasyWhisperUI
@@ -101,7 +108,7 @@ add_custom_command(TARGET EasyWhisperUI POST_BUILD
         "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.app"
 
     # Run install script
-    COMMAND "${CMAKE_SOURCE_DIR}/build.sh"
+    COMMAND sh "${CMAKE_SOURCE_DIR}/build.sh"
 )
 endif()
 

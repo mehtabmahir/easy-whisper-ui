@@ -167,6 +167,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         // Build the model filename from the combo box.
         QString modelParam = "ggml-" + ui->model->currentText() + ".bin";
         QString exeDir = QCoreApplication::applicationDirPath();
+        QString whisperCliPath = exeDir + "/whisper-cli";
         #ifdef Q_OS_MACOS
             // Go up 3 directories: Contents/MacOS/../../../ → EasyWhisperUI.app
             exeDir = QFileInfo(exeDir).absoluteDir().absolutePath();
@@ -174,7 +175,6 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
             exeDir = QFileInfo(exeDir).absoluteDir().absolutePath();
         #endif
         QString modelPath = exeDir + "/models/" + modelParam;
-        QString whisperCliPath = exeDir + "/whisper-cli";
         #ifdef Q_OS_WIN
             whisperCliPath = exeDir + ".exe";
         #endif

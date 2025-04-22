@@ -10,11 +10,12 @@ git clone https://github.com/ggml-org/whisper.cpp.git
 cd "$build_dir/whisper.cpp"
 
 # Run CMake and build
-cmake -B build -DGGML_METAL=ON -DWHISPER_SDL2=ON
+cmake -B build -DGGML_METAL=ON -DWHISPER_SDL2=ON -DBUILD_SHARED_LIBS=OFF -DGGML_METAL_EMBED_LIBRARY=ON
 cmake --build build --clean-first --config Release --parallel 8
 
-# Copy the whisper-cli binary
-cp "$build_dir/whisper.cpp/build/bin/whisper-cli" "$build_dir/"
+# Copy the whisper-cli binary into the bundle
+cp "$build_dir/whisper.cpp/build/bin/whisper-cli" "$build_dir/EasyWhisperUI.app/Contents/MacOS/"
+
 
 # Sign the built application
 codesign --force --deep --sign - "$build_dir/EasyWhisperUI.app"
