@@ -46,8 +46,14 @@ endif()
 
 target_link_libraries(EasyWhisperUI PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
-find_program(WINDEPLOYQT_EXECUTABLE windeployqt REQUIRED)
+if (WIN32)
+    find_program(WINDEPLOYQT_EXECUTABLE windeployqt REQUIRED)
+endif ()
+if (APPLE)
+    find_program(MACDEPLOYQT_EXECUTABLE macdeployqt REQUIRED)
+endif()
 
+if (WIN32)
 add_custom_command(TARGET EasyWhisperUI POST_BUILD
     # Make output folder
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/build/Final"
@@ -80,6 +86,24 @@ add_custom_command(TARGET EasyWhisperUI POST_BUILD
     COMMENT "Compiling Installer"
     COMMAND "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" "${CMAKE_SOURCE_DIR}/setup.iss"
 )
+endif()
+if (APPLE)
+add_custom_command(TARGET EasyWhisperUI POST_BUILD
+    # Make output folder
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/build/Final"
+
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+        "${CMAKE_SOURCE_DIR}/build/EasyWhisperUI.app"
+        "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.app"
+
+    # For macOS, you might want to use macdeployqt instead
+    COMMAND ${MACDEPLOYQT_EXECUTABLE}
+        "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.app"
+
+    # Run install script
+    COMMAND "${CMAKE_SOURCE_DIR}/build.sh"
+)
+endif()
 
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
