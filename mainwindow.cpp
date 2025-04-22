@@ -9,6 +9,8 @@
 #include <QTimer>
 #include <QMimeData>
 #include <QSettings>
+#include <QtSystemDetection>
+#include <QDesktopServices>
 
 QList<QProcess*> processList;
 
@@ -165,8 +167,17 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         // Build the model filename from the combo box.
         QString modelParam = "ggml-" + ui->model->currentText() + ".bin";
         QString exeDir = QCoreApplication::applicationDirPath();
+        #ifdef Q_OS_MACOS
+            // Go up 3 directories: Contents/MacOS/../../../ → EasyWhisperUI.app
+            exeDir = QFileInfo(exeDir).absoluteDir().absolutePath();
+            exeDir = QFileInfo(exeDir).absoluteDir().absolutePath();
+            exeDir = QFileInfo(exeDir).absoluteDir().absolutePath();
+        #endif
         QString modelPath = exeDir + "/models/" + modelParam;
-        QString whisperCliPath = exeDir + "/whisper-cli.exe";
+        QString whisperCliPath = exeDir + "/whisper-cli";
+        #ifdef Q_OS_WIN
+            whisperCliPath = exeDir + ".exe";
+        #endif
 
         QString extraArgs = ui->arguments->toPlainText();
         QStringList parsedArgs = QProcess::splitCommand(extraArgs);
@@ -208,9 +219,10 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                     if (!ui->txtCheckbox->isChecked())
                         ui->console->appendPlainText("Whisper processing complete.");
                     else if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-                        ui->console->appendPlainText("Whisper processing complete. Opening file in Notepad.");
+                        ui->console->appendPlainText("Whisper processing complete. Opening file.");
                         QTimer::singleShot(2000, [outputFile]() {
-                            QProcess::startDetached("notepad.exe", QStringList() << outputFile);
+                            // QProcess::startDetached("notepad.exe", QStringList() << outputFile); // Do not hardcode Notepad
+                            QDesktopServices::openUrl(QUrl::fromLocalFile(outputFile));
                         });
                     } else {
                         ui->console->appendPlainText("Whisper process failed. Exit code: " + QString::number(exitCode));
@@ -219,7 +231,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                     processList.removeOne(whisperProcess);
                     startNextInQueue(); // <- this line starts the next file after current one finishes
                 });
-
+        
         // Start the whisper-cli process.
         whisperProcess->start(whisperCliPath, whisperArgs);
 
@@ -229,6 +241,11 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
     auto checkAndDownloadModel = [this, runWhisper]() {
         QString modelParam = "ggml-" + ui->model->currentText() + ".bin";
         QString exeDir = QCoreApplication::applicationDirPath();
+        #ifdef Q_OS_MACOS
+            exeDir = QFileInfo(exeDir).absoluteDir().absolutePath();
+            exeDir = QFileInfo(exeDir).absoluteDir().absolutePath();
+            exeDir = QFileInfo(exeDir).absoluteDir().absolutePath();
+        #endif
         QString modelsDir = exeDir + "/models/";
         QDir dir(modelsDir);
         if (!dir.exists() && !dir.mkpath(modelsDir)) {
