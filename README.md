@@ -4,7 +4,11 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 
 <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/preview.png"/>
 
----
+
+## 🍎 Initial macOS Support
+
+Thanks to the incredible contribution from [celerycoloured](https://github.com/celerycoloured), EasyWhisper UI now runs on macOS! 
+Check it out on the `releases` page. 
 
 ## Features
 - Supports translation for 100+ languages.
@@ -12,7 +16,8 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 - Installer handles everything for you — from downloading dependencies to compiling/optimizing Whisper for your specific hardware.
 - Choice of `.txt` files, or `.srt` files with timestamps!
 - Fully C++ implementation — no Python!
-- Uses Vulkan for cross-platform GPU acceleration.
+- Uses Vulkan API for cross-platform GPU acceleration!
+- Uses Metal API for GPU acceleration on Apple Silicon on MacOS!
 - Drag & drop or use “Open With” to load media.
 - Automatically converts media to `.mp3` if needed using FFmpeg.
 - Dropdown menu to select the model (e.g. `tiny`, `medium-en`, `large-v3`).
@@ -26,7 +31,7 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 
 ## Requirements
 
-- Windows 10 or later  
+- Windows 10 or later
 - AMD, Intel, or NVIDIA Graphics Card with Vulkan support. (99%)
    - Virtual Machines won't work unless it supports `VulkanSDK` (e.g GPU passthrough)
 
