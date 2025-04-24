@@ -95,7 +95,11 @@ add_custom_command(TARGET EasyWhisperUI POST_BUILD
 )
 endif()
 if (APPLE)
-add_custom_command(TARGET EasyWhisperUI POST_BUILD
+add_custom_target(
+    buildOSXApp ALL
+    DEPENDS EasyWhisperUI
+) 
+add_custom_command(TARGET buildOSXApp POST_BUILD
     # Make output folder
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/build/Final"
 
