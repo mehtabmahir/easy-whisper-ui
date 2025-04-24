@@ -317,7 +317,19 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                     ffmpegProcess->deleteLater();
                     processList.removeOne(ffmpegProcess);
                 });
-        ffmpegProcess->start("ffmpeg", ffmpegArgs);
+        #ifdef Q_OS_MACOS
+            ui->console->appendPlainText("Looking for ffmpeg");
+            QProcess findFfmpegProcess;
+            findFfmpegProcess.start("zsh", QStringList() << "-c" << "source /etc/zshrc || true && source ~/.zshrc || true && source /etc/zprofile || true && source ~/.zprofile || true && which ffmpeg");
+            if (findFfmpegProcess.waitForFinished()) {
+                QString ffmpegPath = findFfmpegProcess.readAllStandardOutput().trimmed();
+                ui->console->appendPlainText("ffmpeg found at:" + ffmpegPath);
+                ffmpegProcess->start(ffmpegPath, ffmpegArgs);
+            }
+        #endif
+        #ifndef Q_OS_MACOS
+            ffmpegProcess->start("ffmpeg", ffmpegArgs);
+        #endif
     } else {
         // Already MP3; proceed directly.
         checkAndDownloadModel();
