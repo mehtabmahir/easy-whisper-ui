@@ -2,8 +2,18 @@
 
 A fast, native desktop UI for transcribing media using Whisper — built entirely in modern C++ and Qt.
 
-<img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/preview.png"/>
-
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/preview.png" width="400"/><br/>
+      <p><strong>Windows</strong></p>
+    </td>
+    <td align="center">
+      <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/preview-mac.png" width="400"/><br/>
+      <p><strong>macOS</strong></p>
+    </td>
+  </tr>
+</table>
 
 ## 🍎 Initial macOS Support
 
