@@ -9,7 +9,7 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
       <p><strong>Windows</strong></p>
     </td>
     <td align="center">
-      <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/preview-mac.png" width="400"/><br/>
+      <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/mac/preview.png" width="400"/><br/>
       <p><strong>macOS</strong></p>
     </td>
   </tr>
