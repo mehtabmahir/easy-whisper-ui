@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>591</width>
-    <height>540</height>
+    <width>617</width>
+    <height>581</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -27,8 +27,8 @@
     </sizepolicy>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0" rowspan="2">
-     <widget class="QPushButton" name="openFile">
+    <item row="1" column="1">
+     <widget class="QPushButton" name="clear">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -37,18 +37,18 @@
       </property>
       <property name="minimumSize">
        <size>
-        <width>120</width>
-        <height>60</height>
+        <width>60</width>
+        <height>30</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>120</width>
-        <height>60</height>
+        <width>60</width>
+        <height>30</height>
        </size>
       </property>
       <property name="text">
-       <string>Open File</string>
+       <string>Clear</string>
       </property>
      </widget>
     </item>
@@ -131,8 +131,8 @@
       </item>
      </layout>
     </item>
-    <item row="1" column="1">
-     <widget class="QPushButton" name="clear">
+    <item row="0" column="0" rowspan="2">
+     <widget class="QPushButton" name="openFile">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -141,20 +141,47 @@
       </property>
       <property name="minimumSize">
        <size>
-        <width>60</width>
-        <height>30</height>
+        <width>120</width>
+        <height>60</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>60</width>
-        <height>30</height>
+        <width>150</width>
+        <height>60</height>
        </size>
       </property>
       <property name="text">
-       <string>Clear</string>
+       <string>Open File</string>
       </property>
      </widget>
+    </item>
+    <item row="4" column="0" colspan="3">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QLabel" name="outputLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Output:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPlainTextEdit" name="console">
+        <property name="minimumSize">
+         <size>
+          <width>571</width>
+          <height>371</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item row="2" column="0" rowspan="2" colspan="2">
      <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -184,7 +211,7 @@
           <property name="maximumSize">
            <size>
             <width>200</width>
-            <height>22</height>
+            <height>25</height>
            </size>
           </property>
           <item>
@@ -264,6 +291,12 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>25</height>
+           </size>
+          </property>
           <item>
            <property name="text">
             <string>en</string>
@@ -337,7 +370,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>100</width>
+          <width>120</width>
           <height>16777215</height>
          </size>
         </property>
@@ -354,35 +387,14 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="maximumSize">
+         <size>
+          <width>250</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
          <string>Output File with Timestamps (.srt)</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="4" column="0" colspan="3">
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <widget class="QLabel" name="outputLabel">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Output:</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPlainTextEdit" name="console">
-        <property name="minimumSize">
-         <size>
-          <width>571</width>
-          <height>371</height>
-         </size>
         </property>
        </widget>
       </item>
@@ -395,8 +407,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>591</width>
-     <height>17</height>
+     <width>617</width>
+     <height>24</height>
     </rect>
    </property>
   </widget>
