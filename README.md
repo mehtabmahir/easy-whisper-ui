@@ -41,9 +41,14 @@ Check it out on the `releases` page.
 
 ## Requirements
 
-- Windows 10 or later
+Windows 10/11:
+
 - AMD, Intel, or NVIDIA Graphics Card with Vulkan support. (99%)
    - Virtual Machines won't work unless it supports `VulkanSDK` (e.g GPU passthrough)
+
+MacOS:
+
+- All Apple Silicon (all M series)
 
 ---
 
