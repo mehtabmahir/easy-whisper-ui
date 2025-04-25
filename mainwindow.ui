@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>591</width>
-    <height>540</height>
+    <height>544</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -123,6 +123,9 @@
           <width>16777215</width>
           <height>65</height>
          </size>
+        </property>
+        <property name="acceptDrops">
+         <bool>false</bool>
         </property>
         <property name="plainText">
          <string/>
