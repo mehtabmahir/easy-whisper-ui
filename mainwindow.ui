@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>591</width>
-    <height>544</height>
+    <width>637</width>
+    <height>548</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -15,6 +15,11 @@
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>10</pointsize>
+   </font>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
@@ -44,7 +49,7 @@
       <property name="maximumSize">
        <size>
         <width>120</width>
-        <height>60</height>
+        <height>80</height>
        </size>
       </property>
       <property name="text">
@@ -96,7 +101,7 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>15</height>
+          <height>20</height>
          </size>
         </property>
         <property name="text">
@@ -159,7 +164,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>100</width>
+          <width>110</width>
           <height>16777215</height>
          </size>
         </property>
@@ -247,6 +252,12 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize">
+           <size>
+            <width>50</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="text">
            <string>     Model:</string>
           </property>
@@ -260,9 +271,15 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize">
+           <size>
+            <width>120</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="maximumSize">
            <size>
-            <width>200</width>
+            <width>120</width>
             <height>22</height>
            </size>
           </property>
@@ -330,6 +347,12 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize">
+           <size>
+            <width>50</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="text">
            <string>Language:</string>
           </property>
@@ -342,6 +365,18 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>120</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>120</width>
+            <height>100</height>
+           </size>
           </property>
           <item>
            <property name="text">
@@ -411,8 +446,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>591</width>
-     <height>17</height>
+     <width>637</width>
+     <height>19</height>
     </rect>
    </property>
   </widget>

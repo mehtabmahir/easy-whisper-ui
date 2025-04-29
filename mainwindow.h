@@ -24,11 +24,13 @@ private slots:
     void onOpenFileClicked();
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
+    void changeEvent(QEvent *event) override;
     void loadSettings();
     void saveSettings();
     void exitProcesses();
     void startNextInQueue();
     void clearConsole();
+    void handleBlur();
 
 private:
     Ui::EasyWhisperUI *ui;

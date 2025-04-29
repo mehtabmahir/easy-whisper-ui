@@ -9,8 +9,10 @@
 #include <QTimer>
 #include <QMimeData>
 #include <QSettings>
+#include <Windows.h>
 
 QList<QProcess*> processList;
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -40,12 +42,89 @@ MainWindow::MainWindow(QWidget *parent)
 
     setAcceptDrops(true);
     loadSettings();
+
+    handleBlur();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+
+    if (event->type() == QEvent::PaletteChange)
+        handleBlur();
+
+}
+
+void MainWindow::handleBlur()
+{
+    setAttribute(Qt::WA_TranslucentBackground);
+    ui->centralwidget->setAttribute(Qt::WA_TranslucentBackground);
+
+    QColor bg = palette().color(QPalette::Window);
+    bool isDark = bg.lightness() < 128;
+
+    QString widgetBackground = isDark
+                                   ? "background-color: rgba(64, 64, 64, 180); color: white;"
+                                   : "background-color: rgba(255, 255, 255, 180); color: black;";
+
+    ui->openFile->setAttribute(Qt::WA_TranslucentBackground);
+    ui->openFile->setStyleSheet(widgetBackground);
+
+    ui->stop->setAttribute(Qt::WA_TranslucentBackground);
+    ui->stop->setStyleSheet(widgetBackground);
+
+    ui->clear->setAttribute(Qt::WA_TranslucentBackground);
+    ui->clear->setStyleSheet(widgetBackground);
+
+    ui->model->setAttribute(Qt::WA_TranslucentBackground);
+    ui->model->setStyleSheet(widgetBackground);
+
+    ui->language->setAttribute(Qt::WA_TranslucentBackground);
+    ui->language->setStyleSheet(widgetBackground);
+
+    ui->arguments->setAttribute(Qt::WA_TranslucentBackground);
+    ui->arguments->setStyleSheet(widgetBackground);
+
+    ui->console->setAttribute(Qt::WA_TranslucentBackground);
+    ui->console->setStyleSheet(widgetBackground);
+
+    int acrylicColor = isDark
+                           ? static_cast<int>(0x77202020)  // dark blur
+                           : static_cast<int>(0x77FFFFFF); // light blur
+
+    HWND hwnd = reinterpret_cast<HWND>(this->winId());
+
+    struct ACCENTPOLICY {
+        int nAccentState;
+        int nFlags;
+        int nColor;
+        int nAnimationId;
+    };
+
+    struct WINCOMPATTRDATA {
+        int nAttribute;
+        PVOID pData;
+        ULONG ulDataSize;
+    };
+
+    ACCENTPOLICY policy = { 4 /* ACCENT_ENABLE_ACRYLICBLURBEHIND */, 2, acrylicColor, 0 };
+    WINCOMPATTRDATA data = { 19, &policy, sizeof(policy) };
+
+    using pSetWindowCompositionAttribute = BOOL(WINAPI *)(HWND, WINCOMPATTRDATA*);
+    auto user32 = GetModuleHandleA("user32.dll");
+    auto setWindowCompositionAttribute = reinterpret_cast<pSetWindowCompositionAttribute>(
+        GetProcAddress(user32, "SetWindowCompositionAttribute"));
+
+    if (setWindowCompositionAttribute) {
+        setWindowCompositionAttribute(hwnd, &data);
+    }
+}
+
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
