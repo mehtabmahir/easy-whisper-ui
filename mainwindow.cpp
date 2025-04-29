@@ -29,13 +29,15 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::clearConsole);
 
     connect(ui->txtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
-        // Handle the change here, for example:
         txtFlag = ui->txtCheckbox->isChecked() ? "-otxt" : "";
     });
 
     connect(ui->srtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
-        // Handle the change here, for example:
         srtFlag = ui->srtCheckbox->isChecked() ? "-osrt" : "";
+    });
+
+    connect(ui->cpuCheckbox, &QCheckBox::toggled, this, [=](bool checked){
+        cpuFlag = ui->cpuCheckbox->isChecked() ? "--no-gpu" : "";
     });
 
     setAcceptDrops(true);
@@ -97,6 +99,7 @@ void MainWindow::saveSettings()
     settings.setValue("language", ui->language->currentIndex());
     settings.setValue("txtFile", ui->txtCheckbox->isChecked());
     settings.setValue("srtFile", ui->srtCheckbox->isChecked());
+    settings.setValue("cpuOnly", ui->cpuCheckbox->isChecked());
     settings.setValue("args", ui->arguments->toPlainText());
 }
 
@@ -116,6 +119,7 @@ void MainWindow::loadSettings()
         ui->txtCheckbox->setChecked(settings.value("txtFile").toBool());
 
     ui->srtCheckbox->setChecked(settings.value("srtFile").toBool());
+    ui->cpuCheckbox->setChecked(settings.value("cpuOnly").toBool());
 
     if (settings.value("args").toString() == "")
         ui->arguments->setPlainText("-tp 0.0 -mc 64 -et 3.0");
@@ -186,7 +190,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         QStringList whisperArgs;
         whisperArgs << "-m" << modelPath
                     << "-f" << mp3File   // explicitly use the converted MP3 file
-                    << txtFlag << srtFlag
+                    << txtFlag << srtFlag << cpuFlag
                     << "-l" << ui->language->currentText()
                     << parsedArgs;
 

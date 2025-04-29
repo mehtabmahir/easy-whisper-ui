@@ -35,6 +35,7 @@ private:
     QString m_filePath;
     QString txtFlag;
     QString srtFlag;
+    QString cpuFlag;
     bool isProcessing = false;
     QQueue<QString> fileQueue;
 
