@@ -137,7 +137,7 @@
     <item row="3" column="2">
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
-       <widget class="QCheckBox" name="cpuCheckBox">
+       <widget class="QCheckBox" name="cpuCheckbox">
         <property name="maximumSize">
          <size>
           <width>80</width>
