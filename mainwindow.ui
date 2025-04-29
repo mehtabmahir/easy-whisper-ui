@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>617</width>
+    <width>639</width>
     <height>581</height>
    </rect>
   </property>
@@ -369,7 +369,7 @@
     <item row="3" column="2">
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
-       <widget class="QCheckBox" name="checkBox">
+       <widget class="QCheckBox" name="cpuCheckbox">
         <property name="maximumSize">
          <size>
           <width>80</width>
@@ -428,7 +428,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>617</width>
+     <width>639</width>
      <height>24</height>
     </rect>
    </property>
