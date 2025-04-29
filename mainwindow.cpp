@@ -92,7 +92,7 @@ void MainWindow::startNextInQueue()
 
 void MainWindow::saveSettings()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings(QCoreApplication::applicationDirPath() + "/settings.ini", QSettings::IniFormat);
     settings.setValue("model", ui->model->currentIndex());
     settings.setValue("language", ui->language->currentIndex());
     settings.setValue("txtFile", ui->txtCheckbox->isChecked());
@@ -103,7 +103,7 @@ void MainWindow::saveSettings()
 
 void MainWindow::loadSettings()
 {
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    QSettings settings(QCoreApplication::applicationDirPath() + "/settings.ini", QSettings::IniFormat);
     if (settings.value("model").toString() == "")
         ui->model->setCurrentIndex(3);
     else
