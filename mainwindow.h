@@ -38,6 +38,5 @@ private:
     QString cpuFlag;
     bool isProcessing = false;
     QQueue<QString> fileQueue;
-
 };
 #endif // MAINWINDOW_H
