@@ -25,9 +25,6 @@ Check it out on the `releases` page.
 - Supports batch processing — drag in multiple files or select many at once; they transcribe one by one in a queue.
 - Installer handles everything for you — from downloading dependencies to compiling/optimizing Whisper for your specific hardware.
 - Choice of `.txt` files, or `.srt` files with timestamps!
-- Fully C++ implementation — no Python!
-- Uses Vulkan API for cross-platform GPU acceleration!
-- Uses Metal API for GPU acceleration on Apple Silicon on MacOS!
 - Drag & drop or use “Open With” to load media.
 - Automatically converts media to `.mp3` if needed using FFmpeg.
 - Dropdown menu to select the model (e.g. `tiny`, `medium-en`, `large-v3`).
@@ -37,18 +34,26 @@ Check it out on the `releases` page.
 - Shows all output in a console box.
 - Opens final transcript in Notepad.
 
+
+- Fully portable MacOS release!
+- Windows Acrylic blur theme!
+- Fully C++ implementation — no Python!
+- Uses Vulkan API for cross-platform GPU acceleration!
+- Uses Metal API for GPU acceleration on Apple Silicon on MacOS!
+- More coming soon!
+
 ---
 
 ## Requirements
 
 Windows 10/11:
 
-- AMD, Intel, or NVIDIA Graphics Card with Vulkan support. (99%)
+- AMD, Intel, or NVIDIA Graphics Card with Vulkan support. (Pretty much all GPUs including Integrated)
    - Virtual Machines won't work unless it supports `VulkanSDK` (e.g GPU passthrough)
 
 MacOS:
 
-- All Apple Silicon (all M series)
+- All Apple Silicon (M1 M2 M3 M4 etc)
 
 ---
 
@@ -76,6 +81,7 @@ Your support truly helps and is greatly appreciated!
 - [FFmpeg Windows builds](https://www.gyan.dev/ffmpeg/) by Gyan.dev  
 - Built with [Qt](https://www.qt.io)  
 - Installer created using [Inno Setup](https://jrsoftware.org/isinfo.php)
+- Huge thanks to [celerycoloured](https://github.com/celerycoloured) for the initial macOS port!
 
 ---
 
@@ -125,7 +131,9 @@ https://jrsoftware.org/isinfo.php
 
 ---
 
-## Build Steps (I RECOMMEND YOU USE THE INSTALLER AVOVE)
+## Build Steps (For Developers)
+
+Windows:
 
 1. **Install [Qt Creator](https://www.qt.io/product/development-tools)**  
    – Use a kit with a compatible C++ compiler (e.g. MinGW).
@@ -142,35 +150,12 @@ https://jrsoftware.org/isinfo.php
    – Press `Ctrl + B` or click the Build button.
 7. Installer and build will be in `build\Installer` and `build\Final` respectively.
 
+MacOS:
+
+- Instructions coming soon!
+
 ---
 
-## 🛠️ Manual Setup (No Installer)
 
-If you prefer not to use the one-click installer for whatever reason, you can manually set up **EasyWhisper UI** by following these steps:
-
-### 1. **Get the UI Executable**
-You can either:
-- Build it yourself (see the [Build](#build) section), **or**
-- Download the latest prebuilt [`EasyWhisperUI.exe`](https://github.com/mehtabmahir/easy-whisper-ui/releases)
-
-### 2. **Bundle Qt DLLs**
-If you downloaded the standalone `EasyWhisperUI.exe`, use `windeployqt` from `Qt Creator` to gather the required Qt runtime DLLs:
-```bash
-windeployqt EasyWhisperUI.exe
-```
-You can find `windeployqt` in your Qt Creator install directory.
-
-### 3. **Get whisper.cpp**
-- Clone the official [`whisper.cpp`](https://github.com/ggerganov/whisper.cpp) repository
-- Compile it using CMake and a compatible compiler (e.g. MSVC or mingw64):
-```bash
-cmake -B build -DGGML_VULKAN=1 -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release -j8
-```
-
-### 4. **Copy the CLI Binary**
-After building, copy the `whisper-cli.exe` (from the `build/Release` folder) into the same folder as `EasyWhisperUI.exe`.
-
-Once all files are in place, just run `EasyWhisperUI.exe` to get started. No installation required!
 
 
