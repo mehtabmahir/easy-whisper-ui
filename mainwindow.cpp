@@ -235,7 +235,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                     processList.removeOne(whisperProcess);
                     startNextInQueue(); // <- this line starts the next file after current one finishes
                 });
-        
+
         // Start the whisper-cli process.
         whisperProcess->start(whisperCliPath, whisperArgs);
 
@@ -321,19 +321,13 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                     ffmpegProcess->deleteLater();
                     processList.removeOne(ffmpegProcess);
                 });
-        #ifdef Q_OS_MACOS
-            ui->console->appendPlainText("Looking for ffmpeg");
-            QProcess findFfmpegProcess;
-            findFfmpegProcess.start("zsh", QStringList() << "-c" << "source /etc/zshrc || true && source ~/.zshrc || true && source /etc/zprofile || true && source ~/.zprofile || true && which ffmpeg");
-            if (findFfmpegProcess.waitForFinished()) {
-                QString ffmpegPath = findFfmpegProcess.readAllStandardOutput().trimmed();
-                ui->console->appendPlainText("ffmpeg found at:" + ffmpegPath);
-                ffmpegProcess->start(ffmpegPath, ffmpegArgs);
-            }
-        #endif
-        #ifndef Q_OS_MACOS
-            ffmpegProcess->start("ffmpeg", ffmpegArgs);
-        #endif
+        QString exeDir = QCoreApplication::applicationDirPath();              // → Contents/MacOS
+        QString contentsDir = QFileInfo(exeDir).absoluteDir().absolutePath(); // → Contents
+        QString ffmpegPath = contentsDir + "/Resources/ffmpeg";              // → Contents/Resources/ffmpeg
+
+        ui->console->appendPlainText("Using bundled ffmpeg at: " + ffmpegPath);
+        ffmpegProcess->start(ffmpegPath, ffmpegArgs);
+
     } else {
         // Already MP3; proceed directly.
         checkAndDownloadModel();
@@ -355,7 +349,3 @@ void MainWindow::clearConsole()
 {
     ui->console->clear();
 }
-
-
-
-

@@ -94,26 +94,52 @@ add_custom_command(TARGET EasyWhisperUI POST_BUILD
     COMMAND "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" "${CMAKE_SOURCE_DIR}/setup.iss"
 )
 endif()
+
 if (APPLE)
-add_custom_target(
-    buildOSXApp ALL
-    DEPENDS EasyWhisperUI
-) 
-add_custom_command(TARGET buildOSXApp POST_BUILD
-    # Make output folder
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/build/Final"
+    find_program(MACDEPLOYQT_EXECUTABLE macdeployqt REQUIRED)
 
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-        "${CMAKE_SOURCE_DIR}/build/EasyWhisperUI.app"
-        "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.app"
+    # FFmpeg paths
+    set(FFMPEG_URL "https://evermeet.cx/ffmpeg/getrelease/zip")
+    set(FFMPEG_ZIP "${CMAKE_BINARY_DIR}/ffmpeg-macos.zip")
+    set(FFMPEG_EXE "${CMAKE_BINARY_DIR}/ffmpeg")
+    set(FFMPEG_RESOURCE_DIR "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.app/Contents/Resources")
+    set(FFMPEG_BUNDLE_PATH "${FFMPEG_RESOURCE_DIR}/ffmpeg")
 
-    # For macOS, you might want to use macdeployqt instead
-    COMMAND ${MACDEPLOYQT_EXECUTABLE}
-        "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.app"
+    # Step 1: Fetch FFmpeg
+    add_custom_target(fetch_ffmpeg ALL
+        COMMAND ${CMAKE_COMMAND} -E echo "Downloading FFmpeg..."
+        COMMAND ${CMAKE_COMMAND} -E remove -f "${FFMPEG_ZIP}"
+        COMMAND curl -L -o "${FFMPEG_ZIP}" "${FFMPEG_URL}"
+        COMMAND unzip -o "${FFMPEG_ZIP}" -d "${CMAKE_BINARY_DIR}"
+        COMMAND chmod +x "${FFMPEG_EXE}"
+        COMMENT "Fetching latest static FFmpeg binary for macOS"
+    )
 
-    # Run install script
-    COMMAND sh "${CMAKE_SOURCE_DIR}/build.sh"
-)
+    # Step 2: Final bundle step
+    add_custom_target(buildOSXApp ALL
+        DEPENDS EasyWhisperUI
+        DEPENDS fetch_ffmpeg
+    )
+
+    add_custom_command(TARGET buildOSXApp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/build/Final"
+
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+            "${CMAKE_SOURCE_DIR}/build/EasyWhisperUI.app"
+            "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.app"
+
+        COMMAND ${MACDEPLOYQT_EXECUTABLE}
+            "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.app"
+
+        # Safe copy: avoids crashing if file already exists
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${FFMPEG_RESOURCE_DIR}"
+        COMMAND cp -f "${FFMPEG_EXE}" "${FFMPEG_BUNDLE_PATH}"
+        COMMAND chmod 0755 "${FFMPEG_BUNDLE_PATH}"
+
+        COMMAND sh "${CMAKE_SOURCE_DIR}/build.sh"
+
+        COMMENT "Finalizing .app bundle: Qt deploy + FFmpeg + custom script"
+    )
 endif()
 
 
