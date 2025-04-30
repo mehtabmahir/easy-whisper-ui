@@ -140,6 +140,31 @@ if (APPLE)
 
         COMMENT "Finalizing .app bundle: Qt deploy + FFmpeg + custom script"
     )
+
+    set(DMG_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/build/Final")
+    set(DMG_NAME "EasyWhisperUI.dmg")
+    set(APP_PATH "${DMG_OUTPUT_DIR}/EasyWhisperUI.app")
+
+    add_custom_target(create_dmg ALL
+        COMMENT "Creating clean .dmg with only EasyWhisperUI.app"
+        DEPENDS buildOSXApp
+        # Remove extra folders from Final/
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_SOURCE_DIR}/build/Final/whisper.cpp"
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_SOURCE_DIR}/build/Final/models"
+        # Remove old DMG if it exists
+        COMMAND ${CMAKE_COMMAND} -E remove -f "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.dmg"
+        # Create the DMG
+        COMMAND /opt/homebrew/bin/create-dmg
+            --volname "EasyWhisperUI"
+            --volicon "${CMAKE_SOURCE_DIR}/icon.icns"
+            --window-pos 200 120
+            --window-size 500 300
+            --icon-size 100
+            --icon "EasyWhisperUI.app" 100 150
+            --app-drop-link 380 150
+            "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.dmg"
+            "${CMAKE_SOURCE_DIR}/build/Final"
+    )
 endif()
 
 
