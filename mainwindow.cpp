@@ -69,8 +69,9 @@ void MainWindow::handleBlur()
     bool isDark = bg.lightness() < 128;
 
     QString widgetBackground = isDark
-                                   ? "background-color: rgba(64, 64, 64, 180); color: white;"
-                                   : "background-color: rgba(255, 255, 255, 180); color: black;";
+                                   ? "background-color: rgba(64, 64, 64, 140); color: white;"  // darker, more transparent
+                                   : "background-color: rgba(255, 255, 255, 140); color: black;";  // lighter, more transparent
+
 
     ui->openFile->setAttribute(Qt::WA_TranslucentBackground);
     ui->openFile->setStyleSheet(widgetBackground);
@@ -91,11 +92,41 @@ void MainWindow::handleBlur()
     ui->arguments->setStyleSheet(widgetBackground);
 
     ui->console->setAttribute(Qt::WA_TranslucentBackground);
-    ui->console->setStyleSheet(widgetBackground);
+    ui->console->viewport()->setAttribute(Qt::WA_TranslucentBackground);
+    ui->console->setStyleSheet(R"(
+QPlainTextEdit {
+    background: transparent;
+    color: )" + QString(isDark ? "white" : "black") + R"(;
+    border: none;
+}
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 0;
+}
+QScrollBar::handle:vertical {
+    background: rgba(128, 128, 128, 0.4);
+    min-height: 20px;
+    border-radius: 5px;
+}
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0;
+}
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: none;
+}
+)");
+
+
+
+
+
 
     int acrylicColor = isDark
-                           ? static_cast<int>(0x77202020)  // dark blur
-                           : static_cast<int>(0x77FFFFFF); // light blur
+                           ? static_cast<int>(0x44202020)  // 0x44 = ~27% opacity
+                           : static_cast<int>(0x44FFFFFF); // lighter and more transparent
 
     HWND hwnd = reinterpret_cast<HWND>(this->winId());
 
