@@ -378,6 +378,14 @@
             <height>100</height>
            </size>
           </property>
+          <property name="currentText">
+           <string>en</string>
+          </property>
+          <item>
+           <property name="text">
+            <string>en</string>
+           </property>
+          </item>
           <item>
            <property name="text">
             <string>af</string>
@@ -466,11 +474,6 @@
           <item>
            <property name="text">
             <string>el</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>en</string>
            </property>
           </item>
           <item>
@@ -892,7 +895,7 @@
      <x>0</x>
      <y>0</y>
      <width>637</width>
-     <height>23</height>
+     <height>19</height>
     </rect>
    </property>
   </widget>
