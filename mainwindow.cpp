@@ -94,34 +94,30 @@ void MainWindow::handleBlur()
     ui->console->setAttribute(Qt::WA_TranslucentBackground);
     ui->console->viewport()->setAttribute(Qt::WA_TranslucentBackground);
     ui->console->setStyleSheet(R"(
-QPlainTextEdit {
-    background: transparent;
-    color: )" + QString(isDark ? "white" : "black") + R"(;
-    border: none;
-}
-QScrollBar:vertical {
-    background: transparent;
-    width: 10px;
-    margin: 0;
-}
-QScrollBar::handle:vertical {
-    background: rgba(128, 128, 128, 0.4);
-    min-height: 20px;
-    border-radius: 5px;
-}
-QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical {
-    height: 0;
-}
-QScrollBar::add-page:vertical,
-QScrollBar::sub-page:vertical {
-    background: none;
-}
-)");
-
-
-
-
+        QPlainTextEdit {
+            background: transparent;
+            color: )" + QString(isDark ? "white" : "black") + R"(;
+            border: none;
+        }
+        QScrollBar:vertical {
+            background: transparent;
+            width: 10px;
+            margin: 0;
+        }
+        QScrollBar::handle:vertical {
+            background: rgba(128, 128, 128, 0.4);
+            min-height: 20px;
+            border-radius: 5px;
+        }
+        QScrollBar::add-line:vertical,
+        QScrollBar::sub-line:vertical {
+            height: 0;
+        }
+        QScrollBar::add-page:vertical,
+        QScrollBar::sub-page:vertical {
+            background: none;
+        }
+    )");
 
 
     int acrylicColor = isDark
