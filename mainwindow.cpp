@@ -8,7 +8,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QMimeData>
-#include <QSettings>
+#include "settings.h"
 #include <Windows.h>
 
 QList<QProcess*> processList;
@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     setAcceptDrops(true);
-    loadSettings();
+    appSettings.load(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->arguments);
 
     handleBlur();
 }
@@ -415,7 +415,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         // Already MP3; proceed directly.
         checkAndDownloadModel();
     }
-    saveSettings();
+    appSettings.save(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->arguments);
 }
 
 void MainWindow::exitProcesses()

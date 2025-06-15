@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>637</width>
+    <width>767</width>
     <height>564</height>
    </rect>
   </property>
@@ -181,8 +181,21 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="maximumSize">
+         <size>
+          <width>225</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
          <string>Output File with Timestamps (.srt)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox">
+        <property name="text">
+         <string>Open Transcription</string>
         </property>
        </widget>
       </item>
@@ -894,7 +907,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>637</width>
+     <width>767</width>
      <height>19</height>
     </rect>
    </property>

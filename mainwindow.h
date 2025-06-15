@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QQueue>
+#include "settings.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -34,6 +35,7 @@ private slots:
 
 private:
     Ui::EasyWhisperUI *ui;
+    Settings appSettings;
     QString m_filePath;
     QString txtFlag;
     QString srtFlag;
