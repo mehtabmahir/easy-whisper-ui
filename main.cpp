@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
         }
 
         if (!fileArgs.isEmpty())
-            w.enqueueFilesAndStart(fileArgs);
+            w.fileQueue.enqueueFilesAndStart(fileArgs);
     }
 
     w.show();

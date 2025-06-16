@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QQueue>
+#include "filequeue.h"
 #include "settings.h"
 #include "windowhelper.h"
 
@@ -20,7 +20,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     void processAudioFile(const QString &filePath);
-    void enqueueFilesAndStart(const QStringList &filePaths);
+    FileQueue fileQueue;
 
 private slots:
     void onOpenFileClicked();
@@ -28,7 +28,6 @@ private slots:
     void dropEvent(QDropEvent *event) override;
     void changeEvent(QEvent *event) override;
     void exitProcesses();
-    void startNextInQueue();
     void clearConsole();
 
 private:
@@ -40,6 +39,5 @@ private:
     QString srtFlag;
     QString cpuFlag;
     bool isProcessing = false;
-    QQueue<QString> fileQueue;
 };
 #endif // MAINWINDOW_H

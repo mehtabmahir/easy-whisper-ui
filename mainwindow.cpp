@@ -42,6 +42,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     windowHelper = new WindowHelper(this, ui, this);
     windowHelper->handleBlur();
+
+    fileQueue.setProcessor([this](const QString &file){
+        processAudioFile(file);
+    });
+
     setAcceptDrops(true);
 
     appSettings.load(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->arguments);
@@ -67,34 +72,10 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 void MainWindow::dropEvent(QDropEvent *event) {
     QStringList files = windowHelper->handleDrop(event);
     for (const QString &filePath : files)
-        fileQueue.enqueue(filePath);
+        fileQueue.enqueueFilesAndStart(QStringList() << filePath);
     if (!isProcessing)
-        startNextInQueue();
+        fileQueue.startNext();
 }
-
-
-void MainWindow::enqueueFilesAndStart(const QStringList &filePaths)
-{
-    for (const QString &filePath : filePaths) {
-        if (!filePath.isEmpty())
-            fileQueue.enqueue(filePath);
-    }
-    if (!isProcessing)
-        startNextInQueue();
-}
-
-void MainWindow::startNextInQueue()
-{
-    if (fileQueue.isEmpty()) {
-        isProcessing = false;
-        return;
-    }
-
-    isProcessing = true;
-    QString nextFile = fileQueue.dequeue();
-    processAudioFile(nextFile);
-}
-
 
 void MainWindow::onOpenFileClicked()
 {
@@ -105,14 +86,7 @@ void MainWindow::onOpenFileClicked()
         tr("Audio/Video Files (*.mp3 *.mp4 *.m4a *.mkv *.m4v *.wav *.mov *.avi *.ogg *.flac *.aac *.wma *.opus);;All Files (*)")
         );
 
-    for (const QString &filePath : filePaths) {
-        if (!filePath.isEmpty()) {
-            fileQueue.enqueue(filePath);
-        }
-    }
-
-    if (!isProcessing)
-        startNextInQueue();
+    fileQueue.enqueueFilesAndStart(filePaths);
 }
 
 void MainWindow::processAudioFile(const QString &inputFilePath)
@@ -174,7 +148,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
         // Log any errors that occur.
         connect(whisperProcess, &QProcess::errorOccurred, this, [this, whisperProcess]() {
             ui->console->appendPlainText("Whisper process error: " + whisperProcess->errorString());
-            startNextInQueue();
+            fileQueue.startNext();
         });
 
         // When finished, check the exit code and then open the output file.
@@ -192,7 +166,7 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                     }
                     whisperProcess->deleteLater();
                     processList.removeOne(whisperProcess);
-                    startNextInQueue(); // <- this line starts the next file after current one finishes
+                    fileQueue.startNext(); // <- this line starts the next file after current one finishes
                 });
 
         // Start the whisper-cli process.
