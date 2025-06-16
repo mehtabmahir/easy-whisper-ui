@@ -40,10 +40,11 @@ MainWindow::MainWindow(QWidget *parent)
         cpuFlag = ui->cpuCheckbox->isChecked() ? "--no-gpu" : "";
     });
 
+    windowHelper = new WindowHelper(this, ui, this);
+    windowHelper->handleBlur();
     setAcceptDrops(true);
-    appSettings.load(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->arguments);
 
-    handleBlur();
+    appSettings.load(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->arguments);
 }
 
 MainWindow::~MainWindow()
@@ -51,127 +52,26 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::changeEvent(QEvent *event)
-{
+void MainWindow::changeEvent(QEvent *event) {
     QMainWindow::changeEvent(event);
-
-    if (event->type() == QEvent::PaletteChange)
-        handleBlur();
-
+    windowHelper->handlePaletteChange(event);
 }
 
-void MainWindow::handleBlur()
-{
-    setAttribute(Qt::WA_TranslucentBackground);
-    ui->centralwidget->setAttribute(Qt::WA_TranslucentBackground);
-
-    QColor bg = palette().color(QPalette::Window);
-    bool isDark = bg.lightness() < 128;
-
-    QString widgetBackground = isDark
-                                   ? "background-color: rgba(64, 64, 64, 140); color: white;"  // darker, more transparent
-                                   : "background-color: rgba(255, 255, 255, 140); color: black;";  // lighter, more transparent
-
-
-    ui->openFile->setAttribute(Qt::WA_TranslucentBackground);
-    ui->openFile->setStyleSheet(widgetBackground);
-
-    ui->stop->setAttribute(Qt::WA_TranslucentBackground);
-    ui->stop->setStyleSheet(widgetBackground);
-
-    ui->clear->setAttribute(Qt::WA_TranslucentBackground);
-    ui->clear->setStyleSheet(widgetBackground);
-
-    ui->model->setAttribute(Qt::WA_TranslucentBackground);
-    ui->model->setStyleSheet(widgetBackground);
-
-    ui->language->setAttribute(Qt::WA_TranslucentBackground);
-    ui->language->setStyleSheet(widgetBackground);
-
-    ui->arguments->setAttribute(Qt::WA_TranslucentBackground);
-    ui->arguments->setStyleSheet(widgetBackground);
-
-    ui->console->setAttribute(Qt::WA_TranslucentBackground);
-    ui->console->viewport()->setAttribute(Qt::WA_TranslucentBackground);
-    ui->console->setStyleSheet(R"(
-        QPlainTextEdit {
-            background: transparent;
-            color: )" + QString(isDark ? "white" : "black") + R"(;
-            border: none;
-        }
-        QScrollBar:vertical {
-            background: transparent;
-            width: 10px;
-            margin: 0;
-        }
-        QScrollBar::handle:vertical {
-            background: rgba(128, 128, 128, 0.4);
-            min-height: 20px;
-            border-radius: 5px;
-        }
-        QScrollBar::add-line:vertical,
-        QScrollBar::sub-line:vertical {
-            height: 0;
-        }
-        QScrollBar::add-page:vertical,
-        QScrollBar::sub-page:vertical {
-            background: none;
-        }
-    )");
-
-
-    int acrylicColor = isDark
-                           ? static_cast<int>(0x44202020)  // 0x44 = ~27% opacity
-                           : static_cast<int>(0x44FFFFFF); // lighter and more transparent
-
-    HWND hwnd = reinterpret_cast<HWND>(this->winId());
-
-    struct ACCENTPOLICY {
-        int nAccentState;
-        int nFlags;
-        int nColor;
-        int nAnimationId;
-    };
-
-    struct WINCOMPATTRDATA {
-        int nAttribute;
-        PVOID pData;
-        ULONG ulDataSize;
-    };
-
-    ACCENTPOLICY policy = { 4 /* ACCENT_ENABLE_ACRYLICBLURBEHIND */, 2, acrylicColor, 0 };
-    WINCOMPATTRDATA data = { 19, &policy, sizeof(policy) };
-
-    using pSetWindowCompositionAttribute = BOOL(WINAPI *)(HWND, WINCOMPATTRDATA*);
-    auto user32 = GetModuleHandleA("user32.dll");
-    auto setWindowCompositionAttribute = reinterpret_cast<pSetWindowCompositionAttribute>(
-        GetProcAddress(user32, "SetWindowCompositionAttribute"));
-
-    if (setWindowCompositionAttribute) {
-        setWindowCompositionAttribute(hwnd, &data);
-    }
-}
 
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
-    if (event->mimeData()->hasUrls())
-        event->acceptProposedAction();
+    windowHelper->handleDragEnter(event);
 }
 
-void MainWindow::dropEvent(QDropEvent *event)
-{
-    QList<QUrl> urls = event->mimeData()->urls();
-    for (const QUrl &url : urls) {
-        QString filePath = url.toLocalFile();
-        if (!filePath.isEmpty()) {
-            fileQueue.enqueue(filePath);
-        }
-    }
-
+void MainWindow::dropEvent(QDropEvent *event) {
+    QStringList files = windowHelper->handleDrop(event);
+    for (const QString &filePath : files)
+        fileQueue.enqueue(filePath);
     if (!isProcessing)
         startNextInQueue();
 }
+
 
 void MainWindow::enqueueFilesAndStart(const QStringList &filePaths)
 {
@@ -195,41 +95,6 @@ void MainWindow::startNextInQueue()
     processAudioFile(nextFile);
 }
 
-
-void MainWindow::saveSettings()
-{
-    QSettings settings(QCoreApplication::applicationDirPath() + "/settings.ini", QSettings::IniFormat);
-    settings.setValue("model", ui->model->currentIndex());
-    settings.setValue("language", ui->language->currentIndex());
-    settings.setValue("txtFile", ui->txtCheckbox->isChecked());
-    settings.setValue("srtFile", ui->srtCheckbox->isChecked());
-    settings.setValue("cpuOnly", ui->cpuCheckbox->isChecked());
-    settings.setValue("args", ui->arguments->toPlainText());
-}
-
-void MainWindow::loadSettings()
-{
-    QSettings settings(QCoreApplication::applicationDirPath() + "/settings.ini", QSettings::IniFormat);
-    if (settings.value("model").toString() == "")
-        ui->model->setCurrentIndex(3);
-    else
-        ui->model->setCurrentIndex(settings.value("model").toInt());
-
-    ui->language->setCurrentIndex(settings.value("language").toInt());
-
-    if (settings.value("txtFile").toString() == "")
-        ui->txtCheckbox->setChecked(true);
-    else
-        ui->txtCheckbox->setChecked(settings.value("txtFile").toBool());
-
-    ui->srtCheckbox->setChecked(settings.value("srtFile").toBool());
-    ui->cpuCheckbox->setChecked(settings.value("cpuOnly").toBool());
-
-    if (settings.value("args").toString() == "")
-        ui->arguments->setPlainText("-tp 0.0 -mc 64 -et 3.0");
-    else
-        ui->arguments->setPlainText(settings.value("args").toString());
-}
 
 void MainWindow::onOpenFileClicked()
 {

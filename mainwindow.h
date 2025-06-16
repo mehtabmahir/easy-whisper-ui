@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QQueue>
 #include "settings.h"
+#include "windowhelper.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -26,14 +27,12 @@ private slots:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
     void changeEvent(QEvent *event) override;
-    void loadSettings();
-    void saveSettings();
     void exitProcesses();
     void startNextInQueue();
     void clearConsole();
-    void handleBlur();
 
 private:
+    WindowHelper *windowHelper;
     Ui::EasyWhisperUI *ui;
     Settings appSettings;
     QString m_filePath;
