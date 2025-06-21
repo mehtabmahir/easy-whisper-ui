@@ -3,6 +3,7 @@
 #include "settings.h"
 #include "transcriptionpipeline.h"
 #include <QFileDialog>
+#include <QProcess>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -37,8 +38,6 @@ MainWindow::MainWindow(QWidget *parent)
         transcribe->start(file);
     });
 
-    setAcceptDrops(true);
-
     appSettings.load(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->arguments);
 
     transcribe = new TranscriptionPipeline(
@@ -56,6 +55,8 @@ MainWindow::MainWindow(QWidget *parent)
     // when one file is done, dequeue and run the next
     connect(transcribe, &TranscriptionPipeline::finished,
             this, [this]() { fileQueue.startNext(); });
+
+    setAcceptDrops(true);
 }
 
 MainWindow::~MainWindow()
