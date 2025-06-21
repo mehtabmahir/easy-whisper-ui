@@ -5,6 +5,7 @@
 #include "filequeue.h"
 #include "settings.h"
 #include "windowhelper.h"
+#include "transcriptionpipeline.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -39,5 +40,7 @@ private:
     QString srtFlag;
     QString cpuFlag;
     bool isProcessing = false;
+    TranscriptionPipeline *transcribe;
+    QList<QProcess*> processList;
 };
 #endif // MAINWINDOW_H
