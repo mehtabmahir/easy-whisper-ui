@@ -15,7 +15,7 @@ void Settings::load(QComboBox* model, QComboBox* language,
     txt->setChecked(settings.value("txtFile", true).toBool());
     srt->setChecked(settings.value("srtFile", false).toBool());
     cpu->setChecked(settings.value("cpuOnly", false).toBool());
-    args->setPlainText(settings.value("args", "-tp 0.0 -mc 64 -et 3.0").toString());
+    args->setPlainText(settings.value("args", "--temperature 0.0 --max-context 64 --entropy-thold 3.0").toString());
 }
 
 void Settings::save(QComboBox* model, QComboBox* language,
