@@ -150,7 +150,7 @@
          </size>
         </property>
         <property name="text">
-         <string>CPU Only</string>
+         <string>Use CPU</string>
         </property>
        </widget>
       </item>
@@ -169,7 +169,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Output .txt File</string>
+         <string>Export Plain Text (.txt)</string>
         </property>
        </widget>
       </item>
@@ -188,7 +188,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Output File with Timestamps (.srt)</string>
+         <string>Export Subtitles (.srt)</string>
         </property>
        </widget>
       </item>
