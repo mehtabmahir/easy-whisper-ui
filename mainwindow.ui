@@ -53,7 +53,7 @@
        </size>
       </property>
       <property name="text">
-       <string>Open File</string>
+       <string>Transcribe Audio</string>
       </property>
      </widget>
     </item>
