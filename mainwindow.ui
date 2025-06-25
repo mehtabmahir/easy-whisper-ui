@@ -105,7 +105,7 @@
          </size>
         </property>
         <property name="text">
-         <string>  Arguments:</string>
+         <string>Advanced Options:</string>
         </property>
        </widget>
       </item>
