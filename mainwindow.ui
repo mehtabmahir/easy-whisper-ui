@@ -31,58 +31,771 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QGridLayout" name="gridLayout">
+   <layout class="QGridLayout" name="gridLayout_2">
     <item row="0" column="0" rowspan="2">
-     <widget class="QPushButton" name="openFile">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>120</width>
-        <height>60</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>120</width>
-        <height>80</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Open File</string>
-      </property>
-     </widget>
+     <layout class="QVBoxLayout" name="verticalLayout_5">
+      <item>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QPushButton" name="openFile">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>60</width>
+              <height>60</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>60</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Open</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="live">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>60</width>
+              <height>60</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>60</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="1">
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QPushButton" name="stop">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>30</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Stop</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="clear">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>30</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Clear</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QLabel" name="modeltext">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>     Model:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="model">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>120</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>100</height>
+             </size>
+            </property>
+            <item>
+             <property name="text">
+              <string>large-v3</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>large-v3-turbo</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>medium</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>medium.en</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>small</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>small.en</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>tiny</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>tiny.en</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>base</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>base.en</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QLabel" name="languageLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Language:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="language">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>120</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="currentText">
+             <string>en</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>en</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>af</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>am</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ar</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>as</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>az</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ba</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>be</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>bg</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>bn</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>bo</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>br</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>bs</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ca</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>cs</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>cy</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>da</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>de</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>el</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>es</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>et</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>eu</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>fa</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>fi</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>fo</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>fr</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>gl</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>gu</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ha</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>haw</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>he</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>hi</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>hr</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ht</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>hu</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>hy</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>id</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>is</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>it</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ja</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>jw</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ka</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>kk</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>km</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>kn</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ko</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>la</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>lb</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ln</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>lo</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>lt</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>lv</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mg</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mi</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mk</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ml</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mn</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mr</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ms</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>mt</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>my</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ne</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>nl</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>nn</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>no</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>oc</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>pa</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>pl</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ps</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>pt</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ro</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ru</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>sa</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>sd</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>si</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>sk</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>sl</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>sn</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>so</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>sq</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>sr</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>su</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>sv</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>sw</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ta</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>te</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>tg</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>th</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>tk</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>tl</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>tr</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>tt</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>uk</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ur</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>uz</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>vi</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>yi</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>yo</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>yue</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>zh</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
     </item>
     <item row="0" column="1">
-     <widget class="QPushButton" name="stop">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>60</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>60</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Stop</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="2" rowspan="3">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QLabel" name="argumentsLabel">
@@ -112,7 +825,7 @@
       <item>
        <widget class="QPlainTextEdit" name="arguments">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -139,7 +852,7 @@
       </item>
      </layout>
     </item>
-    <item row="3" column="2">
+    <item row="1" column="1">
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
        <widget class="QCheckBox" name="cpuCheckbox">
@@ -201,32 +914,7 @@
       </item>
      </layout>
     </item>
-    <item row="1" column="1">
-     <widget class="QPushButton" name="clear">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>60</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>60</width>
-        <height>30</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Clear</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="0" colspan="3">
+    <item row="2" column="0" colspan="2">
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <widget class="QLabel" name="outputLabel">
@@ -250,653 +938,6 @@
          </size>
         </property>
        </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="2" column="0" rowspan="2" colspan="2">
-     <layout class="QVBoxLayout" name="verticalLayout_3">
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <item>
-         <widget class="QLabel" name="modeltext">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>50</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>     Model:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="model">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>120</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>120</width>
-            <height>100</height>
-           </size>
-          </property>
-          <item>
-           <property name="text">
-            <string>large-v3</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>large-v3-turbo</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>medium</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>medium.en</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>small</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>small.en</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>tiny</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>tiny.en</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>base</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>base.en</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <widget class="QLabel" name="languageLabel">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>50</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Language:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="language">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>120</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>120</width>
-            <height>100</height>
-           </size>
-          </property>
-          <property name="currentText">
-           <string>en</string>
-          </property>
-          <item>
-           <property name="text">
-            <string>en</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>af</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>am</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ar</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>as</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>az</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ba</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>be</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>bg</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>bn</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>bo</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>br</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>bs</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ca</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>cs</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>cy</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>da</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>de</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>el</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>es</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>et</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>eu</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>fa</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>fi</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>fo</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>fr</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>gl</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>gu</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ha</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>haw</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>he</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>hi</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>hr</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ht</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>hu</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>hy</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>id</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>is</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>it</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ja</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>jw</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ka</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>kk</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>km</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>kn</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ko</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>la</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>lb</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ln</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>lo</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>lt</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>lv</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>mg</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>mi</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>mk</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ml</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>mn</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>mr</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ms</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>mt</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>my</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ne</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>nl</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>nn</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>no</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>oc</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>pa</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>pl</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ps</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>pt</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ro</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ru</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>sa</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>sd</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>si</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>sk</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>sl</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>sn</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>so</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>sq</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>sr</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>su</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>sv</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>sw</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ta</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>te</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>tg</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>th</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>tk</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>tl</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>tr</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>tt</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>uk</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ur</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>uz</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>vi</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>yi</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>yo</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>yue</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>zh</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-       </layout>
       </item>
      </layout>
     </item>

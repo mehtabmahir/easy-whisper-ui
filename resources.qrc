@@ -2,5 +2,7 @@
     <qresource prefix="/resources">
         <file>icon.ico</file>
         <file>icon.png</file>
+        <file>mic.png</file>
+        <file>stop.png</file>
     </qresource>
 </RCC>

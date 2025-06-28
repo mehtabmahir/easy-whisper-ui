@@ -30,7 +30,7 @@ private slots:
     void changeEvent(QEvent *event) override;
     void exitProcesses();
     void clearConsole();
-
+    void on_live_toggled(bool recording);
 private:
     WindowHelper *windowHelper;
     Ui::EasyWhisperUI *ui;

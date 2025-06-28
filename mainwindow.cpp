@@ -57,6 +57,13 @@ MainWindow::MainWindow(QWidget *parent)
             this, [this]() { fileQueue.startNext(); });
 
     setAcceptDrops(true);
+
+    // live button
+    ui->live->setCheckable(true);
+    ui->live->setIcon(QIcon(":/resources/mic.png"));
+    ui->live->setIconSize(QSize(20, 20));
+    ui->live->setToolTip("Start live transcription (Ctrl+M)");
+
 }
 
 MainWindow::~MainWindow()
@@ -109,5 +116,15 @@ void MainWindow::dropEvent(QDropEvent *event) {
         fileQueue.startNext();
 }
 
+void MainWindow::on_live_toggled(bool recording)
+{
+    ui->live->setIcon(QIcon(recording
+                                      ? ":resources/stop.png"  // when pressed
+                                      : ":resources/mic.png")); // when released
+
+    ui->live->setToolTip(recording
+                                   ? "Stop live transcription"
+                                   : "Start live transcription (Ctrl + M)");
+}
 
 
