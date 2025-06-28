@@ -12,6 +12,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     ui->console->setReadOnly(true);
 
+    appSettings.load(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->openCheckbox, ui->arguments);
+
     connect(ui->openFile, &QPushButton::clicked,
             this, &MainWindow::onOpenFileClicked);
     connect(ui->stop, &QPushButton::clicked,
@@ -21,15 +23,31 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->txtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
         txtFlag = ui->txtCheckbox->isChecked() ? "-otxt" : "";
+        appSettings.save(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->openCheckbox, ui->arguments);
     });
-
     connect(ui->srtCheckbox, &QCheckBox::toggled, this, [=](bool checked){
         srtFlag = ui->srtCheckbox->isChecked() ? "-osrt" : "";
+        appSettings.save(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->openCheckbox, ui->arguments);
     });
-
     connect(ui->cpuCheckbox, &QCheckBox::toggled, this, [=](bool checked){
         cpuFlag = ui->cpuCheckbox->isChecked() ? "--no-gpu" : "";
+        appSettings.save(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->openCheckbox, ui->arguments);
     });
+    connect(ui->openCheckbox, &QCheckBox::toggled, this, [=](bool checked){
+        appSettings.save(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->openCheckbox, ui->arguments);
+    });
+
+    connect(ui->model, &QComboBox::currentTextChanged, this, [this](const QString& txt){
+        appSettings.save(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->openCheckbox, ui->arguments);
+    });
+    connect(ui->language, &QComboBox::currentTextChanged, this, [this](const QString& txt){
+        appSettings.save(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->openCheckbox, ui->arguments);
+    });
+
+    connect(ui->arguments, &QPlainTextEdit::textChanged, this, [this]{
+        appSettings.save(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->openCheckbox, ui->arguments);
+    });
+
 
     windowHelper = new WindowHelper(this, ui, this);
     windowHelper->handleBlur();
@@ -37,8 +55,6 @@ MainWindow::MainWindow(QWidget *parent)
     fileQueue.setProcessor([this](const QString &file){
         transcribe->start(file);
     });
-
-    appSettings.load(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->arguments);
 
     transcribe = new TranscriptionPipeline(
         ui->console,
@@ -82,6 +98,7 @@ void MainWindow::onOpenFileClicked()
         );
 
     fileQueue.enqueueFilesAndStart(filePaths);
+    appSettings.save(ui->model, ui->language, ui->txtCheckbox, ui->srtCheckbox, ui->cpuCheckbox, ui->openCheckbox, ui->arguments);
 }
 
 void MainWindow::clearConsole()

@@ -13,11 +13,11 @@ public:
     Settings();
 
     void load(QComboBox* model, QComboBox* language,
-              QCheckBox* txt, QCheckBox* srt, QCheckBox* cpu,
+              QCheckBox* txt, QCheckBox* srt, QCheckBox* cpu, QCheckBox* open,
               QPlainTextEdit* args);
 
     void save(QComboBox* model, QComboBox* language,
-              QCheckBox* txt, QCheckBox* srt, QCheckBox* cpu,
+              QCheckBox* txt, QCheckBox* srt, QCheckBox* cpu, QCheckBox* open,
               QPlainTextEdit* args);
 
 private:
