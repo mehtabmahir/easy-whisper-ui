@@ -18,6 +18,7 @@ public:
         QCheckBox       *txtCheckbox,
         QCheckBox       *srtCheckbox,
         QCheckBox       *cpuCheckbox,
+        QCheckBox       *openCheckbox,
         QPlainTextEdit  *arguments,
         QList<QProcess*> *processList,
         QObject *parent = nullptr);
@@ -40,6 +41,7 @@ private:
     QCheckBox       *txtCheckbox;
     QCheckBox       *srtCheckbox;
     QCheckBox       *cpuCheckbox;
+    QCheckBox       *openCheckbox;
     QPlainTextEdit  *arguments;
     QList<QProcess*> *processList;
 

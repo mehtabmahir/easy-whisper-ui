@@ -17,6 +17,7 @@ TranscriptionPipeline::TranscriptionPipeline(
     QCheckBox       *txtCheckbox,
     QCheckBox       *srtCheckbox,
     QCheckBox       *cpuCheckbox,
+    QCheckBox       *openCheckbox,
     QPlainTextEdit  *arguments,
     QList<QProcess*> *processList,
     QObject *parent)
@@ -27,6 +28,7 @@ TranscriptionPipeline::TranscriptionPipeline(
     txtCheckbox(txtCheckbox),
     srtCheckbox(srtCheckbox),
     cpuCheckbox(cpuCheckbox),
+    openCheckbox(openCheckbox),
     arguments(arguments),
     processList(processList)
 {}
@@ -151,7 +153,7 @@ void TranscriptionPipeline::runWhisper()
 
                 if (st==QProcess::NormalExit && code==0) {
                     console->appendPlainText("Whisper DONE.");
-                    if (txtCheckbox->isChecked())
+                    if (txtCheckbox->isChecked() && openCheckbox->isChecked())
                         QTimer::singleShot(1500, [=]{ QProcess::startDetached("notepad.exe", { outputTxt }); });
                 } else {
                     console->appendPlainText("Whisper failed.");

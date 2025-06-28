@@ -47,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
         ui->txtCheckbox,
         ui->srtCheckbox,
         ui->cpuCheckbox,
+        ui->openCheckbox,
         ui->arguments,
         &processList,
         this

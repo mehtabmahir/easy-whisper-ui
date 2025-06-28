@@ -906,7 +906,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkBox">
+       <widget class="QCheckBox" name="openCheckbox">
         <property name="text">
          <string>Open Transcription</string>
         </property>
