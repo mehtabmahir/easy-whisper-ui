@@ -1,11 +1,11 @@
 # EasyWhisper UI
 
-A fast, native desktop UI for transcribing media using Whisper — built entirely in modern C++ and Qt.
+A fast, native desktop UI for transcribing media using Whisper — built entirely in modern C++.
 
 <table>
   <tr>
     <td align="center">
-      <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/preview.png" width="400"/><br/>
+      <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/resources/preview.png" width="400"/><br/>
       <p><strong>Windows</strong></p>
     </td>
     <td align="center">
@@ -66,6 +66,11 @@ MacOS:
 
 ## Donate
 
+THANK YOU!:
+- Craig H: $50 
+- Minh P: $5
+- Rödvarg R: $2
+
 This project takes **tons of hours of work** — ensuring everything works smoothly across systems takes a LOT of time testing. It's all built in my free time, and I’m not getting paid for it.
 
 If you’ve found EasyWhisper UI useful, please consider supporting its development:
@@ -73,6 +78,8 @@ If you’ve found EasyWhisper UI useful, please consider supporting its developm
 👉 [**Donate via PayPal**](https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD)
 
 Your support truly helps and is greatly appreciated!
+
+
 ---
 
 ## Credits
