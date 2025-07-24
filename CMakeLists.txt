@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(EasyWhisperUI VERSION 0.1 LANGUAGES CXX)
 
+# ─── Qt & C++ settings ───────────────────────────────────────────
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -12,101 +13,96 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
+# ─── Source files ────────────────────────────────────────────────
 set(PROJECT_SOURCES
-        main.cpp
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
-        icon.rc
+    src/main.cpp
+    src/mainwindow.cpp
+    src/mainwindow.h
+    src/mainwindow.ui
+    resources/icon.rc
 )
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+# ─── Target definition ───────────────────────────────────────────
+if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(EasyWhisperUI
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        resources.qrc
-        settings.h settings.cpp
-        windowhelper.h windowhelper.cpp
-        filequeue.h filequeue.cpp
-        transcriptionpipeline.h transcriptionpipeline.cpp
+        resources/resources.qrc
+        src/settings.h  src/settings.cpp
+        src/windowhelper.h  src/windowhelper.cpp
+        src/filequeue.h  src/filequeue.cpp
+        src/transcriptionpipeline.h  src/transcriptionpipeline.cpp
     )
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET EasyWhisperUI APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
 else()
-    if(ANDROID)
-        add_library(EasyWhisperUI SHARED
-            ${PROJECT_SOURCES}
-        )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
+    if (ANDROID)
+        add_library(EasyWhisperUI SHARED ${PROJECT_SOURCES})
     else()
-        add_executable(EasyWhisperUI
-            ${PROJECT_SOURCES}
-        )
+        add_executable(EasyWhisperUI ${PROJECT_SOURCES})
     endif()
 endif()
 
 target_link_libraries(EasyWhisperUI PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
+# ─── Post-build packaging (WinDeployQt + Inno Setup) ─────────────
 find_program(WINDEPLOYQT_EXECUTABLE windeployqt REQUIRED)
 
 add_custom_command(TARGET EasyWhisperUI POST_BUILD
-    # Make output folder
+    # Create staging folder
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/build/Final"
 
-    # Copy the built .exe to Final/
+    # Copy the freshly built EXE
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_FILE:EasyWhisperUI>"
             "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.exe"
 
+    # Copy the build launcher (now in src/)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/build.bat"
-        "${CMAKE_SOURCE_DIR}/build/Final/build.bat"
+            "${CMAKE_SOURCE_DIR}/src/build.bat"
+            "${CMAKE_SOURCE_DIR}/build/Final/build.bat"
 
-    # Run windeployqt on the copied .exe
+    # Run WinDeployQt
     COMMAND ${WINDEPLOYQT_EXECUTABLE}
-                --no-opengl-sw                # Don't include software OpenGL fallback
-                --no-opengl                   # Skip OpenGL entirely
-                --no-quick                    # No QML/Quick files
-                --no-translations             # No i18n
-                --no-system-d3d-compiler      # Skip optional D3D compiler dependency
-                --no-svg                      # Skip SVG module
-                --no-network                  # Skip network dlls
+            --no-opengl-sw
+            --no-opengl
+            --no-quick
+            --no-translations
+            --no-system-d3d-compiler
+            --no-svg
+            --no-network
             "${CMAKE_SOURCE_DIR}/build/Final/EasyWhisperUI.exe"
 
-    # Delete unnecessary files
+    # Trim unneeded files
     COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_SOURCE_DIR}/build/Final/imageformats"
     COMMAND ${CMAKE_COMMAND} -E rm -f "${CMAKE_SOURCE_DIR}/build/Final/dxcompiler.dll"
 
-    # Compile the installer with Inno Setup
-    COMMENT "Compiling Installer"
-    COMMAND "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" "${CMAKE_SOURCE_DIR}/setup.iss"
+    # Compile the installer (setup.iss now in src/)
+    COMMAND "C:/Program Files (x86)/Inno Setup 6/ISCC.exe"
+            "${CMAKE_SOURCE_DIR}/src/setup.iss"
+
+    COMMENT "Compiling Installer with Inno Setup"
 )
 
-
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.EasyWhisperUI)
+# ─── macOS bundle meta (kept from original) ──────────────────────
+if (${QT_VERSION} VERSION_LESS 6.1.0)
+    set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.EasyWhisperUI)
 endif()
+
 set_target_properties(EasyWhisperUI PROPERTIES
     ${BUNDLE_ID_OPTION}
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
-    WIN32_EXECUTABLE TRUE
+    MACOSX_BUNDLE_BUNDLE_VERSION            ${PROJECT_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING      ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE                           TRUE
+    WIN32_EXECUTABLE                        TRUE
 )
 
+# ─── Install rules ───────────────────────────────────────────────
 include(GNUInstallDirs)
 install(TARGETS EasyWhisperUI
-    BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+        BUNDLE   DESTINATION .
+        LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-if(QT_VERSION_MAJOR EQUAL 6)
+# ─── Qt 6 finalization ───────────────────────────────────────────
+if (QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(EasyWhisperUI)
 endif()

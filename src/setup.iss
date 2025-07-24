@@ -3,21 +3,21 @@ AppName=WhisperUI
 AppVersion=1.0
 DefaultDirName={userappdata}\WhisperUI
 DefaultGroupName=Whisper UI
-OutputDir=build\Installer
+OutputDir=..\build\Installer
 OutputBaseFilename=WhisperUIInstaller
 Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
 DisableDirPage=no
 UsePreviousAppDir=yes
-SetupIconFile=icon.ico
-WizardSmallImageFile=icon.bmp
+SetupIconFile=..\resources\icon.ico
+WizardSmallImageFile=..\resources\icon.bmp
 
 [UninstallDelete]
 Name: "{app}"; Type: filesandordirs
 
 [Files]
-Source: "C:\Users\mehta\OneDrive\easy-whisper-ui\build\Final\*"; DestDir: "{app}"; Flags: recursesubdirs
+Source: "..\build\Final\*"; DestDir: "{app}"; Flags: recursesubdirs
 
 [Code]
 // ExitProcess: Ends the installer process immediately.
