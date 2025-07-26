@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "settings.h"
 #include "transcriptionpipeline.h"
+#include "livetranscriber.h"
 #include <QFileDialog>
 #include <QProcess>
 
@@ -136,13 +137,32 @@ void MainWindow::dropEvent(QDropEvent *event) {
 
 void MainWindow::on_live_toggled(bool recording)
 {
-    ui->live->setIcon(QIcon(recording
-                                      ? ":resources/stop.png"  // when pressed
-                                      : ":resources/mic.png")); // when released
+    ui->live->setIcon(QIcon(recording ? ":resources/stop.png" : ":resources/mic.png"));
+    ui->live->setToolTip(recording ? "Stop live transcription" : "Start live transcription");
 
-    ui->live->setToolTip(recording
-                                   ? "Stop live transcription"
-                                   : "Start live transcription (Ctrl + M)");
+    if (recording) {
+        QString modelPath = QCoreApplication::applicationDirPath()
+        + "/models/ggml-" + ui->model->currentText() + ".bin";
+
+        live->start(modelPath,
+                    ui->language->currentText(),
+                    ui->cpuCheckbox->isChecked());
+
+        connect(live.get(), &LiveTranscriber::newText, this, [this](const QString &l){
+            ui->console->appendPlainText(l);
+        });
+        connect(live.get(), &LiveTranscriber::finished, this, [this]{
+            ui->live->setChecked(false);
+            ui->openFile->setEnabled(true);
+        });
+
+        ui->openFile->setEnabled(false);
+    } else {
+        live->stop();
+        ui->openFile->setEnabled(true);
+    }
 }
+
+
 
 

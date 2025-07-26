@@ -32,6 +32,7 @@ if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/windowhelper.h  src/windowhelper.cpp
         src/filequeue.h  src/filequeue.cpp
         src/transcriptionpipeline.h  src/transcriptionpipeline.cpp
+        src/livetranscriber.h src/livetranscriber.cpp
     )
 else()
     if (ANDROID)

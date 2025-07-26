@@ -6,6 +6,7 @@
 #include "settings.h"
 #include "windowhelper.h"
 #include "transcriptionpipeline.h"
+#include "livetranscriber.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -41,6 +42,7 @@ private:
     QString cpuFlag;
     bool isProcessing = false;
     TranscriptionPipeline *transcribe;
+    std::unique_ptr<LiveTranscriber> live = std::make_unique<LiveTranscriber>(this);
     QList<QProcess*> processList;
 };
 #endif // MAINWINDOW_H
