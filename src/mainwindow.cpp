@@ -148,9 +148,32 @@ void MainWindow::on_live_toggled(bool recording)
                     ui->language->currentText(),
                     ui->cpuCheckbox->isChecked());
 
-        connect(live.get(), &LiveTranscriber::newText, this, [this](const QString &l){
-            ui->console->appendPlainText(l);
-        });
+        static QString lastPrinted;                         // last line we showed
+
+        connect(live.get(), &LiveTranscriber::newText, this,
+                [this](QString chunk)
+                {
+                    // -- scrub timestamps / ANSI / blank audio ---------------------------
+                    static const QRegularExpression esc(R"(\x1B\[[0-9;]*[A-Za-z])");
+                    static const QRegularExpression ts (R"(\[\d{2}:\d{2}\.\d{2}\]\s*)");
+
+                    chunk.remove(esc).remove(ts)
+                        .replace("[BLANK_AUDIO]", "").trimmed();
+                    if (chunk.isEmpty()) return;                    // nothing useful yet
+
+                    // -- we only care when Whisper ends a sentence -----------------------
+                    if (!(chunk.endsWith('.') || chunk.endsWith('?') || chunk.endsWith('!')))
+                        return;                                    // keep waiting
+
+                    // -- identical repeat?  skip it --------------------------------------
+                    if (chunk == lastPrinted) return;
+
+                    // -- print once -------------------------------------------------------
+                    ui->console->appendPlainText(chunk);
+                    lastPrinted = chunk;
+                });
+
+
         connect(live.get(), &LiveTranscriber::finished, this, [this]{
             ui->live->setChecked(false);
             ui->openFile->setEnabled(true);

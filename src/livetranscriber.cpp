@@ -1,14 +1,20 @@
 #include "LiveTranscriber.h"
 #include <QCoreApplication>
 #include <QThread>
+#include <QRegularExpression>
 
 LiveTranscriber::LiveTranscriber(QObject *parent) : QObject(parent)
 {
     proc.setProcessChannelMode(QProcess::MergedChannels);
 
+
     connect(&proc, &QProcess::readyRead, this, [this]{
-        emit newText(QString::fromLocal8Bit(proc.readAll()).trimmed());
+        static const QRegularExpression escSeq(R"(\x1B\[[0-9;]*[A-Za-z])"); // ANSI
+        QString txt = QString::fromLocal8Bit(proc.readAll());
+        txt.remove(escSeq);                     // ⚑ deletes “\x1B[2K”, colors, etc.
+        emit newText(txt.trimmed());
     });
+
     connect(&proc,
             QOverload<int,QProcess::ExitStatus>::of(&QProcess::finished),
             this, &LiveTranscriber::finished);
