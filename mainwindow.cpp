@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QFile>
 #include <QFileInfo>
+#include <QStandardPaths>
 #include <QMessageBox>
 #include <QProcess>
 #include <QFileDialog>
@@ -320,11 +321,20 @@ void MainWindow::processAudioFile(const QString &inputFilePath)
                     ffmpegProcess->deleteLater();
                     processList.removeOne(ffmpegProcess);
                 });
-        QString exeDir = QCoreApplication::applicationDirPath();              // → Contents/MacOS
-        QString contentsDir = QFileInfo(exeDir).absoluteDir().absolutePath(); // → Contents
-        QString ffmpegPath = contentsDir + "/Resources/ffmpeg";              // → Contents/Resources/ffmpeg
+        QString ffmpegPath = QStandardPaths::findExecutable("ffmpeg");
+        if (ffmpegPath.isEmpty()) {
+            QMessageBox::critical(
+                this,
+                tr("FFmpeg Not Found"),
+                tr("Could not find “ffmpeg” in your PATH.\n"
+                "Please install FFmpeg or ensure it’s available on your system PATH."));
+            return;  // or exit the function / application
+        }
 
-        ui->console->appendPlainText("Using bundled ffmpeg at: " + ffmpegPath);
+        ui->console->appendPlainText(
+            tr("Using system ffmpeg at: %1").arg(ffmpegPath)
+        );
+
         ffmpegProcess->start(ffmpegPath, ffmpegArgs);
 
     } else {
