@@ -24,7 +24,7 @@ git clone --depth 1 https://github.com/ggml-org/whisper.cpp.git "$temp_dir/whisp
 
 cd "$temp_dir/whisper.cpp"
 echo ">>> Configuring with CMake"
-cmake -B build -DWHISPER_SDL2=ON -DBUILD_SHARED_LIBS=OFF
+cmake -B build -DWHISPER_SDL2=ON -DGGML_VULKAN=1 -DBUILD_SHARED_LIBS=OFF
 
 echo ">>> Building whisper-cli"
 cmake --build build --clean-first --config Release --parallel 8
