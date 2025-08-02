@@ -176,25 +176,20 @@ begin
 
     
     RunStep('Installing MSYS2 compiler.',
-      'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "& {' +
-      '  $msys = ''C:\msys64''; ' +
-      '  # ── download + extract MSYS2 if missing ──────────────────────────── ' +
-      '  if (-Not (Test-Path ($msys+''\usr\bin\bash.exe''))) { ' +
-      '      $url = ''https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe''; ' +
-      '      $tmp = \"$env:TEMP\\msys2.sfx.exe\"; ' +
-      '      Invoke-WebRequest -Uri $url -OutFile $tmp; ' +
-      '      Start-Process -FilePath $tmp -ArgumentList ''-y -oC:\'' -Wait -NoNewWindow; ' +
-      '  } ; ' +
-      '  # ── refresh pacman + install tool-chain + SDL2 ───────────────────── ' +
-      '  & ($msys+''\usr\bin\bash.exe'') --login -c ''pacman -Sy --noconfirm && pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2'' ; ' +
-      '  # ── prepend mingw64\\bin to PATH (process + user) ────────────────── ' +
-      '  $bin = ''C:\msys64\mingw64\bin''; ' +
-      '  if ($env:Path -notlike \"*\"+$bin+\"*\") { $env:Path = $bin + '';'' + $env:Path } ; ' +
-      '  $uPath = [Environment]::GetEnvironmentVariable(\"Path\",\"User\"); ' +
-      '  if ($uPath  -notlike \"*\"+$bin+\"*\") { $uPath = $bin + '';'' + $uPath } ; ' +
-      '  [Environment]::SetEnvironmentVariable(\"Path\", $env:Path, \"Process\"); ' +
-      '  [Environment]::SetEnvironmentVariable(\"Path\", $uPath,    \"User\"); ' +
-      '}"');
+  'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "& {' +
+  '  $msys=''C:\msys64''; ' +
+  '  $url=''https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe''; ' +
+  '  $tmp=$env:TEMP+''\msys2.sfx.exe''; ' +
+  '  Invoke-WebRequest -Uri $url -OutFile $tmp; ' +
+  '  Start-Process -FilePath $tmp -ArgumentList ''-y -oC:\'' -Wait -NoNewWindow; ' +
+  '  & ($msys+''\usr\bin\bash.exe'') --login -c ''pacman -Sy --noconfirm && pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2''; ' +
+  '  $p=''C:\msys64\mingw64\bin''; ' +
+  '  $userPath=[Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
+  '  if ($userPath -notlike \"*\"+$p+\"*\") { ' +
+  '    [Environment]::SetEnvironmentVariable(\"Path\", $userPath+\";\"+$p, \"User\") ' +
+  '  } ' +
+  '}"');
+
 
     RunStep('Downloading whisper.cpp ZIP',
       'powershell -Command "curl.exe -L -o \"' + WhisperZip + '\" https://github.com/ggerganov/whisper.cpp/archive/refs/heads/master.zip"');

@@ -5,7 +5,7 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 <table>
   <tr>
     <td align="center">
-      <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/resources/preview.png" width="400"/><br/>
+      <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/resources/preview.png" width="450"/><br/>
       <p><strong>Windows</strong></p>
     </td>
     <td align="center">
@@ -21,6 +21,7 @@ Thanks to the incredible contribution from [celerycoloured](https://github.com/c
 Check it out on the `releases` page. 
 
 ## Features
+- Now with Live Transcriptions! (beta)
 - Supports translation for 100+ languages.
 - Supports batch processing — drag in multiple files or select many at once; they transcribe one by one in a queue.
 - Installer handles everything for you — from downloading dependencies to compiling/optimizing Whisper for your specific hardware.
