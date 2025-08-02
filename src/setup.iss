@@ -133,34 +133,21 @@ begin
       ' Remove-Item -Recurse -Force }"');
     
     RunStep('Installing Git',
-      'powershell -Command "' +
-      'try { git --version | Out-Null; $gitExists = $true } catch { $gitExists = $false }; ' +
-      'if (-not $gitExists) { ' +
-        '$url = ''https://github.com/git-for-windows/git/releases/download/v2.49.0.windows.1/PortableGit-2.49.0-64-bit.7z.exe''; ' +
-        '$installer = \"$env:TEMP\\PortableGit-2.49.0-64-bit.7z.exe\"; ' +
-        '$dest = \"' + ExpandConstant('{userappdata}') + '\GitPortable\"; ' +
-        'curl.exe -L -o $installer $url; ' +
-        'Start-Process -FilePath $installer -ArgumentList ''-y -o\"' + ExpandConstant('{userappdata}') + '\GitPortable\"'' -Wait -NoNewWindow; ' +
-
-        '$pathsToAdd = @(' +
-          '\"' + ExpandConstant('{userappdata}') + '\GitPortable\cmd\", ' +
-          '\"' + ExpandConstant('{userappdata}') + '\GitPortable\bin\", ' +
-          '\"' + ExpandConstant('{userappdata}') + '\GitPortable\usr\bin\" ' +
-        '); ' +
-        '$userPath = [Environment]::GetEnvironmentVariable(\"Path\", \"User\"); ' +
-        'foreach ($p in $pathsToAdd) { if ($userPath -notlike \"*\" + $p + \"*\") { $userPath += \";\" + $p } }; ' +
-        '[Environment]::SetEnvironmentVariable(\"Path\", $userPath, \"User\"); ' +
-
-        '$home = [Environment]::GetFolderPath(\"UserProfile\"); ' +
-        '[Environment]::SetEnvironmentVariable(\"HOME\", $home, \"User\"); ' +
-
-        '$execPath = \"' + ExpandConstant('{userappdata}') + '\GitPortable\libexec\git-core\"; ' +
-        '$templatePath = \"' + ExpandConstant('{userappdata}') + '\GitPortable\share\git-core\templates\"; ' +
-        '[Environment]::SetEnvironmentVariable(\"GIT_EXEC_PATH\", $execPath, \"User\"); ' +
-        '[Environment]::SetEnvironmentVariable(\"GIT_TEMPLATE_DIR\", $templatePath, \"User\") ' +
+      'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "& {' +
+      '  try { git --version | Out-Null; return } catch {} ;' +   
+      '  $dest = ''' + ExpandConstant('{userappdata}') + '\\GitPortable'';' +
+      '  $url  = ''https://github.com/git-for-windows/git/releases/download/v2.49.0.windows.1/PortableGit-2.49.0-64-bit.7z.exe'';' +
+      '  $tmp  = \"$env:TEMP\\PortableGit.exe\";' +
+      '  Invoke-WebRequest -Uri $url -OutFile $tmp;' +
+      '  Start-Process -FilePath $tmp -ArgumentList ''-y -o'' + $dest.TrimEnd(''\\'') -Wait -NoNewWindow;' +
+      '  $dirs = @(\"$dest\\cmd\",\"$dest\\bin\",\"$dest\\usr\\bin\");' +
+      '  foreach ($scope in ''Process'',''User'') {' +
+      '    $p=[Environment]::GetEnvironmentVariable(\"Path\",$scope);' +
+      '    foreach ($d in $dirs){if($p -notlike \"*\"+$d+\"*\"){$p=\"$d;$p\"}}' +
+      '    [Environment]::SetEnvironmentVariable(\"Path\",$p,$scope)' +
+      '  }' +
       '}"');
 
-      
     RunStep('Installing Vulkan SDK',
       'powershell -Command "winget install --id KhronosGroup.VulkanSDK -e --accept-source-agreements --accept-package-agreements"');
       
@@ -189,24 +176,26 @@ begin
 
     
     RunStep('Installing MSYS2 compiler.',
-  'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "& {' +
-  '  $msys=''C:\msys64''; ' +
-  '  if (-not (Test-Path ($msys+''\usr\bin\bash.exe''))) { ' +
-  '      $url=''https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe''; ' +
-  '      $tmp=$env:TEMP+''\msys2.sfx.exe''; ' +
-  '      Invoke-WebRequest -Uri $url -OutFile $tmp; ' +
-  '      Start-Process -FilePath $tmp -ArgumentList ''-y -oC:\'' -Wait -NoNewWindow; ' +
-  '  } ; ' +
-  '  & ($msys+''\usr\bin\bash.exe'') --login -c ''pacman -Sy --noconfirm && pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2'' ; ' +
-  '  $p=''C:\msys64\mingw64\bin''; ' +
-  '  if ($env:Path -notlike \"*''+$p+''*\") { ' +
-  '      $env:Path = $p+'';''+$env:Path; ' +
-  '      [Environment]::SetEnvironmentVariable(''Path'',$env:Path,''User''); ' +
-  '  } ' +
-  '}"');
+      'powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "& {' +
+      '  $msys = ''C:\msys64''; ' +
+      '  # ── download + extract MSYS2 if missing ──────────────────────────── ' +
+      '  if (-Not (Test-Path ($msys+''\usr\bin\bash.exe''))) { ' +
+      '      $url = ''https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe''; ' +
+      '      $tmp = \"$env:TEMP\\msys2.sfx.exe\"; ' +
+      '      Invoke-WebRequest -Uri $url -OutFile $tmp; ' +
+      '      Start-Process -FilePath $tmp -ArgumentList ''-y -oC:\'' -Wait -NoNewWindow; ' +
+      '  } ; ' +
+      '  # ── refresh pacman + install tool-chain + SDL2 ───────────────────── ' +
+      '  & ($msys+''\usr\bin\bash.exe'') --login -c ''pacman -Sy --noconfirm && pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2'' ; ' +
+      '  # ── prepend mingw64\\bin to PATH (process + user) ────────────────── ' +
+      '  $bin = ''C:\msys64\mingw64\bin''; ' +
+      '  if ($env:Path -notlike \"*\"+$bin+\"*\") { $env:Path = $bin + '';'' + $env:Path } ; ' +
+      '  $uPath = [Environment]::GetEnvironmentVariable(\"Path\",\"User\"); ' +
+      '  if ($uPath  -notlike \"*\"+$bin+\"*\") { $uPath = $bin + '';'' + $uPath } ; ' +
+      '  [Environment]::SetEnvironmentVariable(\"Path\", $env:Path, \"Process\"); ' +
+      '  [Environment]::SetEnvironmentVariable(\"Path\", $uPath,    \"User\"); ' +
+      '}"');
 
-
-  
     RunStep('Downloading whisper.cpp ZIP',
       'powershell -Command "curl.exe -L -o \"' + WhisperZip + '\" https://github.com/ggerganov/whisper.cpp/archive/refs/heads/master.zip"');
     
