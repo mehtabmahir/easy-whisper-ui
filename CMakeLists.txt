@@ -167,13 +167,55 @@ if (APPLE)
     )
 endif()
 
+if (UNIX AND NOT APPLE)
+    # FFmpeg paths
+    set(FFMPEG_URL "https://evermeet.cx/ffmpeg/getrelease/zip")
+    set(FFMPEG_ZIP "${CMAKE_BINARY_DIR}/ffmpeg-linux.zip")
+    set(FFMPEG_EXE "${CMAKE_BINARY_DIR}/ffmpeg")
+    set(FFMPEG_BUNDLE_DIR "${CMAKE_SOURCE_DIR}/build/LinuxBundle")
+    set(FFMPEG_BUNDLE_PATH "${FFMPEG_BUNDLE_DIR}/ffmpeg")
 
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.EasyWhisperUI)
+    # Step 1: Fetch FFmpeg
+    add_custom_target(fetch_ffmpeg ALL
+        COMMAND ${CMAKE_COMMAND} -E echo "Downloading FFmpeg..."
+        COMMAND ${CMAKE_COMMAND} -E remove -f "${FFMPEG_ZIP}"
+        COMMAND curl -L -o "${FFMPEG_ZIP}" "${FFMPEG_URL}"
+        COMMAND unzip -o "${FFMPEG_ZIP}" -d "${CMAKE_BINARY_DIR}"
+        COMMAND chmod +x "${FFMPEG_EXE}"
+        COMMENT "Fetching latest static FFmpeg binary for Linux"
+    )
+
+    # Step 2: Build + Bundle step
+    add_custom_target(buildLinuxApp ALL
+        DEPENDS EasyWhisperUI
+        DEPENDS fetch_ffmpeg
+    )
+
+    add_custom_command(TARGET buildLinuxApp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${FFMPEG_BUNDLE_DIR}"
+
+        # Copy the compiled binary (assumes output binary is named EasyWhisperUI)
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:EasyWhisperUI>" "${FFMPEG_BUNDLE_DIR}/EasyWhisperUI"
+
+        # Copy FFmpeg
+        COMMAND ${CMAKE_COMMAND} -E copy "${FFMPEG_EXE}" "${FFMPEG_BUNDLE_PATH}"
+        COMMAND chmod 0755 "${FFMPEG_BUNDLE_PATH}"
+
+        # Optional: run a custom build script
+        COMMAND sh "${CMAKE_SOURCE_DIR}/build.sh"
+
+        COMMENT "Bundling Linux version: executable + FFmpeg + custom script"
+    )
+
+    # Optional packaging as .tar.gz
+    set(TAR_OUTPUT "${CMAKE_SOURCE_DIR}/build/LinuxBundle.tar.gz")
+    add_custom_target(create_tarball ALL
+        DEPENDS buildLinuxApp
+        COMMAND ${CMAKE_COMMAND} -E tar "cfvz" "${TAR_OUTPUT}" --format=gnutar -- "${FFMPEG_BUNDLE_DIR}"
+        COMMENT "Creating tarball for Linux distribution"
+    )
 endif()
+
 set_target_properties(EasyWhisperUI PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
