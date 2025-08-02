@@ -8,37 +8,40 @@ if ! command -v cmake &> /dev/null; then
     exit 1
 fi
 
-# Step 1: Setup build directory
-build_dir="$(cd "$(dirname "$0")"; pwd -P)/build/LinuxBundle"
-echo ">>> Working inside $build_dir"
+# Step 1: Setup build directories
+root_dir="$(cd "$(dirname "$0")"; pwd -P)"
+build_dir="$root_dir/build/LinuxBundle"
+temp_dir="$root_dir/build/temp_whisper_build"
+
+echo ">>> Preparing build directories"
 mkdir -p "$build_dir"
+rm -rf "$temp_dir"
+mkdir -p "$temp_dir"
 
-# Step 2: Reclone whisper.cpp from scratch
-echo ">>> Cleaning up any previous whisper.cpp repo"
-rm -rf "$build_dir/whisper.cpp"
+# Step 2: Clone and build whisper.cpp in temp dir
+echo ">>> Cloning whisper.cpp into temp directory"
+git clone --depth 1 https://github.com/ggml-org/whisper.cpp.git "$temp_dir/whisper.cpp"
 
-echo ">>> Cloning fresh whisper.cpp"
-cd "$build_dir"
-git clone https://github.com/ggml-org/whisper.cpp.git
-
-# Step 3: Configure and build whisper.cpp
-cd "$build_dir/whisper.cpp"
-echo ">>> Running CMake configure"
+cd "$temp_dir/whisper.cpp"
+echo ">>> Configuring with CMake"
 cmake -B build -DWHISPER_SDL2=ON -DBUILD_SHARED_LIBS=OFF
 
-echo ">>> Running CMake build"
+echo ">>> Building whisper-cli"
 cmake --build build --clean-first --config Release --parallel 8
 
-# Step 4: Copy whisper-cli into Linux bundle directory
-cli_bin="$build_dir/whisper.cpp/build/bin/whisper-cli"
-bundle_bin="$build_dir"
+# Step 3: Copy whisper-cli into bundle
+cli_bin="$temp_dir/whisper.cpp/build/bin/whisper-cli"
 
 if [ -f "$cli_bin" ]; then
     echo ">>> Copying whisper-cli into bundle directory"
-    cp "$cli_bin" "$bundle_bin/"
+    cp "$cli_bin" "$build_dir/"
 else
     echo "❌ whisper-cli not found — build may have failed"
     exit 1
 fi
+
+# Step 4: Clean up temp build
+echo ">>> Cleaning up temporary build directory"
+rm -rf "$temp_dir"
 
 echo "✅ Linux build.sh completed successfully"
