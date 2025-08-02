@@ -9,8 +9,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+set(QT_VERSION_MAJOR 6)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -167,13 +167,28 @@ if (APPLE)
     )
 endif()
 
+if (UNIX AND NOT APPLE)
+    add_custom_target(buildLinuxApp ALL
+        DEPENDS EasyWhisperUI
+    )
 
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.EasyWhisperUI)
+    add_custom_command(TARGET buildLinuxApp POST_BUILD
+        COMMAND sh "${CMAKE_SOURCE_DIR}/build.sh"
+    )
+
+    # Optional packaging as .tar.gz
+    set(LINUX_BUNDLE_DIR "${CMAKE_SOURCE_DIR}/build/LinuxBundle")
+    set(TAR_OUTPUT "${CMAKE_SOURCE_DIR}/build/EasyWhisperUI.tar.gz")
+
+    add_custom_target(create_tarball ALL
+        DEPENDS buildLinuxApp
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${LINUX_BUNDLE_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:EasyWhisperUI>" "${LINUX_BUNDLE_DIR}/EasyWhisperUI"
+        COMMAND ${CMAKE_COMMAND} -E tar "cfvz" "${TAR_OUTPUT}" --format=gnutar -- "${LINUX_BUNDLE_DIR}"
+        COMMENT "Creating tarball for Linux distribution"
+    )
 endif()
+
 set_target_properties(EasyWhisperUI PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
