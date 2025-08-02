@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <QMimeData>
 #include <QSettings>
+#include <QtSystemDetection>
 #include <QDesktopServices>
 
 QList<QProcess*> processList;
