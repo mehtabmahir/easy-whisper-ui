@@ -60,7 +60,7 @@ MacOS:
 
 ## Setup
 
-1. **Download** the latest installer.  
+1. **Download** the latest installer ([Windows](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v1.5.2/WhisperUIInstaller.exe) / [MacOS](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v1.5.2/EasyWhisperUI-macOS.dmg) / [all versions](https://github.com/mehtabmahir/easy-whisper-ui/releases)).
 2. **Run** the application.
 
 ---
