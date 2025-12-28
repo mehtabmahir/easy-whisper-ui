@@ -119,6 +119,34 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const DEFAULT_ARGS = "-tp 0.0 -mc 64 -et 3.0";
+const SETTINGS_KEY = "easy-whisper-ui.settings";
+
+type PersistedSettings = {
+  model?: string;
+  language?: string;
+  cpuOnly?: boolean;
+  outputTxt?: boolean;
+  outputSrt?: boolean;
+  openAfterComplete?: boolean;
+  extraArgs?: string;
+};
+
+function loadPersistedSettings(): PersistedSettings {
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function savePersistedSettings(settings: PersistedSettings): void {
+  try {
+    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // Ignore storage write failures.
+  }
+}
 
 function getFileName(filePath: string | undefined): string {
   if (!filePath) {
@@ -132,13 +160,15 @@ function App(): JSX.Element {
   const api = window.easyWhisper;
   const apiAvailable = Boolean(api);
 
-  const [model, setModel] = useState<string>("medium.en");
-  const [language, setLanguage] = useState<string>("en");
-  const [cpuOnly, setCpuOnly] = useState<boolean>(false);
-  const [outputTxt, setOutputTxt] = useState<boolean>(true);
-  const [outputSrt, setOutputSrt] = useState<boolean>(false);
-  const [openAfterComplete, setOpenAfterComplete] = useState<boolean>(true);
-  const [extraArgs, setExtraArgs] = useState<string>(DEFAULT_ARGS);
+  const persisted = useMemo(loadPersistedSettings, []);
+
+  const [model, setModel] = useState<string>(persisted.model ?? "medium.en");
+  const [language, setLanguage] = useState<string>(persisted.language ?? "en");
+  const [cpuOnly, setCpuOnly] = useState<boolean>(persisted.cpuOnly ?? false);
+  const [outputTxt, setOutputTxt] = useState<boolean>(persisted.outputTxt ?? true);
+  const [outputSrt, setOutputSrt] = useState<boolean>(persisted.outputSrt ?? false);
+  const [openAfterComplete, setOpenAfterComplete] = useState<boolean>(persisted.openAfterComplete ?? true);
+  const [extraArgs, setExtraArgs] = useState<string>(persisted.extraArgs ?? DEFAULT_ARGS);
 
   const [platform, setPlatform] = useState<string>("...");
   const [arch, setArch] = useState<string>("...");
@@ -263,6 +293,18 @@ function App(): JSX.Element {
     openAfterComplete,
     extraArgs
   }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs]);
+
+  useEffect(() => {
+    savePersistedSettings({
+      model,
+      language,
+      cpuOnly,
+      outputTxt,
+      outputSrt,
+      openAfterComplete,
+      extraArgs
+    });
+  }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs]);
 
   const handleCompile = useCallback(async () => {
     const bridge = window.easyWhisper;
