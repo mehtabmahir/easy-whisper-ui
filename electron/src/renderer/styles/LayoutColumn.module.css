@@ -1,0 +1,41 @@
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.columnHeader {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.columnHeader h2 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.columnBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.blue {
+  background: linear-gradient(135deg, rgba(8, 47, 73, 0.9), rgba(14, 116, 144, 0.45));
+}
+
+.green {
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.9), rgba(34, 197, 94, 0.35));
+}
+
+.orange {
+  background: linear-gradient(135deg, rgba(124, 45, 18, 0.9), rgba(249, 115, 22, 0.35));
+}
+
+.purple {
+  background: linear-gradient(135deg, rgba(76, 29, 149, 0.9), rgba(129, 140, 248, 0.35));
+}

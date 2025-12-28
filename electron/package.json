@@ -1,0 +1,72 @@
+{
+  "name": "easy-whisper-electron",
+  "version": "0.1.0",
+  "description": "Electron frontend shell for EasyWhisper UI",
+  "private": true,
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:main\" \"npm:dev:preload\" \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "dev:main": "tsc -w -p tsconfig.main.json",
+    "dev:preload": "tsc -w -p tsconfig.preload.json",
+    "dev:renderer": "cross-env NODE_ENV=development vite",
+    "dev:electron": "wait-on dist/main/index.js dist/preload/index.js http://localhost:5173 && cross-env NODE_ENV=development VITE_DEV_SERVER_URL=http://localhost:5173 electronmon --trace-warnings dist/main/index.js",
+    "build": "rimraf dist && npm run build:main && npm run build:preload && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:preload": "tsc -p tsconfig.preload.json",
+    "build:renderer": "vite build",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dist": "npm run build && electron-builder",
+    "compile:whisper": "powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File ./buildResources/scripts/compile-whisper.ps1"
+  },
+  "dependencies": {
+    "electron": "^29.3.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@typescript-eslint/eslint-plugin": "^7.1.1",
+    "@typescript-eslint/parser": "^7.1.1",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron-builder": "^24.9.1",
+    "electronmon": "^1.0.7",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.4.4",
+    "vite": "^5.1.4",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.easywhisper.ui",
+    "productName": "EasyWhisperUI",
+    "files": [
+      "dist/main/**/*",
+      "dist/preload/**/*",
+      "dist/renderer/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "../build/electron-dist",
+      "buildResources": "buildResources"
+    },
+    "asar": true,
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "portable"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

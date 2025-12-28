@@ -1,0 +1,31 @@
+:root {
+  color-scheme: dark light;
+  font-family: "Segoe UI", "Segoe UI Variable", "Helvetica Neue", Arial, sans-serif;
+  color: #f1f5f9;
+  background-color: #0f172a;
+  line-height: 1.4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #1e293b 0%, #0f172a 60%);
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+ h2,
+ h3 {
+  font-weight: 600;
+}
+
+p {
+  color: #e2e8f0;
+}
