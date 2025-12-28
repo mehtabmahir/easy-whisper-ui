@@ -216,6 +216,18 @@
   border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
+.queueStatus {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  font-size: 0.95rem;
+  color: rgba(226, 232, 240, 0.9);
+}
+
 .checkbox {
   display: flex;
   align-items: center;

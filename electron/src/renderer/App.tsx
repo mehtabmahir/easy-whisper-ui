@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./styles/App.module.css";
 import type { CompileProgressEvent, LiveState, QueueState } from "../types/easy-whisper";
 
@@ -245,6 +245,14 @@ function App(): JSX.Element {
   }, [api]);
 
   const consoleText = useMemo(() => consoleLines.join("\n"), [consoleLines]);
+  const consoleRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const node = consoleRef.current;
+    if (node) {
+      node.scrollTop = node.scrollHeight;
+    }
+  }, [consoleText]);
 
   const buildSettings = useCallback(() => ({
     model,
@@ -520,6 +528,7 @@ function App(): JSX.Element {
             <div className={styles.consoleBlock}>
               <label htmlFor="console">Output</label>
               <textarea
+                ref={consoleRef}
                 id="console"
                 className={styles.consoleArea}
                 placeholder="FFmpeg and whisper output will appear here."
