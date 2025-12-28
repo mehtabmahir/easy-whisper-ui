@@ -215,6 +215,35 @@ function App(): JSX.Element {
     };
   }, [api, appendConsole]);
 
+  useEffect(() => {
+    if (!api || !api.checkInstall) {
+      return;
+    }
+
+    let cancelled = false;
+    api.checkInstall().then((result) => {
+      if (!cancelled && result.installed) {
+        setCompileInfo((prev) => {
+          if (prev.state === "success") {
+            return prev;
+          }
+          return {
+            step: "completed",
+            message: "Whisper binaries ready.",
+            progress: 100,
+            state: "success"
+          };
+        });
+      }
+    }).catch(() => {
+      // Ignore errors; install status will update on demand.
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api]);
+
   const consoleText = useMemo(() => consoleLines.join("\n"), [consoleLines]);
 
   const buildSettings = useCallback(() => ({
@@ -335,6 +364,7 @@ function App(): JSX.Element {
   const queuedCount = queueState.awaiting.length;
   const isCompiling = compileInfo.state === "running";
   const isProcessing = queueState.isProcessing;
+  const isInstalled = compileInfo.state === "success";
 
   return (
     <div className={styles.windowContainer}>
@@ -379,7 +409,7 @@ function App(): JSX.Element {
                 onClick={handleCompile}
                 disabled={!apiAvailable || isCompiling}
               >
-                Compile
+                {isInstalled ? "Installed" : "Install"}
               </button>
               <button
                 type="button"

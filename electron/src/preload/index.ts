@@ -43,7 +43,8 @@ const api: EasyWhisperApi = {
     return () => ipcRenderer.removeListener(channel, handler);
   },
   closeWindow: () => ipcRenderer.invoke("window:close"),
-  minimizeWindow: () => ipcRenderer.invoke("window:minimize")
+  minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
+  checkInstall: () => ipcRenderer.invoke("easy-whisper:check-install")
 };
 
 contextBridge.exposeInMainWorld("easyWhisper", api);

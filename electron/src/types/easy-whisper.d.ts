@@ -68,6 +68,7 @@ export type EasyWhisperApi = {
   onLiveState: (callback: (state: LiveState) => void) => () => void;
   closeWindow: () => Promise<void>;
   minimizeWindow: () => Promise<void>;
+  checkInstall: () => Promise<{ installed: boolean; outputDir?: string }>;
 };
 
 declare global {

@@ -14,6 +14,8 @@ const compileManager = new CompileManager();
 const transcriptionManager = new TranscriptionManager();
 const liveManager = new LiveManager();
 
+app.setName("EasyWhisperUI");
+
 async function createMainWindow(): Promise<void> {
   // Ensure high contrast themes match OS defaults for readability.
   nativeTheme.themeSource = "system";
@@ -54,6 +56,10 @@ function broadcast(channel: string, payload: unknown): void {
 function registerIpcChannels(): void {
   ipcMain.handle("easy-whisper:compile", async (_event, options: CompileOptions | undefined) => {
     return compileManager.compile(options ?? {});
+  });
+
+  ipcMain.handle("easy-whisper:check-install", async () => {
+    return compileManager.hasExistingBinaries();
   });
 
   ipcMain.handle("easy-whisper:open-dialog", async () => {
@@ -145,6 +151,7 @@ function registerIpcChannels(): void {
 
 app.whenReady().then(() => {
   registerIpcChannels();
+  console.log("userData path:", app.getPath("userData"));
   return createMainWindow();
 }).catch((error) => {
   console.error("Failed to create main window", error);

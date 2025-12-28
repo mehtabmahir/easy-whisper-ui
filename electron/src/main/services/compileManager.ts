@@ -8,6 +8,7 @@ import os from "node:os";
 import { CompileOptions, CompileProgressEvent, CompileResult } from "../../types/easy-whisper";
 
 export const WORK_ROOT_NAME = "whisper-workspace";
+const BINARY_TARGETS = ["whisper-cli.exe", "whisper-stream.exe"];
 
 const MSYS_ROOT = "C:/msys64";
 const MSYS_CMAKE = `${MSYS_ROOT}/mingw64/bin/cmake.exe`;
@@ -56,9 +57,7 @@ export class CompileManager extends EventEmitter {
 
     const workRoot = await this.ensureWorkDirs();
     const binDir = path.join(workRoot, "bin");
-    const existingBinaries = ["whisper-cli.exe", "whisper-stream.exe"].every((exe) =>
-      fs.existsSync(path.join(binDir, exe))
-    );
+    const existingBinaries = this.hasBinariesInDir(binDir);
 
     if (existingBinaries && !options.force) {
       this.emitProgress({
@@ -122,6 +121,17 @@ export class CompileManager extends EventEmitter {
       this.running = false;
       return { success: false, error: err.message };
     }
+  }
+
+  async hasExistingBinaries(): Promise<{ installed: boolean; outputDir?: string }> {
+    if (process.platform !== "win32") {
+      return { installed: false };
+    }
+
+    const workRoot = await this.ensureWorkDirs();
+    const binDir = path.join(workRoot, "bin");
+    const installed = this.hasBinariesInDir(binDir);
+    return installed ? { installed: true, outputDir: binDir } : { installed: false };
   }
 
   private async runStep(step: string, message: string, action: () => Promise<void>): Promise<void> {
@@ -237,9 +247,7 @@ export class CompileManager extends EventEmitter {
 
   private async copyArtifacts(sourceDir: string, binDir: string): Promise<void> {
     const buildBinDir = path.join(sourceDir, "build", "bin");
-    const targets = ["whisper-cli.exe", "whisper-stream.exe"];
-
-    for (const target of targets) {
+    for (const target of BINARY_TARGETS) {
       await fsp.copyFile(path.join(buildBinDir, target), path.join(binDir, target));
     }
 
@@ -301,5 +309,9 @@ export class CompileManager extends EventEmitter {
       return "";
     }
     return label ? `[${label}] ${text}` : text;
+  }
+
+  private hasBinariesInDir(binDir: string): boolean {
+    return BINARY_TARGETS.every((exe) => fs.existsSync(path.join(binDir, exe)));
   }
 }
