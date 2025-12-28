@@ -41,7 +41,9 @@ const api: EasyWhisperApi = {
     const handler = (_event: Electron.IpcRendererEvent, state: Parameters<typeof callback>[0]) => callback(state);
     ipcRenderer.on(channel, handler);
     return () => ipcRenderer.removeListener(channel, handler);
-  }
+  },
+  closeWindow: () => ipcRenderer.invoke("window:close"),
+  minimizeWindow: () => ipcRenderer.invoke("window:minimize")
 };
 
 contextBridge.exposeInMainWorld("easyWhisper", api);

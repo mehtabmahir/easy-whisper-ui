@@ -66,6 +66,8 @@ export type EasyWhisperApi = {
   stopLiveTranscription: () => Promise<void>;
   onLiveText: (callback: (text: string) => void) => () => void;
   onLiveState: (callback: (state: LiveState) => void) => () => void;
+  closeWindow: () => Promise<void>;
+  minimizeWindow: () => Promise<void>;
 };
 
 declare global {

@@ -24,12 +24,18 @@ async function createMainWindow(): Promise<void> {
     minWidth: 1100,
     minHeight: 700,
     title: "EasyWhisper UI",
+    frame: false,
+    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
+    backgroundColor: "#0f172a",
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false
     }
   });
+
+  // Hide native menu so the custom chrome looks consistent across platforms.
+  mainWindow.setMenuBarVisibility(false);
 
   if (isDev && process.env.VITE_DEV_SERVER_URL) {
     await mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
@@ -88,6 +94,16 @@ function registerIpcChannels(): void {
 
   ipcMain.handle("easy-whisper:cancel-all", async () => {
     await transcriptionManager.cancelAll();
+  });
+
+  ipcMain.handle("window:close", (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    window?.close();
+  });
+
+  ipcMain.handle("window:minimize", (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    window?.minimize();
   });
 
   ipcMain.handle("easy-whisper:start-live", async (_event, request: LiveRequest) => {

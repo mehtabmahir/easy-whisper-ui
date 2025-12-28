@@ -16,8 +16,7 @@
     "build:renderer": "vite build",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dist": "npm run build && electron-builder",
-    "compile:whisper": "powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File ./buildResources/scripts/compile-whisper.ps1"
+    "dist": "npm run build && electron-builder"
   },
   "dependencies": {
     "electron": "^29.3.2",

@@ -166,6 +166,7 @@ function App(): JSX.Element {
       setArch("unknown");
     }
   }, [api]);
+
   const appendConsole = useCallback((line: string) => {
     if (!line) {
       return;
@@ -274,6 +275,22 @@ function App(): JSX.Element {
     setConsoleLines([]);
   }, []);
 
+  const handleCloseWindow = useCallback(() => {
+    const bridge = window.easyWhisper;
+    if (!bridge) {
+      return;
+    }
+    void bridge.closeWindow();
+  }, []);
+
+  const handleMinimizeWindow = useCallback(() => {
+    const bridge = window.easyWhisper;
+    if (!bridge) {
+      return;
+    }
+    void bridge.minimizeWindow();
+  }, []);
+
   const handleLiveToggle = useCallback(async () => {
     const bridge = window.easyWhisper;
     if (!bridge) {
@@ -320,146 +337,170 @@ function App(): JSX.Element {
   const isProcessing = queueState.isProcessing;
 
   return (
-    <div className={styles.appShell}>
-      <header className={styles.header}>
-        <div>
-          <h1>EasyWhisper UI</h1>
-          <p className={styles.subtitle}>Recreating the original workflow in Electron.</p>
+    <div className={styles.windowContainer}>
+      <div className={styles.titlebar}>
+        <div className={styles.titleDragRegion}>
+          <span className={styles.titleText}>EasyWhisper UI</span>
         </div>
-        <span className={styles.status}>{statusText}</span>
-      </header>
+      </div>
 
-      <section className={styles.workspace}>
-        <aside className={styles.leftPanel}>
-          <div className={styles.buttonStack}>
-            <button
-              type="button"
-              className={`${styles.controlButton} ${styles.primaryButton}`}
-              onClick={handleOpen}
-              disabled={!apiAvailable}
-            >
-              Open
-            </button>
-            <button
-              type="button"
-              className={`${styles.controlButton} ${styles.liveButton}`}
-              onClick={handleLiveToggle}
-              aria-pressed={liveActive}
-              disabled={!apiAvailable}
-            >
-              {liveActive ? "Stop Live" : "Live"}
-            </button>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={handleCompile}
-              disabled={!apiAvailable || isCompiling}
-            >
-              Compile
-            </button>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={handleStop}
-              disabled={!apiAvailable || (!isProcessing && queuedCount === 0)}
-            >
-              Stop
-            </button>
-            <button type="button" className={styles.secondaryButton} onClick={handleClear}>
-              Clear
-            </button>
+      <div className={styles.appShell}>
+        <header className={styles.header}>
+          <div>
+            <h1>EasyWhisper UI</h1>
+            <p className={styles.subtitle}>Recreating the original workflow in Electron.</p>
           </div>
-          <div className={styles.compileStatus}>
-            <span>{compileStateLabel}</span>
-            {isCompiling && <progress value={compileInfo.progress} max={100} />}
-          </div>
+          <span className={styles.status}>{statusText}</span>
+        </header>
 
-          <div className={styles.selectorGroup}>
-            <label className={styles.selectorLabel}>
-              <span>Model</span>
-              <select value={model} onChange={(event) => setModel(event.target.value)}>
-                {MODEL_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
+        <section className={styles.workspace}>
+          <aside className={styles.leftPanel}>
+            <div className={styles.buttonStack}>
+              <button
+                type="button"
+                className={`${styles.controlButton} ${styles.primaryButton}`}
+                onClick={handleOpen}
+                disabled={!apiAvailable}
+              >
+                Open
+              </button>
+              <button
+                type="button"
+                className={`${styles.controlButton} ${styles.liveButton}`}
+                onClick={handleLiveToggle}
+                aria-pressed={liveActive}
+                disabled={!apiAvailable}
+              >
+                {liveActive ? "Stop Live" : "Live"}
+              </button>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={handleCompile}
+                disabled={!apiAvailable || isCompiling}
+              >
+                Compile
+              </button>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={handleStop}
+                disabled={!apiAvailable || (!isProcessing && queuedCount === 0)}
+              >
+                Stop
+              </button>
+              <button type="button" className={styles.secondaryButton} onClick={handleClear}>
+                Clear
+              </button>
+              <div className={styles.windowControlRow}>
+                <button
+                  type="button"
+                  className={`${styles.controlButton} ${styles.minimizeButton}`}
+                  onClick={handleMinimizeWindow}
+                >
+                  Minimize
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.controlButton} ${styles.closeButton}`}
+                  onClick={handleCloseWindow}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <div className={styles.compileStatus}>
+              <span>{compileStateLabel}</span>
+              {isCompiling && <progress value={compileInfo.progress} max={100} />}
+            </div>
 
-            <label className={styles.selectorLabel}>
-              <span>Language</span>
-              <select value={language} onChange={(event) => setLanguage(event.target.value)}>
-                {LANGUAGE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </aside>
+            <div className={styles.selectorGroup}>
+              <label className={styles.selectorLabel}>
+                <span>Model</span>
+                <select value={model} onChange={(event) => setModel(event.target.value)}>
+                  {MODEL_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-        <section className={styles.rightPanel}>
-          <div className={styles.argumentsBlock}>
-            <label htmlFor="arguments">Arguments</label>
-            <textarea
-              id="arguments"
-              placeholder="Example: --temperature 0.6 --max-context 1"
-              rows={4}
-              value={extraArgs}
-              onChange={(event) => setExtraArgs(event.target.value)}
-            />
-          </div>
+              <label className={styles.selectorLabel}>
+                <span>Language</span>
+                <select value={language} onChange={(event) => setLanguage(event.target.value)}>
+                  {LANGUAGE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </aside>
 
-          <div className={styles.optionsRow}>
-            <label className={styles.checkbox}>
-              <input type="checkbox" checked={cpuOnly} onChange={(event) => setCpuOnly(event.target.checked)} />
-              <span>CPU Only</span>
-            </label>
-            <label className={styles.checkbox}>
-              <input
-                type="checkbox"
-                checked={outputTxt}
-                onChange={(event) => setOutputTxt(event.target.checked)}
+          <main className={styles.rightPanel}>
+            <div className={styles.argumentsBlock}>
+              <label htmlFor="arguments">Arguments</label>
+              <textarea
+                id="arguments"
+                placeholder="Example: --temperature 0.6 --max-context 1"
+                rows={4}
+                value={extraArgs}
+                onChange={(event) => setExtraArgs(event.target.value)}
               />
-              <span>Output .txt File</span>
-            </label>
-            <label className={styles.checkbox}>
-              <input
-                type="checkbox"
-                checked={outputSrt}
-                onChange={(event) => setOutputSrt(event.target.checked)}
-              />
-              <span>Output File with Timestamps (.srt)</span>
-            </label>
-            <label className={styles.checkbox}>
-              <input
-                type="checkbox"
-                checked={openAfterComplete}
-                onChange={(event) => setOpenAfterComplete(event.target.checked)}
-              />
-              <span>Open Transcription</span>
-            </label>
-          </div>
+            </div>
 
-          <div className={styles.queueStatus}>
-            <span>Processing: {getFileName(queueState.processing)}</span>
-            <span>Queued: {queuedCount}</span>
-          </div>
+            <div className={styles.optionsRow}>
+              <label className={styles.checkbox}>
+                <input type="checkbox" checked={cpuOnly} onChange={(event) => setCpuOnly(event.target.checked)} />
+                <span>CPU Only</span>
+              </label>
+              <label className={styles.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={outputTxt}
+                  onChange={(event) => setOutputTxt(event.target.checked)}
+                />
+                <span>Output .txt File</span>
+              </label>
+              <label className={styles.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={outputSrt}
+                  onChange={(event) => setOutputSrt(event.target.checked)}
+                />
+                <span>Output File with Timestamps (.srt)</span>
+              </label>
+              <label className={styles.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={openAfterComplete}
+                  onChange={(event) => setOpenAfterComplete(event.target.checked)}
+                />
+                <span>Open Transcription</span>
+              </label>
+            </div>
 
-          <div className={styles.consoleBlock}>
-            <label htmlFor="console">Output</label>
-            <textarea
-              id="console"
-              className={styles.consoleArea}
-              placeholder="FFmpeg and whisper output will appear here."
-              rows={14}
-              readOnly
-              value={consoleText}
-            />
-          </div>
+            <div className={styles.queueStatus}>
+              <span>Processing: {getFileName(queueState.processing)}</span>
+              <span>Queued: {queuedCount}</span>
+            </div>
+
+            <div className={styles.consoleBlock}>
+              <label htmlFor="console">Output</label>
+              <textarea
+                id="console"
+                className={styles.consoleArea}
+                placeholder="FFmpeg and whisper output will appear here."
+                rows={14}
+                readOnly
+                value={consoleText}
+              />
+            </div>
+          </main>
         </section>
-      </section>
+      </div>
     </div>
   );
 }
