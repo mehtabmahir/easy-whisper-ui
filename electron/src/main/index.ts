@@ -36,6 +36,10 @@ async function createMainWindow(): Promise<void> {
     }
   });
 
+  if (process.platform === "darwin") {
+    mainWindow.setWindowButtonVisibility(false);
+  }
+
   // Hide native menu so the custom chrome looks consistent across platforms.
   mainWindow.setMenuBarVisibility(false);
 
