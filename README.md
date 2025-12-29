@@ -20,6 +20,19 @@ A fast, native desktop UI for transcribing media using Whisper — built entirel
 Thanks to the incredible contribution from [celerycoloured](https://github.com/celerycoloured), EasyWhisper UI now runs on macOS! 
 Check it out on the `releases` page. 
 
+### Developer note: mac binaries auto-compile
+
+On macOS, the Electron shell automatically builds `whisper.cpp` with Metal during `npm install`, stages the `whisper-cli` and `whisper-stream` binaries, and downloads a static `ffmpeg` into `electron/buildResources/mac-bin`. These artifacts are bundled into the app at build time and staged to the user workspace on first run.
+
+If you want to trigger it manually:
+
+```bash
+cd electron
+bash buildResources/scripts/compile-whisper.sh
+```
+
+Requirements: Homebrew with `cmake`, `ninja`, and `sdl2` installed (the script will install them if missing).
+
 ## Features
 - Now with Live Transcriptions! (beta)
 - Supports translation for 100+ languages.

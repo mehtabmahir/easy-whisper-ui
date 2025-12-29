@@ -8,6 +8,7 @@ import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { ConsoleEvent, LiveRequest } from "../../types/easy-whisper";
 import { WORK_ROOT_NAME } from "./compileManager";
+import { resolveBinary } from "./binaryResolver";
 
 interface LiveEvents {
   console: ConsoleEvent;
@@ -41,11 +42,12 @@ export class LiveManager extends EventEmitter {
       throw new Error("Live transcription already running.");
     }
 
-    const binDir = path.join(app.getPath("userData"), WORK_ROOT_NAME, "bin");
-    const exe = path.join(binDir, "whisper-stream.exe");
-    if (!fs.existsSync(exe)) {
-      throw new Error("Whisper live binary missing. Compile binaries before starting live transcription.");
+    const streamBinary = resolveBinary("whisper-stream", { allowSystemFallback: false });
+    if (!streamBinary.found || streamBinary.command.length === 0) {
+      throw new Error("Whisper live binary missing. Compile Whisper before starting live transcription.");
     }
+    const exe = streamBinary.command;
+    const exeLabel = path.basename(exe);
 
     const modelPath = await this.ensureModel(request.settings.model);
 
@@ -64,10 +66,10 @@ export class LiveManager extends EventEmitter {
       args.push("--no-gpu");
     }
 
-    this.emitConsole({ source: "live", message: "Starting live transcription." });
+    this.emitConsole({ source: "live", message: `Starting live transcription with ${exeLabel}.` });
 
     await new Promise<void>((resolve, reject) => {
-      const child = spawn(exe, args, { stdio: ["ignore", "pipe", "pipe"] });
+      const child = spawn(exe, args);
       this.proc = child;
 
       child.stdout.on("data", (data) => {

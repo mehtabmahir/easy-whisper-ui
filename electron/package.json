@@ -16,7 +16,8 @@
     "build:renderer": "vite build",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder",
+    "postinstall": "node buildResources/scripts/postinstall.js"
   },
   "dependencies": {
     "electron": "^29.3.2",

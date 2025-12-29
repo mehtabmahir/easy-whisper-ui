@@ -5,6 +5,7 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import https from "node:https";
 import path from "node:path";
+import os from "node:os";
 import { pipeline } from "node:stream/promises";
 import {
   ConsoleEvent,
@@ -13,6 +14,7 @@ import {
   TranscriptionRequest
 } from "../../types/easy-whisper";
 import { WORK_ROOT_NAME } from "./compileManager";
+import { resolveBinary } from "./binaryResolver";
 
 interface QueueItem {
   file: string;
@@ -87,15 +89,15 @@ export class TranscriptionManager extends EventEmitter {
     this.emitQueue();
 
     try {
-      const mp3Path = await this.ensureMp3(nextItem.file);
+      const audioPath = await this.ensureWav(nextItem.file);
       const modelPath = await this.ensureModel(nextItem.settings);
-      await this.runWhisper(mp3Path, modelPath, nextItem.settings);
+      await this.runWhisper(audioPath, modelPath, nextItem.settings);
       if (nextItem.settings.openAfterComplete) {
-        const outputTxt = `${mp3Path}.txt`;
+        const outputTxt = `${audioPath}.txt`;
         if (fs.existsSync(outputTxt)) {
           await shell.showItemInFolder(outputTxt);
         } else {
-          await shell.showItemInFolder(mp3Path);
+          await shell.showItemInFolder(audioPath);
         }
       }
       this.emitConsole({ source: "transcription", message: `Completed: ${path.basename(nextItem.file)}` });
@@ -111,17 +113,73 @@ export class TranscriptionManager extends EventEmitter {
     }
   }
 
-  private async ensureMp3(filePath: string): Promise<string> {
+  private async ensureWav(filePath: string): Promise<string> {
     const ext = path.extname(filePath).toLowerCase();
-    if (ext === ".mp3") {
-      this.emitConsole({ source: "transcription", message: "Input already MP3, skipping conversion." });
+    if (ext === ".wav") {
+      this.emitConsole({ source: "transcription", message: "Input already WAV, skipping conversion." });
       return filePath;
     }
 
     const parsed = path.parse(filePath);
-    const target = path.join(parsed.dir, `${parsed.name}.mp3`);
-    this.emitConsole({ source: "transcription", message: `Converting to MP3: ${path.basename(target)}` });
-    await this.spawnWithLogs("ffmpeg", ["-y", "-i", filePath, "-b:a", "128k", target]);
+    const target = path.join(parsed.dir, `${parsed.name}.wav`);
+    const conversionLabel = path.basename(target);
+    this.emitConsole({ source: "transcription", message: `Converting to WAV: ${conversionLabel}` });
+    const ffmpeg = resolveBinary("ffmpeg");
+
+    try {
+      const availableCpus = Math.max(1, os.cpus().length);
+      const threadCount = Math.min(8, availableCpus);
+      const threadArgs = [
+        "-threads",
+        String(threadCount),
+        "-filter_threads",
+        String(threadCount),
+        "-filter_complex_threads",
+        String(threadCount)
+      ];
+
+      const args = [
+        "-y",
+        "-hide_banner",
+        "-loglevel",
+        "warning",
+        "-progress",
+        "pipe:2",
+        "-nostats",
+        ...threadArgs,
+        "-i",
+        filePath,
+        "-vn",
+        "-sn",
+        "-dn",
+        "-map_metadata",
+        "-1",
+        "-ac",
+        "1",
+        "-ar",
+        "44100",
+        "-c:a",
+        "pcm_s16le",
+        target
+      ];
+
+      const started = Date.now();
+      await this.spawnWithLogs(ffmpeg.command, args);
+      const elapsed = ((Date.now() - started) / 1000).toFixed(1);
+      this.emitConsole({
+        source: "transcription",
+        message: `FFmpeg finished (${elapsed}s): ${conversionLabel}`
+      });
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code === "ENOENT" && !ffmpeg.found) {
+        const searched = ffmpeg.searched.length > 0 ? ffmpeg.searched.join(", ") : "<none>";
+        throw new Error(
+          `FFmpeg executable not found. Checked paths: ${searched}. Install dependencies or rerun the compiler.`
+        );
+      }
+      throw err;
+    }
     return target;
   }
 
@@ -145,18 +203,20 @@ export class TranscriptionManager extends EventEmitter {
     return modelPath;
   }
 
-  private async runWhisper(mp3File: string, modelPath: string, settings: ModelSettings): Promise<void> {
+  private async runWhisper(audioFile: string, modelPath: string, settings: ModelSettings): Promise<void> {
     const binDir = path.join(app.getPath("userData"), WORK_ROOT_NAME, "bin");
-    const exePath = path.join(binDir, "whisper-cli.exe");
-    if (!fs.existsSync(exePath)) {
-      throw new Error("Whisper binaries missing. Please compile them first.");
+    const whisper = resolveBinary("whisper-cli", { allowSystemFallback: false });
+    if (!whisper.found || whisper.command.length === 0) {
+      throw new Error(
+        "Whisper CLI binary missing. Compile Whisper from the settings panel to continue."
+      );
     }
 
     const args = [
       "-m",
       modelPath,
       "-f",
-      mp3File
+      audioFile
     ];
 
     if (settings.outputTxt) {
@@ -175,8 +235,9 @@ export class TranscriptionManager extends EventEmitter {
       args.push(...this.parseArgs(settings.extraArgs));
     }
 
-    this.emitConsole({ source: "transcription", message: `Running whisper-cli on ${path.basename(mp3File)}` });
-    await this.spawnWithLogs(exePath, args);
+    const exeLabel = path.basename(whisper.command);
+    this.emitConsole({ source: "transcription", message: `Running ${exeLabel} on ${path.basename(audioFile)}` });
+    await this.spawnWithLogs(whisper.command, args);
   }
 
   private parseArgs(argumentText: string): string[] {
@@ -243,20 +304,28 @@ export class TranscriptionManager extends EventEmitter {
 
   private async spawnWithLogs(command: string, args: string[]): Promise<void> {
     await new Promise<void>((resolve, reject) => {
-      const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
+      const child = spawn(command, args);
       this.activeProcess = child;
 
       child.stdout.on("data", (data) => {
-        const text = data.toString().trim();
-        if (text.length > 0) {
-          this.emitConsole({ source: "transcription", message: text });
+        const chunk = data.toString();
+        const lines: string[] = chunk.replace(/\r/g, "\n").split(/\n+/);
+        for (const raw of lines) {
+          const line = raw.trim();
+          if (line.length > 0) {
+            this.emitConsole({ source: "transcription", message: line });
+          }
         }
       });
 
       child.stderr.on("data", (data) => {
-        const text = data.toString().trim();
-        if (text.length > 0) {
-          this.emitConsole({ source: "transcription", message: text });
+        const chunk = data.toString();
+        const lines: string[] = chunk.replace(/\r/g, "\n").split(/\n+/);
+        for (const raw of lines) {
+          const line = raw.trim();
+          if (line.length > 0) {
+            this.emitConsole({ source: "transcription", message: line });
+          }
         }
       });
 
