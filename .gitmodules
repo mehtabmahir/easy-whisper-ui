@@ -1,0 +1,3 @@
+[submodule "electron/buildResources/whisper.cpp"]
+	path = electron/buildResources/whisper.cpp
+	url = https://github.com/ggerganov/whisper.cpp.git
