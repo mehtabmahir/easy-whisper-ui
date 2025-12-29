@@ -1,5 +1,6 @@
 {
   "name": "easy-whisper-electron",
+  "author": "Mehtab Mahir",
   "version": "0.1.0",
   "description": "Electron frontend shell for EasyWhisper UI",
   "private": true,
@@ -20,11 +21,11 @@
     "postinstall": "node buildResources/scripts/postinstall.js"
   },
   "dependencies": {
-    "electron": "^29.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "electron": "^29.3.2",
     "@types/node": "^20.12.7",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
