@@ -59,7 +59,14 @@
     },
     "asar": true,
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "extraResources": [
+        {
+          "from": "buildResources/mac-bin",
+          "to": "mac-bin",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "win": {
       "target": "portable"

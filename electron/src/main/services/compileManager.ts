@@ -8,7 +8,8 @@ import os from "node:os";
 import { CompileOptions, CompileProgressEvent, CompileResult } from "../../types/easy-whisper";
 
 export const WORK_ROOT_NAME = "whisper-workspace";
-const BINARY_TARGETS = ["whisper-cli.exe", "whisper-stream.exe"];
+const WINDOWS_BINARY_TARGETS = ["whisper-cli.exe", "whisper-stream.exe"];
+const MAC_BUNDLE_DIR_NAME = "mac-bin";
 
 const MSYS_ROOT = "C:/msys64";
 const MSYS_CMAKE = `${MSYS_ROOT}/mingw64/bin/cmake.exe`;
@@ -45,8 +46,17 @@ export class CompileManager extends EventEmitter {
   }
 
   async compile(options: CompileOptions = {}): Promise<CompileResult> {
+    if (process.platform === "darwin") {
+      try {
+        return await this.stagePrebuiltMacBinaries(options.force === true);
+      } catch (error) {
+        const err = error as Error;
+        return { success: false, error: err.message };
+      }
+    }
+
     if (process.platform !== "win32") {
-      return { success: false, error: "Windows is required for on-device compilation." };
+      return { success: false, error: "This platform is not supported for compilation." };
     }
 
     if (this.running) {
@@ -124,14 +134,24 @@ export class CompileManager extends EventEmitter {
   }
 
   async hasExistingBinaries(): Promise<{ installed: boolean; outputDir?: string }> {
+    const workRoot = await this.ensureWorkDirs();
+    const binDir = path.join(workRoot, "bin");
+    const installed = this.hasBinariesInDir(binDir);
+
+    if (installed) {
+      return { installed: true, outputDir: binDir };
+    }
+
+    if (process.platform === "darwin") {
+      const bundleDir = this.resolveMacBundleDir();
+      return bundleDir ? { installed: true, outputDir: bundleDir } : { installed: false };
+    }
+
     if (process.platform !== "win32") {
       return { installed: false };
     }
 
-    const workRoot = await this.ensureWorkDirs();
-    const binDir = path.join(workRoot, "bin");
-    const installed = this.hasBinariesInDir(binDir);
-    return installed ? { installed: true, outputDir: binDir } : { installed: false };
+    return { installed: false };
   }
 
   private async runStep(step: string, message: string, action: () => Promise<void>): Promise<void> {
@@ -247,7 +267,7 @@ export class CompileManager extends EventEmitter {
 
   private async copyArtifacts(sourceDir: string, binDir: string): Promise<void> {
     const buildBinDir = path.join(sourceDir, "build", "bin");
-    for (const target of BINARY_TARGETS) {
+    for (const target of WINDOWS_BINARY_TARGETS) {
       await fsp.copyFile(path.join(buildBinDir, target), path.join(binDir, target));
     }
 
@@ -312,6 +332,75 @@ export class CompileManager extends EventEmitter {
   }
 
   private hasBinariesInDir(binDir: string): boolean {
-    return BINARY_TARGETS.every((exe) => fs.existsSync(path.join(binDir, exe)));
+    if (!fs.existsSync(binDir)) {
+      return false;
+    }
+
+    if (process.platform === "win32") {
+      return WINDOWS_BINARY_TARGETS.every((exe) => fs.existsSync(path.join(binDir, exe)));
+    }
+
+    if (process.platform === "darwin") {
+      try {
+        return fs.readdirSync(binDir).length > 0;
+      } catch {
+        return false;
+      }
+    }
+
+    return false;
+  }
+
+  private async stagePrebuiltMacBinaries(force: boolean): Promise<CompileResult> {
+    const workRoot = await this.ensureWorkDirs();
+    const binDir = path.join(workRoot, "bin");
+
+    if (this.hasBinariesInDir(binDir) && !force) {
+      this.emitProgress({
+        step: "prebuilt",
+        message: "Prebuilt macOS binaries already staged.",
+        progress: 100,
+        state: "success"
+      });
+      return { success: true, outputDir: binDir };
+    }
+
+    const sourceDir = this.resolveMacBundleDir();
+    if (!sourceDir) {
+      throw new Error("Prebuilt macOS binaries are not bundled with the application.");
+    }
+
+    await fsp.mkdir(binDir, { recursive: true });
+    await fsp.cp(sourceDir, binDir, { recursive: true, force: true });
+
+    this.emitProgress({
+      step: "prebuilt",
+      message: "Prebuilt macOS binaries staged.",
+      progress: 100,
+      state: "success"
+    });
+
+    return { success: true, outputDir: binDir };
+  }
+
+  private resolveMacBundleDir(): string | null {
+    const candidates: string[] = [];
+
+    if (process.resourcesPath) {
+      candidates.push(path.join(process.resourcesPath, MAC_BUNDLE_DIR_NAME));
+    }
+
+    candidates.push(
+      path.join(app.getAppPath(), "buildResources", MAC_BUNDLE_DIR_NAME),
+      path.join(__dirname, "../../..", "buildResources", MAC_BUNDLE_DIR_NAME)
+    );
+
+    for (const candidate of candidates) {
+      if (candidate && fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+
+    return null;
   }
 }
