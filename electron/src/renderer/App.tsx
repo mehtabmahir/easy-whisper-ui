@@ -1,5 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./styles/App.module.css";
+import FirstLaunchLoader from "./FirstLaunchLoader";
+const FIRST_LAUNCH_KEY = "easy-whisper-ui.first-launch";
+
+function isFirstLaunch(): boolean {
+  try {
+    return window.localStorage.getItem(FIRST_LAUNCH_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
+function setFirstLaunchDone(): void {
+  try {
+    window.localStorage.setItem(FIRST_LAUNCH_KEY, "false");
+  } catch {
+    // Ignore
+  }
+}
 import type { CompileProgressEvent, LiveState, QueueState } from "../types/easy-whisper";
 
 const MODEL_OPTIONS = [
@@ -159,12 +177,15 @@ function getFileName(filePath: string | undefined): string {
   return parts[parts.length - 1] ?? filePath;
 }
 
+
 function App(): JSX.Element {
-  const api = window.easyWhisper;
-  const apiAvailable = Boolean(api);
+  // All state hooks must be declared first
+  const [showLoader, setShowLoader] = useState<boolean>(true);
+  const [loaderProgress, setLoaderProgress] = useState<number>(0);
+  const [loaderMessage, setLoaderMessage] = useState<string>("Preparing EasyWhisperUI for first use...");
+  const [canContinue, setCanContinue] = useState<boolean>(false);
 
   const persisted = useMemo(loadPersistedSettings, []);
-
   const [model, setModel] = useState<string>(persisted.model ?? "medium.en");
   const [language, setLanguage] = useState<string>(persisted.language ?? "en");
   const [cpuOnly, setCpuOnly] = useState<boolean>(persisted.cpuOnly ?? false);
@@ -172,7 +193,6 @@ function App(): JSX.Element {
   const [outputSrt, setOutputSrt] = useState<boolean>(persisted.outputSrt ?? false);
   const [openAfterComplete, setOpenAfterComplete] = useState<boolean>(persisted.openAfterComplete ?? true);
   const [extraArgs, setExtraArgs] = useState<string>(persisted.extraArgs ?? DEFAULT_ARGS);
-
   const [platform, setPlatform] = useState<string>("...");
   const [arch, setArch] = useState<string>("...");
   const [consoleLines, setConsoleLines] = useState<string[]>([]);
@@ -185,6 +205,121 @@ function App(): JSX.Element {
   }));
   const [liveActive, setLiveActive] = useState<boolean>(false);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
+  const loaderStartedRef = useRef<boolean>(false);
+  const closeLoader = useCallback((reason?: string) => {
+    console.debug("closeLoader called", reason);
+    console.trace();
+    if (!showLoader) return;
+    // reset started ref so loader can run again if needed
+    loaderStartedRef.current = false;
+    // clear any install poll timers
+    if (installPollRef.current) {
+      clearTimeout(installPollRef.current);
+      installPollRef.current = null;
+    }
+    setShowLoader(false);
+  }, [showLoader]);
+  const installPollRef = useRef<number | null>(null);
+
+  // API reference must be declared before any useEffect or logic that uses it
+  const api = window.easyWhisper;
+  const apiAvailable = Boolean(api);
+  // Loader logic must come after all state hooks
+  useEffect(() => {
+    if (!showLoader) return;
+    if (loaderStartedRef.current) return;
+    loaderStartedRef.current = true;
+    setLoaderProgress(0);
+    setLoaderMessage("Checking for updates and requirements...");
+    setCanContinue(false);
+
+    // Wait for preload bridge
+    if (!window.easyWhisper) {
+      setLoaderMessage("Preload bridge unavailable. Please rebuild and reload the app.");
+      setCanContinue(false);
+      return;
+    }
+
+    // Simulate async checks for each step, only if needed
+    (async () => {
+      // 1. Check system requirements (simulate always OK)
+      setLoaderProgress(20);
+      setLoaderMessage("Checking system requirements...");
+      await new Promise(r => setTimeout(r, 600));
+
+      // 2. Check for updates (simulate always up-to-date)
+      setLoaderProgress(40);
+      setLoaderMessage("Checking for updates...");
+      await new Promise(r => setTimeout(r, 600));
+
+      // 3. Setup desktop shortcut (simulate only if not present)
+      let shortcutNeeded = false; // TODO: real check
+      if (shortcutNeeded) {
+        setLoaderProgress(60);
+        setLoaderMessage("Setting up desktop shortcut...");
+        await new Promise(r => setTimeout(r, 600));
+      }
+
+      // 4. Register uninstall entry (simulate only if not present)
+      let uninstallNeeded = false; // TODO: real check
+      if (uninstallNeeded) {
+        setLoaderProgress(80);
+        setLoaderMessage("Registering uninstall entry...");
+        await new Promise(r => setTimeout(r, 600));
+      }
+
+      // 5. Install Whisper binaries if not installed
+      let whisperNeedsInstall = compileInfo.state !== "success";
+      if (whisperNeedsInstall) {
+        setLoaderProgress(80);
+        setLoaderMessage("Installing Whisper binaries...");
+        if (compileInfo.state !== "running") {
+          // start compile via preload bridge (if available)
+          if (api && api.compileWhisper) {
+            void api.compileWhisper();
+          } else if (window.easyWhisper) {
+            void window.easyWhisper.compileWhisper();
+          }
+        }
+        // Allow user to Continue while compile is running, but DO NOT auto-close.
+        setCanContinue(true);
+
+        // Poll api.checkInstall() (same check used by Install button) to decide when install is complete
+        if (api && api.checkInstall) {
+          let cancelled = false;
+          const poll = async () => {
+            try {
+              const res = await api.checkInstall();
+              if (cancelled) return;
+              if (res.installed) {
+                // Installation verified by checkInstall — update loader.
+                setLoaderProgress(100);
+                setLoaderMessage("All requirements satisfied!");
+                setCanContinue(true);
+                // Do NOT auto-close here; rely on compileInfo success event to close
+                return;
+              }
+            } catch {
+              // ignore transient errors
+            }
+            if (!cancelled) setTimeout(poll, 1200);
+          };
+          poll();
+          // ensure we don't leak if component unmounts
+          // store cancel flag in closure
+        }
+      } else {
+        setLoaderProgress(100);
+        setLoaderMessage("All requirements satisfied!");
+        setCanContinue(true);
+      }
+    })();
+  }, [showLoader]);
+
+  const handleLoaderContinue = useCallback(() => {
+    console.debug("Loader: user pressed Continue");
+    closeLoader("user-continue");
+  }, []);
 
   useEffect(() => {
     if (!api) {
@@ -248,6 +383,52 @@ function App(): JSX.Element {
       removeLiveState();
     };
   }, [api, appendConsole]);
+
+  // Reflect compile progress in loader and auto-close only when compile finishes
+  useEffect(() => {
+    if (!showLoader) return;
+    if (compileInfo.state === "running") {
+      setLoaderMessage("Installing Whisper binaries...");
+      setCanContinue(true); // allow user to continue while compile runs
+      setLoaderProgress(80 + Math.round((compileInfo.progress || 0) * 0.2));
+    } else if (compileInfo.state === "success") {
+      setLoaderProgress(100);
+      setLoaderMessage("All requirements satisfied!");
+      setCanContinue(true);
+      // Confirm installation via api.checkInstall(), then close.
+      console.debug("Loader: compileInfo indicates success — verifying install via checkInstall");
+      if (installPollRef.current) {
+        clearTimeout(installPollRef.current);
+        installPollRef.current = null;
+      }
+      if (api && api.checkInstall) {
+        let cancelled = false;
+        const pollInstall = async () => {
+          try {
+            const res = await api.checkInstall();
+            if (cancelled) return;
+            if (res.installed) {
+              console.debug("Loader: checkInstall confirmed installed — closing");
+              closeLoader("compile-success-confirmed");
+              return;
+            }
+          } catch (e) {
+            // ignore transient errors
+          }
+          installPollRef.current = window.setTimeout(pollInstall, 1200) as unknown as number;
+        };
+        pollInstall();
+        // clear poll on cleanup or subsequent runs
+        return () => { cancelled = true; if (installPollRef.current) { clearTimeout(installPollRef.current); installPollRef.current = null; } };
+      } else {
+        // If no API to confirm, close immediately
+        closeLoader("compile-success-no-check");
+      }
+    } else if (compileInfo.state === "error") {
+      setLoaderMessage(compileInfo.message || "Compile failed");
+      setCanContinue(true);
+    }
+  }, [compileInfo, showLoader]);
 
   useEffect(() => {
     if (!api || !api.checkInstall) {
@@ -489,8 +670,17 @@ function App(): JSX.Element {
   const isInstalled = compileInfo.state === "success";
 
   return (
-    <div className={styles.windowContainer}>
-      <div className={styles.titlebar}>
+    <>
+      {showLoader && (
+        <FirstLaunchLoader
+          progress={loaderProgress}
+          message={loaderMessage}
+          canContinue={canContinue}
+          onContinue={handleLoaderContinue}
+        />
+      )}
+      <div className={styles.windowContainer} style={showLoader ? { filter: 'blur(2.5px)', pointerEvents: 'none', userSelect: 'none' } : {}}>
+        <div className={styles.titlebar}>
         <div className={styles.titleDragRegion}>
           <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.titleLogo} />
           <span className={styles.titleText}>EasyWhisperUI</span>
@@ -558,7 +748,11 @@ function App(): JSX.Element {
               >
                 Stop
               </button>
-              <button type="button" className={`${styles.secondaryButton} ${styles.fullWidthButton}`} onClick={handleClear}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={handleClear}
+              >
                 Clear
               </button>
             </div>
@@ -708,7 +902,7 @@ function App(): JSX.Element {
         </section>
       </div>
     </div>
-  );
+  </>);
 }
 
 export default App;

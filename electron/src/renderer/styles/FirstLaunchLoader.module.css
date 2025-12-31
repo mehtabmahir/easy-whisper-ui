@@ -1,0 +1,96 @@
+.progressBarTrack {
+  width: 220px;
+  height: 10px;
+  border-radius: 999px;
+  background: #1e2533;
+  margin-top: 18px;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #3a8bfd 0%, #6a9bff 100%);
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(.4,1.6,.6,1);
+}
+.loaderOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(10, 14, 22, 0.96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s;
+}
+
+.loaderCard {
+  background: rgba(22, 28, 44, 0.98);
+  border-radius: 22px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+  padding: 48px 44px 36px 44px;
+  min-width: 340px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.logoArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  border: 1.5px solid #3a8bfd;
+  background: #101624;
+}
+
+.progressBlock {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.progressMessage {
+  color: #b7c7e6;
+  font-size: 1.05rem;
+  text-align: center;
+}
+
+.progressBar {
+  width: 220px;
+  height: 10px;
+  border-radius: 999px;
+  background: #1e2533;
+  overflow: hidden;
+}
+
+.continueButton {
+  margin-top: 18px;
+  padding: 12px 32px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #3358ff, #2c72ff);
+  color: #fff;
+  font-size: 1.08rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.18s, opacity 0.18s;
+}
+
+.continueButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
