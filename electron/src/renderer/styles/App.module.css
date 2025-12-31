@@ -1,3 +1,8 @@
+.linkCluster {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 .windowContainer {
   min-height: 100vh;
   display: flex;
@@ -178,6 +183,37 @@
 .status {
   font-size: 0.82rem;
   color: #9aa5bf;
+}
+
+.socialButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(82, 96, 128, 0.5);
+  background: rgba(14, 19, 29, 0.65);
+  color: #d9e2ff;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  -webkit-app-region: no-drag;
+}
+
+.socialButton:hover {
+  background: rgba(25, 34, 51, 0.85);
+  border-color: rgba(125, 145, 184, 0.7);
+  color: #ffffff;
+}
+
+.socialButton:active {
+  transform: translateY(1px);
+}
+
+.socialIcon {
+  width: 16px;
+  height: 16px;
 }
 
 .workspace {
