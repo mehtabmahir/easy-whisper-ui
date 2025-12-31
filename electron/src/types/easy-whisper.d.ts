@@ -68,6 +68,9 @@ export type EasyWhisperApi = {
   onLiveState: (callback: (state: LiveState) => void) => () => void;
   closeWindow: () => Promise<void>;
   minimizeWindow: () => Promise<void>;
+  toggleMaximizeWindow: () => Promise<boolean>;
+  onWindowState: (callback: (state: { maximized: boolean }) => void) => () => void;
+  getWindowState: () => Promise<{ maximized: boolean }>;
   checkInstall: () => Promise<{ installed: boolean; outputDir?: string }>;
 };
 

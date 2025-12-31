@@ -40,6 +40,97 @@
   letter-spacing: 0.12em;
 }
 
+.titleControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+.titleControlButton {
+  position: relative;
+  width: 40px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #a8b2c9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.titleControlButton:hover {
+  background: rgba(154, 165, 191, 0.14);
+  color: #e2e9ff;
+}
+
+.titleControlButton:active {
+  transform: translateY(1px);
+}
+
+.titleControlButton::before,
+.titleControlButton::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: currentColor;
+  transition: background 0.12s ease;
+}
+
+.titleControlMinimize::before {
+  width: 12px;
+  height: 1.5px;
+  border-radius: 999px;
+}
+
+.titleControlMinimize::after {
+  display: none;
+}
+
+.titleControlMaximize::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  border: 1.5px solid currentColor;
+  background: transparent;
+}
+
+.titleControlMaximize::after {
+  display: none;
+}
+
+.titleControlMaximize[aria-pressed="true"]::before {
+  border-radius: 2px;
+  border-width: 1.5px;
+  width: 7px;
+  height: 7px;
+}
+
+.titleControlClose::before,
+.titleControlClose::after {
+  width: 12px;
+  height: 1.5px;
+  border-radius: 999px;
+}
+
+.titleControlClose::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.titleControlClose::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.titleControlClose:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #ffd6db;
+}
+
 .appShell {
   flex: 1;
   min-height: 0;
@@ -151,23 +242,12 @@
   border-color: transparent;
 }
 
-.minimizeButton {
-  background: rgba(26, 33, 53, 0.92);
-}
-
-.closeButton {
-  background: rgba(54, 27, 34, 0.92);
-}
-
-.windowControlRow {
-  grid-column: span 2;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
 .secondaryButton {
   background: rgba(13, 18, 29, 0.78);
+}
+
+.fullWidthButton {
+  grid-column: span 2;
 }
 
 .selectorGroup {

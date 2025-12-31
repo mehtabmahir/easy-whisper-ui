@@ -182,6 +182,7 @@ function App(): JSX.Element {
     state: "pending"
   }));
   const [liveActive, setLiveActive] = useState<boolean>(false);
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
 
   useEffect(() => {
     if (!api) {
@@ -285,6 +286,34 @@ function App(): JSX.Element {
     }
   }, [consoleText]);
 
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    let cancelled = false;
+    api.getWindowState().then((state) => {
+      if (!cancelled) {
+        setIsMaximized(state.maximized);
+      }
+    }).catch(() => {
+      // Ignore errors fetching initial window state.
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api]);
+
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+    return api.onWindowState((state) => {
+      setIsMaximized(state.maximized);
+    });
+  }, [api]);
+
   const buildSettings = useCallback(() => ({
     model,
     language,
@@ -371,6 +400,21 @@ function App(): JSX.Element {
     void bridge.minimizeWindow();
   }, []);
 
+  const handleToggleMaximizeWindow = useCallback(async () => {
+    const bridge = window.easyWhisper;
+    if (!bridge) {
+      appendConsole("[system] Preload bridge unavailable.");
+      return;
+    }
+    try {
+      const maximized = await bridge.toggleMaximizeWindow();
+      setIsMaximized(maximized);
+    } catch (error) {
+      const err = error as Error;
+      appendConsole(`[system] ${err.message}`);
+    }
+  }, [appendConsole]);
+
   const handleLiveToggle = useCallback(async () => {
     const bridge = window.easyWhisper;
     if (!bridge) {
@@ -424,6 +468,27 @@ function App(): JSX.Element {
           <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.titleLogo} />
           <span className={styles.titleText}>EasyWhisperUI</span>
         </div>
+        <div className={styles.titleControls}>
+          <button
+            type="button"
+            className={`${styles.titleControlButton} ${styles.titleControlMinimize}`}
+            onClick={handleMinimizeWindow}
+            aria-label="Minimize window"
+          />
+          <button
+            type="button"
+            className={`${styles.titleControlButton} ${styles.titleControlMaximize}`}
+            onClick={handleToggleMaximizeWindow}
+            aria-label={isMaximized ? "Restore window" : "Maximize window"}
+            aria-pressed={isMaximized}
+          />
+          <button
+            type="button"
+            className={`${styles.titleControlButton} ${styles.titleControlClose}`}
+            onClick={handleCloseWindow}
+            aria-label="Close window"
+          />
+        </div>
       </div>
 
       <div className={styles.appShell}>
@@ -474,25 +539,9 @@ function App(): JSX.Element {
               >
                 Stop
               </button>
-              <button type="button" className={styles.secondaryButton} onClick={handleClear}>
+              <button type="button" className={`${styles.secondaryButton} ${styles.fullWidthButton}`} onClick={handleClear}>
                 Clear
               </button>
-              <div className={styles.windowControlRow}>
-                <button
-                  type="button"
-                  className={`${styles.controlButton} ${styles.minimizeButton}`}
-                  onClick={handleMinimizeWindow}
-                >
-                  Minimize
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.controlButton} ${styles.closeButton}`}
-                  onClick={handleCloseWindow}
-                >
-                  Close
-                </button>
-              </div>
             </div>
             <div className={styles.compileStatus}>
               <span>{compileStateLabel}</span>

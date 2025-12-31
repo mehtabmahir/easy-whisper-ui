@@ -44,6 +44,14 @@ const api: EasyWhisperApi = {
   },
   closeWindow: () => ipcRenderer.invoke("window:close"),
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
+  toggleMaximizeWindow: () => ipcRenderer.invoke("window:toggle-maximize"),
+  onWindowState: (callback) => {
+    const channel = "window:maximize-state";
+    const handler = (_event: Electron.IpcRendererEvent, state: { maximized: boolean }) => callback(state);
+    ipcRenderer.on(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
+  },
+  getWindowState: () => ipcRenderer.invoke("window:get-state"),
   checkInstall: () => ipcRenderer.invoke("easy-whisper:check-install")
 };
 

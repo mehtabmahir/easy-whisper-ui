@@ -34,9 +34,9 @@ async function createMainWindow(): Promise<void> {
 
   const mainWindow = new BrowserWindow({
     width: 1280,
-    height: 860,
-    minWidth: 1100,
-    minHeight: 760,
+    height: 920,
+    minWidth: 1200,
+    minHeight: 820,
     title: "EasyWhisperUI",
     frame: false,
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
@@ -48,6 +48,15 @@ async function createMainWindow(): Promise<void> {
       nodeIntegration: false
     }
   });
+
+    const emitWindowState = (): void => {
+      broadcast("window:maximize-state", { maximized: mainWindow.isMaximized() });
+    };
+
+    mainWindow.on("maximize", emitWindowState);
+    mainWindow.on("unmaximize", emitWindowState);
+    mainWindow.on("enter-full-screen", emitWindowState);
+    mainWindow.on("leave-full-screen", emitWindowState);
 
   if (process.platform === "darwin") {
     mainWindow.setWindowButtonVisibility(false);
@@ -62,6 +71,8 @@ async function createMainWindow(): Promise<void> {
   } else {
     await mainWindow.loadFile(rendererHtmlPath);
   }
+
+    emitWindowState();
 }
 
 function broadcast(channel: string, payload: unknown): void {
@@ -127,6 +138,26 @@ function registerIpcChannels(): void {
   ipcMain.handle("window:minimize", (event) => {
     const window = BrowserWindow.fromWebContents(event.sender);
     window?.minimize();
+  });
+
+  ipcMain.handle("window:get-state", (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    return { maximized: window?.isMaximized() ?? false };
+  });
+
+  ipcMain.handle("window:toggle-maximize", (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) {
+      return false;
+    }
+    if (window.isMaximized()) {
+      window.unmaximize();
+    } else {
+      window.maximize();
+    }
+    const maximized = window.isMaximized();
+    broadcast("window:maximize-state", { maximized });
+    return maximized;
   });
 
   ipcMain.handle("easy-whisper:start-live", async (_event, request: LiveRequest) => {
