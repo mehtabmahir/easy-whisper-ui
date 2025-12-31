@@ -35,8 +35,8 @@ async function createMainWindow(): Promise<void> {
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 920,
-    minWidth: 1200,
-    minHeight: 820,
+    minWidth: 1280,
+    minHeight: 920,
     title: "EasyWhisperUI",
     frame: false,
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",

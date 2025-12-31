@@ -1,3 +1,9 @@
+/* Ensure right panel stretches vertically */
+.rightPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 .installUninstallButton {
   height: 40px;
   min-width: 0;
@@ -40,12 +46,24 @@
 .installUninstallCluster {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   margin-top: 18px;
-  align-items: stretch;
+  align-items: flex-start;
 }
 .installUninstallButton {
-  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  border: 1px solid rgba(56, 66, 92, 0.85);
+  background: rgba(13, 18, 29, 0.78);
+  color: #dbe3f5;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease;
   box-sizing: border-box;
 }
 .linkCluster {
@@ -270,7 +288,7 @@
   flex: 1;
   display: grid;
   grid-template-columns: 320px 1fr;
-  gap: 32px;
+  gap: 40px;
 }
 
 .leftPanel {
@@ -383,11 +401,19 @@
   padding: 0 12px;
 }
 
-.argumentsBlock,
+.argumentsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .consoleBlock {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 12px;
+  flex: 1;
+  min-height: 0;
 }
 
 .argumentsBlock label,
@@ -410,11 +436,12 @@
 .optionsRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  padding: 14px 18px;
-  border-radius: 14px;
-  background: rgba(12, 17, 26, 0.6);
-  border: 1px solid rgba(43, 54, 76, 0.45);
+  gap: 18px;
+  padding: 0 2px;
+  border-radius: 0;
+  background: none;
+  border: none;
+  margin-top: 18px;
 }
 
 .queueStatus {
@@ -427,6 +454,7 @@
   border: 1px solid rgba(43, 54, 76, 0.45);
   font-size: 0.9rem;
   color: #c4cce1;
+  margin-top: 18px;
 }
 
 .checkbox {
@@ -444,6 +472,7 @@
 
 .consoleArea {
   min-height: 300px;
+  height: 100%;
   padding: 18px;
   font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
   font-size: 0.86rem;
