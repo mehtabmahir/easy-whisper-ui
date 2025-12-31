@@ -224,6 +224,8 @@ function App(): JSX.Element {
   // API reference must be declared before any useEffect or logic that uses it
   const api = window.easyWhisper;
   const apiAvailable = Boolean(api);
+  const isMac = (typeof process !== 'undefined' && (process as any).platform === 'darwin')
+    || (typeof navigator !== 'undefined' && /Mac|iPhone|iPad|MacIntel/.test(navigator.platform || navigator.userAgent));
   // Loader logic must come after all state hooks
   useEffect(() => {
     if (!showLoader) return;
@@ -270,15 +272,24 @@ function App(): JSX.Element {
 
       // 5. Install Whisper binaries if not installed
       let whisperNeedsInstall = compileInfo.state !== "success";
+      if (isMac) {
+        // macOS: local compile not required/supported in this build — skip
+        whisperNeedsInstall = false;
+        setLoaderProgress(100);
+        setLoaderMessage("macOS detected — skipping local Whisper compile (not supported).");
+        setCanContinue(true);
+      }
       if (whisperNeedsInstall) {
         setLoaderProgress(80);
         setLoaderMessage("Installing Whisper binaries...");
         if (compileInfo.state !== "running") {
           // start compile via preload bridge (if available)
-          if (api && api.compileWhisper) {
-            void api.compileWhisper();
-          } else if (window.easyWhisper) {
-            void window.easyWhisper.compileWhisper();
+          if (!isMac) {
+            if (api && api.compileWhisper) {
+              void api.compileWhisper();
+            } else if (window.easyWhisper) {
+              void window.easyWhisper.compileWhisper();
+            }
           }
         }
         // Allow user to Continue while compile is running, but DO NOT auto-close.
@@ -520,6 +531,10 @@ function App(): JSX.Element {
   }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs]);
 
   const handleCompile = useCallback(async () => {
+    if (isMac) {
+      appendConsole("[system] macOS detected — local compile is disabled on this platform.");
+      return;
+    }
     const bridge = window.easyWhisper;
     if (!bridge) {
       appendConsole("[system] Cannot compile without preload bridge.");
@@ -823,15 +838,15 @@ function App(): JSX.Element {
                 type="button"
                 className={styles.installUninstallButton}
                 onClick={handleCompile}
-                disabled={!apiAvailable || isCompiling}
+                disabled={!apiAvailable || isCompiling || isMac}
               >
-                {isInstalled ? "Installed" : "Install"}
+                {isMac ? "Not supported on macOS" : (isInstalled ? "Installed" : "Install")}
               </button>
               <button
                 type="button"
                 className={`${styles.installUninstallButton} ${styles.dangerButton}`}
                 onClick={handleUninstall}
-                disabled={!apiAvailable || isCompiling || compileInfo.state !== "success"}
+                disabled={!apiAvailable || isCompiling || (!isMac && compileInfo.state !== "success")}
               >
                 Uninstall
               </button>

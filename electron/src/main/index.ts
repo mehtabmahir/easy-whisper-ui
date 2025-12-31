@@ -1,4 +1,6 @@
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from "electron";
+import fs from "node:fs";
+import fsp from "node:fs/promises";
 import path from "node:path";
 import { CompileOptions, LiveRequest, TranscriptionRequest } from "../types/easy-whisper";
 import { CompileManager } from "./services/compileManager";
@@ -91,7 +93,44 @@ function registerIpcChannels(): void {
   });
 
   ipcMain.handle("easy-whisper:uninstall", async () => {
-    return compileManager.uninstall();
+    const result = await compileManager.uninstall();
+
+    // On macOS, also attempt to remove the installed .app bundle from /Applications
+    if (process.platform === "darwin") {
+      try {
+        const bundleName = `${app.getName()}.app`;
+        const primaryPath = path.join("/Applications", bundleName);
+        const execBundle = path.resolve(process.execPath, "../../..");
+        let bundlePath: string | null = null;
+
+        if (fs.existsSync(primaryPath)) {
+          bundlePath = primaryPath;
+        } else if (fs.existsSync(execBundle)) {
+          bundlePath = execBundle;
+        }
+
+        if (bundlePath) {
+          // Prefer moving to Trash for safety; fall back to forced removal.
+          const moved = shell.moveItemToTrash(bundlePath);
+          if (!moved) {
+            await fsp.rm(bundlePath, { recursive: true, force: true });
+            console.log("Removed app bundle:", bundlePath);
+          } else {
+            console.log("Moved app bundle to Trash:", bundlePath);
+          }
+        } else {
+          console.log("App bundle not found for removal.");
+        }
+      } catch (err) {
+        console.error("Failed to remove macOS app bundle:", err);
+        return {
+          success: false,
+          error: `Failed to remove app bundle: ${(err as Error).message}`
+        };
+      }
+    }
+
+    return result;
   });
 
   ipcMain.handle("easy-whisper:open-dialog", async () => {
