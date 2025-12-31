@@ -2,62 +2,59 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  color: #f8fafc;
+  background: #0c1018;
+  color: #e5e9f0;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 .titlebar {
-  height: 40px;
-  padding: 0 16px;
+  height: 44px;
+  padding: 0 18px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  background: rgba(15, 23, 42, 0.9);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  background: #05070c;
+  border-bottom: 1px solid #141923;
   -webkit-app-region: drag;
 }
 
 .titleDragRegion {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
-  font-weight: 600;
-  color: rgba(226, 232, 240, 0.92);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  font-size: 0.72rem;
+  color: #c9d1e6;
+  font-weight: 600;
 }
 
 .titleLogo {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 6px;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(88, 102, 132, 0.4);
 }
 
 .titleText {
-  font-size: 0.82rem;
+  letter-spacing: 0.12em;
 }
 
 .appShell {
   flex: 1;
   min-height: 0;
-  padding: 28px;
+  padding: 36px 44px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  color: #f8fafc;
+  gap: 32px;
 }
 
 .header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  padding: 16px 22px;
-  border-radius: 18px;
-  backdrop-filter: blur(14px);
-  background: rgba(15, 23, 42, 0.72);
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  box-shadow: 0 24px 48px rgba(2, 6, 23, 0.45);
+  padding-bottom: 18px;
+  border-bottom: 1px solid #1e2533;
 }
 
 .branding {
@@ -67,44 +64,48 @@
 }
 
 .headerLogo {
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
   border-radius: 14px;
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(88, 102, 132, 0.45);
 }
 
 .header h1 {
   margin: 0;
-  font-size: 1.45rem;
+  font-size: 1.28rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
+  color: #f3f6ff;
 }
 
 .subtitle {
-  margin: 6px 0 0;
-  color: rgba(226, 232, 240, 0.8);
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: #8a94ad;
 }
 
 .status {
-  font-size: 0.95rem;
-  color: rgba(148, 163, 184, 0.9);
+  font-size: 0.82rem;
+  color: #9aa5bf;
 }
 
 .workspace {
   flex: 1;
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 22px;
+  grid-template-columns: 320px 1fr;
+  gap: 32px;
 }
 
-.leftPanel {
+.leftPanel,
+.rightPanel {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 20px;
+  padding: 24px;
   border-radius: 18px;
-  padding: 18px;
-  background: rgba(15, 23, 42, 0.78);
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+  background: rgba(15, 19, 28, 0.72);
+  border: 1px solid rgba(46, 58, 80, 0.4);
+  backdrop-filter: blur(24px);
 }
 
 .buttonStack {
@@ -115,15 +116,23 @@
 
 .controlButton,
 .secondaryButton {
-  height: 64px;
-  border-radius: 16px;
-  border: none;
-  font-size: 1rem;
+  height: 56px;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 66, 92, 0.85);
+  background: rgba(13, 18, 29, 0.78);
+  font-size: 0.95rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease;
   -webkit-app-region: no-drag;
+  color: #dbe3f5;
+}
+
+.controlButton:hover,
+.secondaryButton:hover {
+  background: rgba(19, 27, 41, 0.9);
+  border-color: rgba(82, 96, 128, 0.9);
 }
 
 .controlButton:active,
@@ -132,27 +141,22 @@
 }
 
 .primaryButton {
-  background: linear-gradient(135deg, #0ea5e9, #38bdf8);
-  color: #0f172a;
-  box-shadow: 0 16px 32px rgba(14, 165, 233, 0.35);
+  background: linear-gradient(135deg, #3358ff, #2c72ff);
+  border-color: transparent;
+  color: #ffffff;
 }
 
 .liveButton {
-  background: linear-gradient(135deg, #ef4444, #fb7185);
-  color: #fff;
-  box-shadow: 0 16px 32px rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, #ff4d4d, #ff7d66);
+  border-color: transparent;
 }
 
 .minimizeButton {
-  background: linear-gradient(135deg, #f97316, #facc15);
-  color: #0f172a;
-  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.35);
+  background: rgba(26, 33, 53, 0.92);
 }
 
 .closeButton {
-  background: linear-gradient(135deg, #dc2626, #f87171);
-  color: #fff;
-  box-shadow: 0 12px 28px rgba(220, 38, 38, 0.4);
+  background: rgba(54, 27, 34, 0.92);
 }
 
 .windowControlRow {
@@ -163,9 +167,7 @@
 }
 
 .secondaryButton {
-  background: rgba(15, 23, 42, 0.9);
-  color: rgba(226, 232, 240, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(13, 18, 29, 0.78);
 }
 
 .selectorGroup {
@@ -178,82 +180,71 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 0.95rem;
-  color: rgba(226, 232, 240, 0.9);
+  font-size: 0.9rem;
+  color: #cad2e5;
 }
 
 .selectorLabel select {
-  height: 42px;
+  height: 44px;
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid rgba(56, 66, 92, 0.6);
+  background: rgba(9, 13, 21, 0.95);
+  color: #f0f3ff;
   padding: 0 12px;
-  background: rgba(15, 23, 42, 0.95);
-  color: #e2e8f0;
-}
-
-.rightPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  border-radius: 18px;
-  padding: 22px;
-  background: rgba(15, 23, 42, 0.82);
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
 }
 
 .argumentsBlock,
 .consoleBlock {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .argumentsBlock label,
 .consoleBlock label {
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(148, 163, 184, 0.9);
+  color: #8392b1;
 }
 
 .argumentsBlock textarea {
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(15, 23, 42, 0.95);
-  color: rgba(226, 232, 240, 0.95);
-  padding: 12px;
+  border: 1px solid rgba(58, 72, 99, 0.5);
+  background: rgba(9, 14, 22, 0.88);
+  color: #f0f4ff;
+  padding: 14px;
   resize: none;
 }
 
 .optionsRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 18px;
-  padding: 12px 16px;
+  gap: 16px;
+  padding: 14px 18px;
   border-radius: 14px;
-  background: rgba(30, 41, 59, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(12, 17, 26, 0.6);
+  border: 1px solid rgba(43, 54, 76, 0.45);
 }
 
 .queueStatus {
   display: flex;
   justify-content: space-between;
-  gap: 18px;
-  padding: 12px 16px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  font-size: 0.95rem;
-  color: rgba(226, 232, 240, 0.9);
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(12, 17, 26, 0.6);
+  border: 1px solid rgba(43, 54, 76, 0.45);
+  font-size: 0.9rem;
+  color: #c4cce1;
 }
 
 .checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.95rem;
-  color: rgba(226, 232, 240, 0.92);
+  gap: 10px;
+  font-size: 0.9rem;
+  color: #cdd5e9;
 }
 
 .checkbox input {
@@ -263,29 +254,57 @@
 
 .consoleArea {
   min-height: 300px;
-  padding: 16px;
-  font-family: "Cascadia Code", "Fira Code", "Source Code Pro", monospace;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: rgba(226, 232, 240, 0.9);
+  padding: 18px;
+  font-family: "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: #e3e8f7;
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(58, 72, 99, 0.5);
+  background: rgba(7, 10, 16, 0.92);
   resize: none;
+}
+
+.compileStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #9ca6bf;
+}
+
+.compileStatus progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(30, 37, 49, 0.7);
+}
+
+.compileStatus progress::-webkit-progress-bar {
+  background: rgba(30, 37, 49, 0.7);
+}
+
+.compileStatus progress::-webkit-progress-value {
+  background: linear-gradient(135deg, #3a8bfd, #6a9bff);
+}
+
+.compileStatus progress::-moz-progress-bar {
+  background: linear-gradient(135deg, #3a8bfd, #6a9bff);
 }
 
 @media (max-width: 1200px) {
   .workspace {
     grid-template-columns: 1fr;
+    gap: 24px;
   }
 
   .leftPanel {
-    flex-direction: row;
-    align-items: flex-start;
+    flex-direction: column;
   }
 
   .buttonStack {
-    grid-template-columns: repeat(2, 140px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .selectorGroup {
