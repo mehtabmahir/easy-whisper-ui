@@ -1,3 +1,53 @@
+.installUninstallButton {
+  height: 40px;
+  min-width: 0;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0 18px;
+  border: 1px solid rgba(56, 66, 92, 0.85);
+  background: rgba(13, 18, 29, 0.78);
+  color: #dbe3f5;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.installUninstallButton:hover {
+  background: rgba(19, 27, 41, 0.9);
+  border-color: rgba(82, 96, 128, 0.9);
+}
+
+.installUninstallButton:active {
+  transform: translateY(1px);
+}
+
+.installUninstallButton.dangerButton {
+  background: rgba(60, 22, 26, 0.85);
+  border-color: rgba(168, 52, 61, 0.8);
+  color: #ffb6bb;
+}
+.installUninstallButton.dangerButton:hover {
+  background: rgba(82, 34, 40, 0.9);
+  border-color: rgba(219, 94, 105, 0.9);
+  color: #ffe3e5;
+}
+.installUninstallButton.dangerButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+/* Cluster for install/uninstall buttons below social links */
+.installUninstallCluster {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+  align-items: stretch;
+}
+.installUninstallButton {
+  width: 100%;
+  box-sizing: border-box;
+}
 .linkCluster {
   display: flex;
   gap: 12px;
@@ -223,16 +273,23 @@
   gap: 32px;
 }
 
-.leftPanel,
-.rightPanel {
+.leftPanel {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 20px;
   padding: 24px;
   border-radius: 18px;
   background: rgba(15, 19, 28, 0.72);
   border: 1px solid rgba(46, 58, 80, 0.4);
   backdrop-filter: blur(24px);
+}
+
+.selectorGroup {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .buttonStack {
@@ -280,6 +337,23 @@
 
 .secondaryButton {
   background: rgba(13, 18, 29, 0.78);
+}
+
+.dangerButton {
+  background: rgba(60, 22, 26, 0.85);
+  border-color: rgba(168, 52, 61, 0.8);
+  color: #ffb6bb;
+}
+
+.dangerButton:hover {
+  background: rgba(82, 34, 40, 0.9);
+  border-color: rgba(219, 94, 105, 0.9);
+  color: #ffe3e5;
+}
+
+.dangerButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .fullWidthButton {

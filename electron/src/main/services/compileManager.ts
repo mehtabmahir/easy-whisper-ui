@@ -11,15 +11,31 @@ export const WORK_ROOT_NAME = "whisper-workspace";
 const WINDOWS_BINARY_TARGETS = ["whisper-cli.exe", "whisper-stream.exe"];
 const MAC_BUNDLE_DIR_NAME = "mac-bin";
 
-const MSYS_ROOT = "C:/msys64";
-const MSYS_CMAKE = `${MSYS_ROOT}/mingw64/bin/cmake.exe`;
-const SDL2_DLL = `${MSYS_ROOT}/mingw64/bin/SDL2.dll`;
+const TOOLCHAIN_DIR_NAME = "toolchain";
+const DOWNLOADS_DIR_NAME = "downloads";
 const REQUIRED_DLLS = [
   "libwinpthread-1.dll",
   "libstdc++-6.dll",
   "libgcc_s_seh-1.dll",
   "SDL2.dll"
 ];
+
+interface ToolchainContext {
+  workRoot: string;
+  toolchainRoot: string;
+  downloadsDir: string;
+  msysRoot: string;
+  mingwBin: string;
+  usrBin: string;
+  cmakePath: string;
+  bashPath: string;
+  gccPath: string;
+  gxxPath: string;
+  arPath: string;
+  ranlibPath: string;
+  sdl2CMakeDir: string;
+  env: NodeJS.ProcessEnv;
+}
 
 export interface CompileManagerEvents {
   progress: CompileProgressEvent;
@@ -67,6 +83,7 @@ export class CompileManager extends EventEmitter {
 
     const workRoot = await this.ensureWorkDirs();
     const binDir = path.join(workRoot, "bin");
+    let toolchain!: ToolchainContext;
     const existingBinaries = this.hasBinariesInDir(binDir);
 
     if (existingBinaries && !options.force) {
@@ -83,14 +100,15 @@ export class CompileManager extends EventEmitter {
     try {
       await this.runStep("prepare", "Preparing workspace", async () => {
         await fsp.mkdir(binDir, { recursive: true });
+        toolchain = await this.prepareToolchain(workRoot, options.force === true);
       });
 
       await this.runStep("msys", "Ensuring MSYS2 toolchain", async () => {
-        await this.ensureMsys();
+        await this.ensureMsys(toolchain);
       });
 
       await this.runStep("packages", "Updating MSYS2 packages", async () => {
-        await this.installPackages();
+        await this.installPackages(toolchain);
       });
 
       const sourceDir = path.join(workRoot, "whisper.cpp");
@@ -99,15 +117,15 @@ export class CompileManager extends EventEmitter {
       });
 
       await this.runStep("configure", "Configuring CMake project", async () => {
-        await this.configureWithCmake(sourceDir);
+        await this.configureWithCmake(toolchain, sourceDir);
       });
 
       await this.runStep("build", "Building whisper binaries", async () => {
-        await this.buildBinaries(sourceDir);
+        await this.buildBinaries(toolchain, sourceDir);
       });
 
       await this.runStep("copy", "Copying artifacts", async () => {
-        await this.copyArtifacts(sourceDir, binDir);
+        await this.copyArtifacts(toolchain, sourceDir, binDir);
       });
 
       this.running = false;
@@ -154,6 +172,48 @@ export class CompileManager extends EventEmitter {
     return { installed: false };
   }
 
+  async uninstall(): Promise<CompileResult> {
+    if (this.running) {
+      return { success: false, error: "Compilation already in progress." };
+    }
+
+    this.running = true;
+
+    try {
+      const workRoot = path.join(app.getPath("userData"), WORK_ROOT_NAME);
+      this.emitProgress({
+        step: "uninstall",
+        message: "Removing Whisper workspace...",
+        progress: 0,
+        state: "running"
+      });
+
+      await fsp.rm(workRoot, { recursive: true, force: true });
+
+      this.emitProgress({
+        step: "uninstall",
+        message: "Whisper binaries removed. Install to rebuild.",
+        progress: 0,
+        state: "pending"
+      });
+      this.emitConsole("[compile] Whisper workspace removed.");
+
+      return { success: true };
+    } catch (error) {
+      const err = error as Error;
+      this.emitProgress({
+        step: "uninstall",
+        message: "Failed to remove Whisper workspace.",
+        progress: 100,
+        state: "error",
+        error: err.message
+      });
+      return { success: false, error: err.message };
+    } finally {
+      this.running = false;
+    }
+  }
+
   private async runStep(step: string, message: string, action: () => Promise<void>): Promise<void> {
     this.emitProgress({ step, message, progress: 0, state: "running" });
     this.emitConsole(`[${step}] ${message}`);
@@ -175,28 +235,109 @@ export class CompileManager extends EventEmitter {
     return root;
   }
 
-  private async ensureMsys(): Promise<void> {
-    if (fs.existsSync(MSYS_CMAKE)) {
+  private async prepareToolchain(workRoot: string, force: boolean): Promise<ToolchainContext> {
+    const toolchainRoot = path.join(workRoot, TOOLCHAIN_DIR_NAME);
+    const downloadsDir = path.join(workRoot, DOWNLOADS_DIR_NAME);
+
+    if (force) {
+      await fsp.rm(toolchainRoot, { recursive: true, force: true });
+    }
+
+    await fsp.mkdir(toolchainRoot, { recursive: true });
+    await fsp.mkdir(downloadsDir, { recursive: true });
+
+    const msysRoot = path.join(toolchainRoot, "msys64");
+    const mingwBin = path.join(msysRoot, "mingw64", "bin");
+    const usrBin = path.join(msysRoot, "usr", "bin");
+
+    const originalPath = process.env.PATH ?? "";
+    const filteredEntries = originalPath
+      .split(path.delimiter)
+      .filter((entry) => entry && !entry.toLowerCase().includes("\\miniconda3\\library\\mingw-w64\\bin"));
+
+    const normalizedMingw = mingwBin.replace(/\\/g, "/").toLowerCase();
+    const normalizedUsr = usrBin.replace(/\\/g, "/").toLowerCase();
+    const sanitizedEntries = filteredEntries.filter((entry) => {
+      const normalized = entry.replace(/\\/g, "/").toLowerCase();
+      return normalized !== normalizedMingw && normalized !== normalizedUsr;
+    });
+
+    const envPath = [mingwBin, usrBin, ...sanitizedEntries].join(path.delimiter);
+
+    const gccPath = path.join(mingwBin, "gcc.exe");
+    const gxxPath = path.join(mingwBin, "g++.exe");
+    const preferredAr = path.join(mingwBin, "gcc-ar.exe");
+    const preferredRanlib = path.join(mingwBin, "gcc-ranlib.exe");
+    const fallbackAr = path.join(mingwBin, "ar.exe");
+    const fallbackRanlib = path.join(mingwBin, "ranlib.exe");
+    const arPath = fs.existsSync(preferredAr) ? preferredAr : fallbackAr;
+    const ranlibPath = fs.existsSync(preferredRanlib) ? preferredRanlib : fallbackRanlib;
+
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      PATH: envPath,
+      CC: gccPath,
+      CXX: gxxPath,
+      AR: arPath,
+      RANLIB: ranlibPath,
+      MSYSTEM: "MINGW64",
+      CHERE_INVOKING: "1"
+    };
+
+    return {
+      workRoot,
+      toolchainRoot,
+      downloadsDir,
+      msysRoot,
+      mingwBin,
+      usrBin,
+      cmakePath: path.join(mingwBin, "cmake.exe"),
+      bashPath: path.join(usrBin, "bash.exe"),
+      gccPath,
+      gxxPath,
+      arPath,
+      ranlibPath,
+      sdl2CMakeDir: path.join(msysRoot, "mingw64", "lib", "cmake", "SDL2"),
+      env
+    };
+  }
+
+  private toPosixPath(value: string): string {
+    return value.replace(/\\/g, "/");
+  }
+
+  private async ensureMsys(context: ToolchainContext): Promise<void> {
+    if (fs.existsSync(context.cmakePath)) {
       return;
     }
 
     const script = [
-      "$msys = 'C:/msys64'",
-      "if (!(Test-Path $msys)) {",
-      "  $url = 'https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe'",
-      "  $tmp = Join-Path $env:TEMP 'msys2-installer.exe'",
-      "  Invoke-WebRequest -Uri $url -OutFile $tmp -UseBasicParsing",
-      "  Start-Process -FilePath $tmp -ArgumentList '-y','-oC:\\' -Wait -NoNewWindow",
-      "}"
+      `$toolchainRoot = '${this.toPosixPath(context.toolchainRoot)}'`,
+      `$downloads = '${this.toPosixPath(context.downloadsDir)}'`,
+      "$msysRoot = Join-Path $toolchainRoot 'msys64'",
+      "New-Item -ItemType Directory -Path $toolchainRoot -Force | Out-Null",
+      "New-Item -ItemType Directory -Path $downloads -Force | Out-Null",
+      "if (Test-Path $msysRoot) { Remove-Item $msysRoot -Recurse -Force }",
+      "$msysUrl = 'https://github.com/msys2/msys2-installer/releases/latest/download/msys2-base-x86_64-latest.sfx.exe'",
+      "$msysTmp = Join-Path $downloads 'msys2-installer.exe'",
+      "if (Test-Path $msysTmp) { Remove-Item $msysTmp -Force }",
+      "Invoke-WebRequest -Uri $msysUrl -OutFile $msysTmp -UseBasicParsing",
+      "$args = @('-y', \"-o`\"$toolchainRoot`\"\")",
+      "Start-Process -FilePath $msysTmp -ArgumentList $args -Wait -NoNewWindow",
+      "Remove-Item $msysTmp -Force",
+      "if (-not (Test-Path (Join-Path $msysRoot 'usr\\bin\\bash.exe'))) { throw 'MSYS2 extraction failed.' }"
     ].join("; ");
 
-    await this.runPowerShell(script, "Download/Install MSYS2");
+    await this.runPowerShell(script, "Install MSYS2");
   }
 
-  private async installPackages(): Promise<void> {
-    const bashPath = `${MSYS_ROOT}/usr/bin/bash.exe`;
+  private async installPackages(context: ToolchainContext): Promise<void> {
+    if (!fs.existsSync(context.bashPath)) {
+      throw new Error(`MSYS2 bash not found at ${context.bashPath}`);
+    }
+
     const command = "pacman -Sy --noconfirm && pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2 ninja";
-    await this.spawnWithLogs(bashPath, ["--login", "-c", command]);
+    await this.spawnWithLogs(context.bashPath, ["--login", "-c", command], undefined, context.env);
   }
 
   private async ensureWhisperSource(sourceDir: string, force: boolean): Promise<void> {
@@ -227,8 +368,9 @@ export class CompileManager extends EventEmitter {
     await this.runPowerShell(script, "Fetch whisper.cpp");
   }
 
-  private async configureWithCmake(sourceDir: string): Promise<void> {
+  private async configureWithCmake(context: ToolchainContext, sourceDir: string): Promise<void> {
     const buildDir = path.join(sourceDir, "build");
+    await fsp.rm(buildDir, { recursive: true, force: true });
     await fsp.mkdir(buildDir, { recursive: true });
 
     const args = [
@@ -241,14 +383,30 @@ export class CompileManager extends EventEmitter {
       "-DGGML_VULKAN=1",
       "-DWHISPER_SDL2=ON",
       "-DWHISPER_BUILD_EXAMPLES=ON",
-      "-DSDL2_DIR=C:/msys64/mingw64/lib/cmake/SDL2",
-      "-DCMAKE_BUILD_TYPE=Release"
+      `-DSDL2_DIR=${this.toPosixPath(context.sdl2CMakeDir)}`,
+      "-DCMAKE_BUILD_TYPE=Release",
+      `-DCMAKE_C_COMPILER=${this.toPosixPath(context.gccPath)}`,
+      `-DCMAKE_CXX_COMPILER=${this.toPosixPath(context.gxxPath)}`,
+      `-DCMAKE_AR=${this.toPosixPath(context.arPath)}`,
+      `-DCMAKE_RANLIB=${this.toPosixPath(context.ranlibPath)}`,
+      "-DCMAKE_C_ARCHIVE_CREATE=<CMAKE_AR> crs <TARGET> <LINK_FLAGS> <OBJECTS>",
+      "-DCMAKE_CXX_ARCHIVE_CREATE=<CMAKE_AR> crs <TARGET> <LINK_FLAGS> <OBJECTS>",
+      "-DCMAKE_C_ARCHIVE_FINISH=<CMAKE_RANLIB> <TARGET>",
+      "-DCMAKE_CXX_ARCHIVE_FINISH=<CMAKE_RANLIB> <TARGET>"
     ];
 
-    await this.spawnWithLogs(MSYS_CMAKE, args);
+    if (!fs.existsSync(context.cmakePath)) {
+      throw new Error(`CMake not found at ${context.cmakePath}`);
+    }
+
+    if (!fs.existsSync(context.sdl2CMakeDir)) {
+      throw new Error(`SDL2 CMake directory not found at ${context.sdl2CMakeDir}`);
+    }
+
+    await this.spawnWithLogs(context.cmakePath, args, undefined, context.env);
   }
 
-  private async buildBinaries(sourceDir: string): Promise<void> {
+  private async buildBinaries(context: ToolchainContext, sourceDir: string): Promise<void> {
     const buildDir = path.join(sourceDir, "build");
     const args = [
       "--build",
@@ -262,17 +420,18 @@ export class CompileManager extends EventEmitter {
       String(Math.max(1, os.cpus().length - 1))
     ];
 
-    await this.spawnWithLogs(MSYS_CMAKE, args);
+    await this.spawnWithLogs(context.cmakePath, args, undefined, context.env);
   }
 
-  private async copyArtifacts(sourceDir: string, binDir: string): Promise<void> {
+  private async copyArtifacts(context: ToolchainContext, sourceDir: string, binDir: string): Promise<void> {
     const buildBinDir = path.join(sourceDir, "build", "bin");
     for (const target of WINDOWS_BINARY_TARGETS) {
       await fsp.copyFile(path.join(buildBinDir, target), path.join(binDir, target));
     }
 
     for (const dll of REQUIRED_DLLS) {
-      await fsp.copyFile(path.join(MSYS_ROOT, "mingw64", "bin", dll), path.join(binDir, dll));
+      const sourcePath = path.join(context.mingwBin, dll);
+      await fsp.copyFile(sourcePath, path.join(binDir, dll));
     }
   }
 
@@ -289,11 +448,14 @@ export class CompileManager extends EventEmitter {
     await this.spawnWithLogs("powershell.exe", args, label);
   }
 
-  private async spawnWithLogs(command: string, args: string[], label?: string): Promise<void> {
+  private async spawnWithLogs(command: string, args: string[], label?: string, env?: NodeJS.ProcessEnv): Promise<void> {
     this.emitConsole(`Running ${command} ${args.join(" ")}`);
 
     await new Promise<void>((resolve, reject) => {
-      const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
+      const child = spawn(command, args, {
+        stdio: ["ignore", "pipe", "pipe"],
+        env: env ?? process.env
+      });
 
       child.stdout.on("data", (data) => {
         const text = this.formatOutput(label, data.toString());

@@ -72,6 +72,7 @@ export type EasyWhisperApi = {
   onWindowState: (callback: (state: { maximized: boolean }) => void) => () => void;
   getWindowState: () => Promise<{ maximized: boolean }>;
   checkInstall: () => Promise<{ installed: boolean; outputDir?: string }>;
+  uninstallWhisper: () => Promise<CompileResult>;
 };
 
 declare global {

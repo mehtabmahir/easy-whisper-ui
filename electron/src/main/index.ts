@@ -90,6 +90,10 @@ function registerIpcChannels(): void {
     return compileManager.hasExistingBinaries();
   });
 
+  ipcMain.handle("easy-whisper:uninstall", async () => {
+    return compileManager.uninstall();
+  });
+
   ipcMain.handle("easy-whisper:open-dialog", async () => {
     const result = await dialog.showOpenDialog({
       title: "Open Audio/Video Files",

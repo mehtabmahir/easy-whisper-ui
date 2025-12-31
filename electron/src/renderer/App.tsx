@@ -355,6 +355,31 @@ function App(): JSX.Element {
     }
   }, [appendConsole]);
 
+  const handleUninstall = useCallback(async () => {
+    const bridge = window.easyWhisper;
+    if (!bridge || !bridge.uninstallWhisper) {
+      appendConsole("[system] Cannot uninstall without preload bridge.");
+      return;
+    }
+    try {
+      const result = await bridge.uninstallWhisper();
+      if (result.success) {
+        appendConsole("[compile] Whisper workspace removed.");
+        setCompileInfo({
+          step: "uninstall",
+          message: "Whisper binaries removed. Install to rebuild.",
+          progress: 0,
+          state: "pending"
+        });
+      } else if (result.error) {
+        appendConsole(`[compile] ${result.error}`);
+      }
+    } catch (error) {
+      const err = error as Error;
+      appendConsole(`[compile] ${err.message}`);
+    }
+  }, [appendConsole]);
+
   const handleOpen = useCallback(async () => {
     const bridge = window.easyWhisper;
     if (!bridge) {
@@ -528,14 +553,6 @@ function App(): JSX.Element {
               <button
                 type="button"
                 className={styles.secondaryButton}
-                onClick={handleCompile}
-                disabled={!apiAvailable || isCompiling}
-              >
-                {isInstalled ? "Installed" : "Install"}
-              </button>
-              <button
-                type="button"
-                className={styles.secondaryButton}
                 onClick={handleStop}
                 disabled={!apiAvailable || (!isProcessing && queuedCount === 0)}
               >
@@ -599,12 +616,31 @@ function App(): JSX.Element {
                   <svg className={styles.socialIcon} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path
                       fill="currentColor"
-                      d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm6.93 9h-2.61a15.25 15.25 0 0 0-1.17-5 8.06 8.06 0 0 1 3.78 5Zm-5.93 9.95a13.4 13.4 0 0 1-3.16-6.95h6.32a13.4 13.4 0 0 1-3.16 6.95ZM9.84 11a13.4 13.4 0 0 1 3.16-6.95A13.4 13.4 0 0 1 16.16 11Zm-1.02-5a15.25 15.25 0 0 0-1.17 5H5.04a8.06 8.06 0 0 1 3.78-5Zm-3.78 7h2.61a15.25 15.25 0 0 0 1.17 5 8.06 8.06 0 0 1-3.78-5Zm11.92 5a15.25 15.25 0 0 0 1.17-5h2.61a8.06 8.06 0 0 1-3.78 5Z"
+                      d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm6.93 9h-2.61a15.25 15.25 0 0 0-1.17-5 8.06 8.06 0 0 1 3.78 5Zm-5.93 9.95a13.4 13.4 0 0 1-3.16-6.95h6.32a13.4 13.4 0 0 1-3.16 6.95ZM9.84 11a13.4 13.4 0 0 1 3.16-6.95A13.4 13.4 0 0 1 16.16 11Zm-1.02-5a15.25 15.25 0 0 0-1.17 5H5.04a8.06 8.06 0 0 1 3.78-5Zm-3.78 7h2.61a15.25 15.25 0 0 0-1.17 5 8.06 8.06 0 0 1-3.78-5Zm11.92 5a15.25 15.25 0 0 0 1.17-5h2.61a8.06 8.06 0 0 1-3.78 5Z"
                     />
                   </svg>
                   <span>Website</span>
                 </a>
               </div>
+            </div>
+
+            <div className={styles.installUninstallCluster}>
+              <button
+                type="button"
+                className={styles.installUninstallButton}
+                onClick={handleCompile}
+                disabled={!apiAvailable || isCompiling}
+              >
+                {isInstalled ? "Installed" : "Install"}
+              </button>
+              <button
+                type="button"
+                className={`${styles.installUninstallButton} ${styles.dangerButton}`}
+                onClick={handleUninstall}
+                disabled={!apiAvailable || isCompiling || compileInfo.state !== "success"}
+              >
+                Uninstall
+              </button>
             </div>
           </aside>
 

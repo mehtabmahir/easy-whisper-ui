@@ -52,7 +52,8 @@ const api: EasyWhisperApi = {
     return () => ipcRenderer.removeListener(channel, handler);
   },
   getWindowState: () => ipcRenderer.invoke("window:get-state"),
-  checkInstall: () => ipcRenderer.invoke("easy-whisper:check-install")
+  checkInstall: () => ipcRenderer.invoke("easy-whisper:check-install"),
+  uninstallWhisper: () => ipcRenderer.invoke("easy-whisper:uninstall")
 };
 
 contextBridge.exposeInMainWorld("easyWhisper", api);
