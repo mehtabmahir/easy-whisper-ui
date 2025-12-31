@@ -27,6 +27,13 @@
   text-transform: uppercase;
 }
 
+.titleLogo {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.35);
+}
+
 .titleText {
   font-size: 0.82rem;
 }
@@ -51,6 +58,19 @@
   background: rgba(15, 23, 42, 0.72);
   border: 1px solid rgba(148, 163, 184, 0.35);
   box-shadow: 0 24px 48px rgba(2, 6, 23, 0.45);
+}
+
+.branding {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.headerLogo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.35);
 }
 
 .header h1 {

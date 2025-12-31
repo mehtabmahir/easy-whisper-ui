@@ -16,6 +16,18 @@ const liveManager = new LiveManager();
 
 app.setName("EasyWhisperUI");
 
+if (process.platform === "win32") {
+  app.setAppUserModelId("com.easywhisper.ui");
+}
+
+function resolveAppIcon(): string | undefined {
+  const iconFile = process.platform === "win32" ? "icon.ico" : "icon.png";
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, iconFile);
+  }
+  return path.join(__dirname, "../../../resources", iconFile);
+}
+
 async function createMainWindow(): Promise<void> {
   // Ensure high contrast themes match OS defaults for readability.
   nativeTheme.themeSource = "system";
@@ -25,10 +37,11 @@ async function createMainWindow(): Promise<void> {
     height: 860,
     minWidth: 1100,
     minHeight: 760,
-    title: "EasyWhisper UI",
+    title: "EasyWhisperUI",
     frame: false,
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
     backgroundColor: "#0f172a",
+    icon: resolveAppIcon(),
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,

@@ -120,6 +120,7 @@ const LANGUAGE_OPTIONS = [
 
 const DEFAULT_ARGS = "-tp 0.0 -mc 64 -et 3.0";
 const SETTINGS_KEY = "easy-whisper-ui.settings";
+const LOGO_URL = "./icon.png";
 
 type PersistedSettings = {
   model?: string;
@@ -420,15 +421,19 @@ function App(): JSX.Element {
     <div className={styles.windowContainer}>
       <div className={styles.titlebar}>
         <div className={styles.titleDragRegion}>
-          <span className={styles.titleText}>EasyWhisper UI</span>
+          <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.titleLogo} />
+          <span className={styles.titleText}>EasyWhisperUI</span>
         </div>
       </div>
 
       <div className={styles.appShell}>
         <header className={styles.header}>
-          <div>
-            <h1>EasyWhisper UI</h1>
-            <p className={styles.subtitle}>Recreating the original workflow in Electron.</p>
+          <div className={styles.branding}>
+            <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.headerLogo} />
+            <div>
+              <h1>EasyWhisperUI</h1>
+              <p className={styles.subtitle}>Recreating the original workflow in Electron.</p>
+            </div>
           </div>
           <span className={styles.status}>{statusText}</span>
         </header>

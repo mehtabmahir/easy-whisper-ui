@@ -2,7 +2,7 @@
   "name": "easy-whisper-electron",
   "author": "Mehtab Mahir",
   "version": "0.1.0",
-  "description": "Electron frontend shell for EasyWhisper UI",
+  "description": "Electron frontend shell for EasyWhisperUI",
   "private": true,
   "main": "dist/main/index.js",
   "scripts": {
@@ -60,6 +60,16 @@
       "buildResources": "buildResources"
     },
     "asar": true,
+    "extraResources": [
+      {
+        "from": "../resources/icon.png",
+        "to": "icon.png"
+      },
+      {
+        "from": "../resources/icon.ico",
+        "to": "icon.ico"
+      }
+    ],
     "mac": {
       "target": "dmg",
       "extraResources": [
@@ -71,7 +81,8 @@
       ]
     },
     "win": {
-      "target": "portable"
+      "target": "portable",
+      "icon": "../resources/icon.ico"
     },
     "linux": {
       "target": "AppImage"
