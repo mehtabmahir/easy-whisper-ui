@@ -92,6 +92,10 @@ function registerIpcChannels(): void {
     return compileManager.hasExistingBinaries();
   });
 
+  ipcMain.handle("easy-whisper:ensure-deps", async (_event, options) => {
+    return compileManager.ensureDependencies(options ?? {});
+  });
+
   ipcMain.handle("easy-whisper:uninstall", async () => {
     const result = await compileManager.uninstall();
 

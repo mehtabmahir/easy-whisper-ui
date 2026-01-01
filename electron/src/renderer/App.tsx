@@ -531,8 +531,8 @@ function App(): JSX.Element {
   }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs]);
 
   const handleCompile = useCallback(async () => {
-    if (isMac) {
-      appendConsole("[system] macOS detected — local compile is disabled on this platform.");
+    if (!isWindows) {
+      appendConsole("[system] Local dependency installation and compile are Windows-only for now.");
       return;
     }
     const bridge = window.easyWhisper;
@@ -541,6 +541,14 @@ function App(): JSX.Element {
       return;
     }
     try {
+      appendConsole("[system] Ensuring dependencies (Git, Vulkan SDK, FFmpeg, MSYS2)...");
+      const deps = await bridge.ensureDependencies();
+      if (!deps.success) {
+        appendConsole(`[system] Dependency installation failed: ${deps.error}`);
+        // still attempt compile — user may have components already
+      } else {
+        appendConsole("[system] Dependencies installed.");
+      }
       const result = await bridge.compileWhisper();
       if (!result.success && result.error) {
         appendConsole(`[compile] ${result.error}`);
@@ -676,7 +684,7 @@ function App(): JSX.Element {
       : compileInfo.state === "running"
         ? "Compiling..."
         : compileInfo.message;
-    return `Platform: ${platform} • Arch: ${arch} • Compile: ${compileSummary}`;
+    return `Platform: ${platform} • Arch: ${arch} • Whisper: ${compileSummary}`;
   }, [apiAvailable, arch, compileInfo, platform]);
 
   const queuedCount = queueState.awaiting.length;

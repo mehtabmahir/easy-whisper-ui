@@ -57,6 +57,7 @@ export type EasyWhisperApi = {
   arch: () => string;
   openAudioFiles: () => Promise<string[]>;
   compileWhisper: (options?: CompileOptions) => Promise<CompileResult>;
+  ensureDependencies: (options?: CompileOptions) => Promise<CompileResult>;
   onCompileProgress: (callback: (event: CompileProgressEvent) => void) => () => void;
   enqueueTranscriptions: (request: TranscriptionRequest) => void;
   cancelAll: () => Promise<void>;

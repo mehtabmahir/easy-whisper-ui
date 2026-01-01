@@ -151,6 +151,101 @@ export class CompileManager extends EventEmitter {
     }
   }
 
+  /**
+   * Ensure required toolchain and dependencies are installed (Windows).
+   * Emits progress events similar to compile steps.
+   */
+  async ensureDependencies(options: CompileOptions = {}): Promise<CompileResult> {
+    if (process.platform === "darwin") {
+      this.emitProgress({ step: "prebuilt", message: "macOS detected — no deps to install.", progress: 100, state: "success" });
+      return { success: true };
+    }
+
+    if (process.platform !== "win32") {
+      const msg = process.platform === "linux"
+        ? "Dependency installation currently implemented only for Windows. Linux support coming later."
+        : "Dependency installation not required on this platform.";
+      this.emitProgress({ step: "dependencies", message: msg, progress: 100, state: "success" });
+      return { success: false, error: msg };
+    }
+
+    if (this.running) {
+      return { success: false, error: "Another operation is already in progress." };
+    }
+
+    this.running = true;
+
+    try {
+      const workRoot = await this.ensureWorkDirs();
+      const toolchain = await this.prepareToolchain(workRoot, options.force === true);
+
+      // Install Git (portable) if not available
+      await this.runStep("git", "Installing Git", async () => {
+        const script = [
+          'try { git --version | Out-Null; return } catch {} ;',
+          ` $dest = '${path.join(process.env.LOCALAPPDATA || process.env.USERPROFILE || "", "GitPortable")}' ;`,
+          ` $url  = 'https://github.com/git-for-windows/git/releases/download/v2.49.0.windows.1/PortableGit-2.49.0-64-bit.7z.exe' ;`,
+          ` $tmp  = "$env:TEMP\\PortableGit.exe" ;`,
+          'Invoke-WebRequest -Uri $url -OutFile $tmp ;',
+          'Start-Process -FilePath $tmp -ArgumentList "-y -o" + $dest.TrimEnd("\\") -Wait -NoNewWindow ;',
+          ' $dirs = @("$dest\\cmd","$dest\\bin","$dest\\usr\\bin");',
+          ' foreach ($scope in "Process","User") {',
+          '   $p=[Environment]::GetEnvironmentVariable("Path",$scope);',
+          '   foreach ($d in $dirs){if($p -notlike "*"+$d+"*"){$p="$d;$p"}}',
+          '   [Environment]::SetEnvironmentVariable("Path", $p, $scope)',
+          ' }'
+        ].join(" ; ");
+        await this.runPowerShell(script, "Install Git");
+      });
+
+      // Install Vulkan SDK via winget
+      await this.runStep("vulkan", "Installing Vulkan SDK", async () => {
+        const script = "winget install --id KhronosGroup.VulkanSDK -e --accept-source-agreements --accept-package-agreements";
+        await this.runPowerShell(script, "VulkanSDK");
+      });
+
+      // Set VULKAN_SDK environment variable from registry (process-level)
+      await this.runStep("vulkan-env", "Setting VULKAN_SDK environment variable", async () => {
+        const script = `$v = Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Khronos\\Vulkan\\RT' ; $env:VULKAN_SDK = $v.VulkanSDK ; [System.Environment]::SetEnvironmentVariable('VULKAN_SDK', $v.VulkanSDK, 'Process')`;
+        await this.runPowerShell(script, "SetVulkanEnv");
+      });
+
+      // Install FFmpeg if missing
+      await this.runStep("ffmpeg", "Installing FFmpeg", async () => {
+        const script = [
+          'if (Test-Path (Get-Command ffmpeg -ErrorAction SilentlyContinue).Path) { Write-Output "ffmpeg-present"; return }',
+          '$ffmpegUrl = "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-7.0.2-essentials_build.zip" ;',
+          '$outFile = "$env:TEMP\\ffmpeg.zip" ;',
+          ` $dest = '${path.join(process.env.LOCALAPPDATA || process.env.USERPROFILE || "", "ffmpeg")}' ;`,
+          'curl.exe -L -o $outFile $ffmpegUrl ;',
+          'Expand-Archive -Path $outFile -DestinationPath $dest -Force ;',
+          '$binPath = Get-ChildItem $dest -Directory | Where-Object { $_.Name -like "ffmpeg-*" } | Select-Object -First 1 | ForEach-Object { $_.FullName + "\\bin" } ;',
+          '$userPath = [Environment]::GetEnvironmentVariable("Path", "User");',
+          'if ($userPath -notlike "*" + $binPath + "*") { [Environment]::SetEnvironmentVariable("Path", $userPath + ";" + $binPath, "User") }'
+        ].join(" ; ");
+        await this.runPowerShell(script, "Install FFmpeg");
+      });
+
+      // Ensure MSYS2 toolchain and packages
+      await this.runStep("msys", "Ensuring MSYS2 toolchain", async () => {
+        await this.ensureMsys(toolchain);
+      });
+
+      await this.runStep("packages", "Installing required toolchain packages", async () => {
+        await this.installPackages(toolchain);
+      });
+
+      this.running = false;
+      this.emitProgress({ step: "dependencies", message: "Dependencies installed.", progress: 100, state: "success" });
+      return { success: true };
+    } catch (error) {
+      const err = error as Error;
+      this.emitProgress({ step: "dependencies", message: "Failed to install dependencies.", progress: 100, state: "error", error: err.message });
+      this.running = false;
+      return { success: false, error: err.message };
+    }
+  }
+
   async hasExistingBinaries(): Promise<{ installed: boolean; outputDir?: string }> {
     const workRoot = await this.ensureWorkDirs();
     const binDir = path.join(workRoot, "bin");
