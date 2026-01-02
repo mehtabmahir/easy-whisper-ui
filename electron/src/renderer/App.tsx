@@ -531,10 +531,6 @@ function App(): JSX.Element {
   }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs]);
 
   const handleCompile = useCallback(async () => {
-    if (!isWindows) {
-      appendConsole("[system] Local dependency installation and compile are Windows-only for now.");
-      return;
-    }
     const bridge = window.easyWhisper;
     if (!bridge) {
       appendConsole("[system] Cannot compile without preload bridge.");
