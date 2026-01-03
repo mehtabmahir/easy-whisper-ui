@@ -206,12 +206,18 @@ function App(): JSX.Element {
   const [liveActive, setLiveActive] = useState<boolean>(false);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const loaderStartedRef = useRef<boolean>(false);
+  const depsEnsuredRef = useRef<boolean>(false);
+  const depsInProgressRef = useRef<boolean>(false);
+  const ensureDepsPromiseRef = useRef<Promise<{ success: boolean; error?: string }> | null>(null);
   const closeLoader = useCallback((reason?: string) => {
     console.debug("closeLoader called", reason);
     console.trace();
     if (!showLoader) return;
     // reset started ref so loader can run again if needed
     loaderStartedRef.current = false;
+    depsEnsuredRef.current = false;
+    depsInProgressRef.current = false;
+    ensureDepsPromiseRef.current = null;
     // clear any install poll timers
     if (installPollRef.current) {
       clearTimeout(installPollRef.current);
@@ -280,9 +286,39 @@ function App(): JSX.Element {
         setCanContinue(true);
       }
       if (whisperNeedsInstall) {
+        if (!depsEnsuredRef.current) {
+          setLoaderProgress(60);
+          setLoaderMessage("Installing prerequisite dependencies...");
+          setCanContinue(false);
+          depsInProgressRef.current = true;
+          if (api && api.ensureDependencies) {
+            try {
+              const pending = ensureDepsPromiseRef.current ?? api.ensureDependencies({ force: false });
+              ensureDepsPromiseRef.current = pending;
+              const result = await pending;
+              ensureDepsPromiseRef.current = null;
+              depsInProgressRef.current = false;
+              if (!result.success) {
+                setLoaderMessage(result.error ? `Dependency installation failed: ${result.error}` : "Dependency installation failed.");
+                setCanContinue(true);
+                return;
+              }
+            } catch (error) {
+              ensureDepsPromiseRef.current = null;
+              const err = error as Error;
+              depsInProgressRef.current = false;
+              setLoaderMessage(`Dependency installation failed: ${err.message}`);
+              setCanContinue(true);
+              return;
+            }
+          }
+          depsEnsuredRef.current = true;
+          depsInProgressRef.current = false;
+        }
+
         setLoaderProgress(80);
         setLoaderMessage("Installing Whisper binaries...");
-        if (compileInfo.state !== "running") {
+        if (compileInfo.state !== "running" && !depsInProgressRef.current) {
           // start compile via preload bridge (if available)
           if (!isMac) {
             if (api && api.compileWhisper) {
@@ -399,9 +435,37 @@ function App(): JSX.Element {
   useEffect(() => {
     if (!showLoader) return;
     if (compileInfo.state === "running") {
-      setLoaderMessage("Installing Whisper binaries...");
+      const stepProgress = (() => {
+        switch (compileInfo.step) {
+          case "prepare":
+            return 45;
+          case "git":
+            return 50;
+          case "vulkan":
+            return 55;
+          case "vulkan-env":
+            return 58;
+          case "ffmpeg":
+            return 60;
+          case "msys":
+            return 65;
+          case "packages":
+            return 70;
+          case "source":
+            return 78;
+          case "configure":
+            return 85;
+          case "build":
+            return 92;
+          case "copy":
+            return 96;
+          default:
+            return 80 + Math.round((compileInfo.progress || 0) * 0.2);
+        }
+      })();
+      setLoaderProgress(Math.min(99, stepProgress));
+      setLoaderMessage(compileInfo.message || "Installing Whisper components...");
       setCanContinue(true); // allow user to continue while compile runs
-      setLoaderProgress(80 + Math.round((compileInfo.progress || 0) * 0.2));
     } else if (compileInfo.state === "success") {
       setLoaderProgress(100);
       setLoaderMessage("All requirements satisfied!");
@@ -538,13 +602,13 @@ function App(): JSX.Element {
     }
     try {
       appendConsole("[system] Ensuring dependencies (Git, Vulkan SDK, FFmpeg, MSYS2)...");
-      const deps = await bridge.ensureDependencies();
+      const deps = await bridge.ensureDependencies({ force: true });
       if (!deps.success) {
-        appendConsole(`[system] Dependency installation failed: ${deps.error}`);
-        // still attempt compile — user may have components already
-      } else {
-        appendConsole("[system] Dependencies installed.");
+        appendConsole(`[system] Dependency installation failed: ${deps.error ?? "Unknown error"}`);
+        return;
       }
+      appendConsole(`[system] Dependency installer result: ${JSON.stringify({ success: deps.success, error: deps.error ?? null })}`);
+      appendConsole("[system] Dependencies installed.");
       const result = await bridge.compileWhisper();
       if (!result.success && result.error) {
         appendConsole(`[compile] ${result.error}`);

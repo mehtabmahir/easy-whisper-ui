@@ -1,5 +1,5 @@
 import { app } from "electron";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
@@ -34,6 +34,7 @@ interface ToolchainContext {
   arPath: string;
   ranlibPath: string;
   sdl2CMakeDir: string;
+  vulkanSdkPath?: string;
   env: NodeJS.ProcessEnv;
 }
 
@@ -176,6 +177,7 @@ export class CompileManager extends EventEmitter {
     this.running = true;
 
     try {
+      this.emitConsole("[deps] Starting dependency installation checks...");
       const workRoot = await this.ensureWorkDirs();
       const toolchain = await this.prepareToolchain(workRoot, options.force === true);
 
@@ -235,6 +237,7 @@ export class CompileManager extends EventEmitter {
         await this.installPackages(toolchain);
       });
 
+      this.emitConsole("[deps] Dependency installation sequence completed.");
       this.running = false;
       this.emitProgress({ step: "dependencies", message: "Dependencies installed.", progress: 100, state: "success" });
       return { success: true };
@@ -330,6 +333,56 @@ export class CompileManager extends EventEmitter {
     return root;
   }
 
+  private resolveVulkanSdkPath(): string | null {
+    const envPath = process.env.VULKAN_SDK;
+    if (envPath && fs.existsSync(envPath)) {
+      return envPath;
+    }
+
+    if (process.platform !== "win32") {
+      return envPath ?? null;
+    }
+
+    try {
+      const reg = spawnSync("reg", ["query", "HKLM\\SOFTWARE\\Khronos\\Vulkan\\RT", "/v", "VulkanSDK"], { encoding: "utf8" });
+      if (reg.status === 0 && reg.stdout) {
+        const line = reg.stdout
+          .split(/\r?\n/)
+          .map((value) => value.trim())
+          .find((value) => value.startsWith("VulkanSDK"));
+        if (line) {
+          const parts = line.split(/\s{2,}|\t+/).filter(Boolean);
+          const candidate = parts[parts.length - 1];
+          if (candidate && fs.existsSync(candidate)) {
+            return candidate;
+          }
+        }
+      }
+    } catch {
+      // Ignore registry lookup failures.
+    }
+
+    const defaultRoot = "C:/VulkanSDK";
+    if (fs.existsSync(defaultRoot)) {
+      try {
+        const entries = fs.readdirSync(defaultRoot, { withFileTypes: true })
+          .filter((dirent) => dirent.isDirectory())
+          .map((dirent) => dirent.name)
+          .sort((a, b) => b.localeCompare(a, undefined, { numeric: true, sensitivity: "base" }));
+        for (const entry of entries) {
+          const candidate = path.join(defaultRoot, entry);
+          if (fs.existsSync(candidate)) {
+            return candidate;
+          }
+        }
+      } catch {
+        // Ignore filesystem enumeration failures.
+      }
+    }
+
+    return null;
+  }
+
   private async prepareToolchain(workRoot: string, force: boolean): Promise<ToolchainContext> {
     const toolchainRoot = path.join(workRoot, TOOLCHAIN_DIR_NAME);
     const downloadsDir = path.join(workRoot, DOWNLOADS_DIR_NAME);
@@ -357,7 +410,15 @@ export class CompileManager extends EventEmitter {
       return normalized !== normalizedMingw && normalized !== normalizedUsr;
     });
 
-    const envPath = [mingwBin, usrBin, ...sanitizedEntries].join(path.delimiter);
+    const pathEntries = [mingwBin, usrBin];
+    const vulkanSdkPath = this.resolveVulkanSdkPath();
+    if (vulkanSdkPath) {
+      pathEntries.unshift(path.join(vulkanSdkPath, "Bin"));
+      pathEntries.push(path.join(vulkanSdkPath, "Bin32"));
+    }
+    pathEntries.push(...sanitizedEntries.filter(Boolean));
+    const uniqueEntries = Array.from(new Set(pathEntries.filter(Boolean)));
+    const envPath = uniqueEntries.join(path.delimiter);
 
     const gccPath = path.join(mingwBin, "gcc.exe");
     const gxxPath = path.join(mingwBin, "g++.exe");
@@ -379,6 +440,10 @@ export class CompileManager extends EventEmitter {
       CHERE_INVOKING: "1"
     };
 
+    if (vulkanSdkPath) {
+      env.VULKAN_SDK = vulkanSdkPath;
+    }
+
     return {
       workRoot,
       toolchainRoot,
@@ -393,6 +458,7 @@ export class CompileManager extends EventEmitter {
       arPath,
       ranlibPath,
       sdl2CMakeDir: path.join(msysRoot, "mingw64", "lib", "cmake", "SDL2"),
+      vulkanSdkPath,
       env
     };
   }
@@ -468,6 +534,8 @@ export class CompileManager extends EventEmitter {
     await fsp.rm(buildDir, { recursive: true, force: true });
     await fsp.mkdir(buildDir, { recursive: true });
 
+    const enableVulkan = Boolean(context.vulkanSdkPath);
+
     const args = [
       "-S",
       sourceDir,
@@ -475,7 +543,7 @@ export class CompileManager extends EventEmitter {
       buildDir,
       "-G",
       "Ninja",
-      "-DGGML_VULKAN=1",
+      enableVulkan ? "-DGGML_VULKAN=1" : "-DGGML_VULKAN=0",
       "-DWHISPER_SDL2=ON",
       "-DWHISPER_BUILD_EXAMPLES=ON",
       `-DSDL2_DIR=${this.toPosixPath(context.sdl2CMakeDir)}`,
@@ -487,7 +555,8 @@ export class CompileManager extends EventEmitter {
       "-DCMAKE_C_ARCHIVE_CREATE=<CMAKE_AR> crs <TARGET> <LINK_FLAGS> <OBJECTS>",
       "-DCMAKE_CXX_ARCHIVE_CREATE=<CMAKE_AR> crs <TARGET> <LINK_FLAGS> <OBJECTS>",
       "-DCMAKE_C_ARCHIVE_FINISH=<CMAKE_RANLIB> <TARGET>",
-      "-DCMAKE_CXX_ARCHIVE_FINISH=<CMAKE_RANLIB> <TARGET>"
+      "-DCMAKE_CXX_ARCHIVE_FINISH=<CMAKE_RANLIB> <TARGET>",
+      "-DGGML_CCACHE=OFF"
     ];
 
     if (!fs.existsSync(context.cmakePath)) {
@@ -496,6 +565,10 @@ export class CompileManager extends EventEmitter {
 
     if (!fs.existsSync(context.sdl2CMakeDir)) {
       throw new Error(`SDL2 CMake directory not found at ${context.sdl2CMakeDir}`);
+    }
+
+    if (!enableVulkan) {
+      this.emitConsole("[compile] Vulkan SDK not detected; building without Vulkan backend.");
     }
 
     await this.spawnWithLogs(context.cmakePath, args, undefined, context.env);
