@@ -177,6 +177,46 @@ function getFileName(filePath: string | undefined): string {
   return parts[parts.length - 1] ?? filePath;
 }
 
+function computeCompileProgressPercent(info: CompileProgressEvent): number {
+  if (info.state === "success") {
+    return 100;
+  }
+  if (info.state !== "running") {
+    return 0;
+  }
+
+  const percent = (() => {
+    switch (info.step) {
+      case "prepare":
+        return 45;
+      case "git":
+        return 50;
+      case "vulkan":
+        return 55;
+      case "vulkan-env":
+        return 58;
+      case "ffmpeg":
+        return 60;
+      case "msys":
+        return 65;
+      case "packages":
+        return 70;
+      case "source":
+        return 78;
+      case "configure":
+        return 85;
+      case "build":
+        return 92;
+      case "copy":
+        return 96;
+      default:
+        return 80 + Math.round((info.progress || 0) * 0.2);
+    }
+  })();
+
+  return Math.max(0, Math.min(99, percent));
+}
+
 
 function App(): JSX.Element {
   // All state hooks must be declared first
@@ -438,35 +478,8 @@ function App(): JSX.Element {
     if (!showLoader) return;
     if (compileInfo.state === "running") {
       compileRanRef.current = true;
-      const stepProgress = (() => {
-        switch (compileInfo.step) {
-          case "prepare":
-            return 45;
-          case "git":
-            return 50;
-          case "vulkan":
-            return 55;
-          case "vulkan-env":
-            return 58;
-          case "ffmpeg":
-            return 60;
-          case "msys":
-            return 65;
-          case "packages":
-            return 70;
-          case "source":
-            return 78;
-          case "configure":
-            return 85;
-          case "build":
-            return 92;
-          case "copy":
-            return 96;
-          default:
-            return 80 + Math.round((compileInfo.progress || 0) * 0.2);
-        }
-      })();
-      setLoaderProgress(Math.min(99, stepProgress));
+      const stepProgress = computeCompileProgressPercent(compileInfo);
+      setLoaderProgress(stepProgress);
       setLoaderMessage(compileInfo.message || "Installing Whisper components...");
       setCanContinue(true); // allow user to continue while compile runs
     } else if (compileInfo.state === "success") {
@@ -748,6 +761,8 @@ function App(): JSX.Element {
     return compileInfo.message;
   }, [compileInfo]);
 
+  const compileProgressPercent = useMemo(() => computeCompileProgressPercent(compileInfo), [compileInfo]);
+
   const statusText = useMemo(() => {
     if (!apiAvailable) {
       return "Preload bridge unavailable; check build output.";
@@ -854,7 +869,7 @@ function App(): JSX.Element {
             </div>
             <div className={styles.compileStatus}>
               <span>{compileStateLabel}</span>
-              {isCompiling && <progress value={compileInfo.progress} max={100} />}
+              {isCompiling && <progress value={compileProgressPercent} max={100} />}
             </div>
 
             <div className={styles.selectorGroup}>
