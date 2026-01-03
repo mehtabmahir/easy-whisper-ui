@@ -209,6 +209,7 @@ function App(): JSX.Element {
   const depsEnsuredRef = useRef<boolean>(false);
   const depsInProgressRef = useRef<boolean>(false);
   const ensureDepsPromiseRef = useRef<Promise<{ success: boolean; error?: string }> | null>(null);
+  const compileRanRef = useRef<boolean>(false);
   const closeLoader = useCallback((reason?: string) => {
     console.debug("closeLoader called", reason);
     console.trace();
@@ -218,6 +219,7 @@ function App(): JSX.Element {
     depsEnsuredRef.current = false;
     depsInProgressRef.current = false;
     ensureDepsPromiseRef.current = null;
+    compileRanRef.current = false;
     // clear any install poll timers
     if (installPollRef.current) {
       clearTimeout(installPollRef.current);
@@ -435,6 +437,7 @@ function App(): JSX.Element {
   useEffect(() => {
     if (!showLoader) return;
     if (compileInfo.state === "running") {
+      compileRanRef.current = true;
       const stepProgress = (() => {
         switch (compileInfo.step) {
           case "prepare":
@@ -470,6 +473,10 @@ function App(): JSX.Element {
       setLoaderProgress(100);
       setLoaderMessage("All requirements satisfied!");
       setCanContinue(true);
+      if (!compileRanRef.current && !depsEnsuredRef.current) {
+        // Avoid auto-closing if nothing actually ran; wait for user input.
+        return;
+      }
       // Confirm installation via api.checkInstall(), then close.
       console.debug("Loader: compileInfo indicates success — verifying install via checkInstall");
       if (installPollRef.current) {

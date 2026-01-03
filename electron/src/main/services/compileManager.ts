@@ -182,29 +182,26 @@ export class CompileManager extends EventEmitter {
       const toolchain = await this.prepareToolchain(workRoot, options.force === true);
 
       // Install Git (portable) if not available
-      await this.runStep("git", "Installing Git", async () => {
+      await this.runStep("git", "Ensuring Git is installed", async () => {
         const script = [
-          'try { git --version | Out-Null; return } catch {} ;',
-          ` $dest = '${path.join(process.env.LOCALAPPDATA || process.env.USERPROFILE || "", "GitPortable")}' ;`,
-          ` $url  = 'https://github.com/git-for-windows/git/releases/download/v2.49.0.windows.1/PortableGit-2.49.0-64-bit.7z.exe' ;`,
-          ` $tmp  = "$env:TEMP\\PortableGit.exe" ;`,
-          'Invoke-WebRequest -Uri $url -OutFile $tmp ;',
-          'Start-Process -FilePath $tmp -ArgumentList "-y -o" + $dest.TrimEnd("\\") -Wait -NoNewWindow ;',
-          ' $dirs = @("$dest\\cmd","$dest\\bin","$dest\\usr\\bin");',
-          ' foreach ($scope in "Process","User") {',
-          '   $p=[Environment]::GetEnvironmentVariable("Path",$scope);',
-          '   foreach ($d in $dirs){if($p -notlike "*"+$d+"*"){$p="$d;$p"}}',
-          '   [Environment]::SetEnvironmentVariable("Path", $p, $scope)',
-          ' }'
+          'if (Get-Command git.exe -ErrorAction SilentlyContinue) { Write-Output "git-present"; exit 0 }',
+          'winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements'
         ].join(" ; ");
-        await this.runPowerShell(script, "Install Git");
+        await this.runPowerShell(script, "Git");
       });
 
-      // Install Vulkan SDK via winget
-      await this.runStep("vulkan", "Installing Vulkan SDK", async () => {
-        const script = "winget install --id KhronosGroup.VulkanSDK -e --accept-source-agreements --accept-package-agreements";
-        await this.runPowerShell(script, "VulkanSDK");
-      });
+      // Install Vulkan SDK via winget (skip if already present)
+      const hasVulkanSdk = Boolean(toolchain.vulkanSdkPath);
+      if (!hasVulkanSdk) {
+        await this.runStep("vulkan", "Installing Vulkan SDK", async () => {
+          const script = "winget install --id KhronosGroup.VulkanSDK -e --accept-source-agreements --accept-package-agreements";
+          await this.runPowerShell(script, "VulkanSDK");
+          toolchain.vulkanSdkPath = this.resolveVulkanSdkPath() ?? undefined;
+        });
+      } else {
+        this.emitConsole("[vulkan] Vulkan SDK already installed; skipping install.");
+        this.emitProgress({ step: "vulkan", message: "Vulkan SDK already installed.", progress: 100, state: "success" });
+      }
 
       // Set VULKAN_SDK environment variable from registry (process-level)
       await this.runStep("vulkan-env", "Setting VULKAN_SDK environment variable", async () => {
