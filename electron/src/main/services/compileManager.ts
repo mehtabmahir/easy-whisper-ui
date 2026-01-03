@@ -411,10 +411,10 @@ export class CompileManager extends EventEmitter {
     });
 
     const pathEntries = [mingwBin, usrBin];
-    const vulkanSdkPath = this.resolveVulkanSdkPath();
-    if (vulkanSdkPath) {
-      pathEntries.unshift(path.join(vulkanSdkPath, "Bin"));
-      pathEntries.push(path.join(vulkanSdkPath, "Bin32"));
+    const vulkanSdkPathResolved = this.resolveVulkanSdkPath() ?? undefined;
+    if (vulkanSdkPathResolved) {
+      pathEntries.unshift(path.join(vulkanSdkPathResolved, "Bin"));
+      pathEntries.push(path.join(vulkanSdkPathResolved, "Bin32"));
     }
     pathEntries.push(...sanitizedEntries.filter(Boolean));
     const uniqueEntries = Array.from(new Set(pathEntries.filter(Boolean)));
@@ -440,8 +440,8 @@ export class CompileManager extends EventEmitter {
       CHERE_INVOKING: "1"
     };
 
-    if (vulkanSdkPath) {
-      env.VULKAN_SDK = vulkanSdkPath;
+    if (vulkanSdkPathResolved) {
+      env.VULKAN_SDK = vulkanSdkPathResolved;
     }
 
     return {
@@ -458,7 +458,7 @@ export class CompileManager extends EventEmitter {
       arPath,
       ranlibPath,
       sdl2CMakeDir: path.join(msysRoot, "mingw64", "lib", "cmake", "SDL2"),
-      vulkanSdkPath,
+      vulkanSdkPath: vulkanSdkPathResolved,
       env
     };
   }
