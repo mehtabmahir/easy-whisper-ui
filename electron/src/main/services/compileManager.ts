@@ -177,6 +177,14 @@ export class CompileManager extends EventEmitter {
     this.running = true;
 
     try {
+      if (!options.force) {
+        const existing = await this.hasExistingBinaries();
+        if (existing.installed) {
+          this.running = false;
+          return { success: true };
+        }
+      }
+
       this.emitConsole("[deps] Starting dependency installation checks...");
       const workRoot = await this.ensureWorkDirs();
       const toolchain = await this.prepareToolchain(workRoot, options.force === true);
@@ -203,11 +211,15 @@ export class CompileManager extends EventEmitter {
         this.emitProgress({ step: "vulkan", message: "Vulkan SDK already installed.", progress: 100, state: "success" });
       }
 
-      // Set VULKAN_SDK environment variable from registry (process-level)
-      await this.runStep("vulkan-env", "Setting VULKAN_SDK environment variable", async () => {
-        const script = `$v = Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Khronos\\Vulkan\\RT' ; $env:VULKAN_SDK = $v.VulkanSDK ; [System.Environment]::SetEnvironmentVariable('VULKAN_SDK', $v.VulkanSDK, 'Process')`;
-        await this.runPowerShell(script, "SetVulkanEnv");
-      });
+      if (toolchain.vulkanSdkPath) {
+        await this.runStep("vulkan-env", "Setting VULKAN_SDK environment variable", async () => {
+          const script = `$v = Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Khronos\\Vulkan\\RT' ; $env:VULKAN_SDK = $v.VulkanSDK ; [System.Environment]::SetEnvironmentVariable('VULKAN_SDK', $v.VulkanSDK, 'Process')`;
+          await this.runPowerShell(script, "SetVulkanEnv");
+        });
+      } else {
+        this.emitConsole("[vulkan] Vulkan SDK not detected; skipping VULKAN_SDK environment setup.");
+        this.emitProgress({ step: "vulkan-env", message: "Vulkan SDK not detected; skipping environment setup.", progress: 100, state: "success" });
+      }
 
       // Install FFmpeg if missing
       await this.runStep("ffmpeg", "Installing FFmpeg", async () => {

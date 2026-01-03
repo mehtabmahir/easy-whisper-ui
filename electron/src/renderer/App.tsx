@@ -288,7 +288,7 @@ function App(): JSX.Element {
         setCanContinue(true);
       }
       if (whisperNeedsInstall) {
-        if (!depsEnsuredRef.current) {
+        if (!depsEnsuredRef.current && !compileRanRef.current && !depsInProgressRef.current) {
           setLoaderProgress(60);
           setLoaderMessage("Installing prerequisite dependencies...");
           setCanContinue(false);
@@ -531,6 +531,9 @@ function App(): JSX.Element {
             state: "success"
           };
         });
+        if (showLoader) {
+          closeLoader("already-installed");
+        }
       }
     }).catch(() => {
       // Ignore errors; install status will update on demand.
@@ -607,14 +610,17 @@ function App(): JSX.Element {
       appendConsole("[system] Cannot compile without preload bridge.");
       return;
     }
+    if (compileInfo.state === "success") {
+      appendConsole("[system] Whisper binaries already installed; skipping reinstall.");
+      return;
+    }
     try {
       appendConsole("[system] Ensuring dependencies (Git, Vulkan SDK, FFmpeg, MSYS2)...");
-      const deps = await bridge.ensureDependencies({ force: true });
+      const deps = await bridge.ensureDependencies({ force: false });
       if (!deps.success) {
         appendConsole(`[system] Dependency installation failed: ${deps.error ?? "Unknown error"}`);
         return;
       }
-      appendConsole(`[system] Dependency installer result: ${JSON.stringify({ success: deps.success, error: deps.error ?? null })}`);
       appendConsole("[system] Dependencies installed.");
       const result = await bridge.compileWhisper();
       if (!result.success && result.error) {
@@ -624,7 +630,7 @@ function App(): JSX.Element {
       const err = error as Error;
       appendConsole(`[compile] ${err.message}`);
     }
-  }, [appendConsole]);
+  }, [appendConsole, compileInfo.state]);
 
   const handleUninstall = useCallback(async () => {
     const bridge = window.easyWhisper;
