@@ -90,7 +90,7 @@ export class CompileManager extends EventEmitter {
     if (existingBinaries && !options.force) {
       this.emitProgress({
         step: "check-cache",
-        message: "Whisper binaries already built; skipping.",
+        message: "Whisper binaries ready.",
         progress: 100,
         state: "success"
       });
