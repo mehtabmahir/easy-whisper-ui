@@ -17,6 +17,7 @@ const REQUIRED_DLLS = [
   "libwinpthread-1.dll",
   "libstdc++-6.dll",
   "libgcc_s_seh-1.dll",
+  "libgomp-1.dll",
   "SDL2.dll"
 ];
 
@@ -221,20 +222,28 @@ export class CompileManager extends EventEmitter {
         this.emitProgress({ step: "vulkan-env", message: "Vulkan SDK not detected; skipping environment setup.", progress: 100, state: "success" });
       }
 
-      // Install FFmpeg if missing
-      await this.runStep("ffmpeg", "Installing FFmpeg", async () => {
-        const script = [
-          'if (Test-Path (Get-Command ffmpeg -ErrorAction SilentlyContinue).Path) { Write-Output "ffmpeg-present"; return }',
-          '$ffmpegUrl = "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-7.0.2-essentials_build.zip" ;',
-          '$outFile = "$env:TEMP\\ffmpeg.zip" ;',
-          ` $dest = '${path.join(process.env.LOCALAPPDATA || process.env.USERPROFILE || "", "ffmpeg")}' ;`,
-          'curl.exe -L -o $outFile $ffmpegUrl ;',
-          'Expand-Archive -Path $outFile -DestinationPath $dest -Force ;',
-          '$binPath = Get-ChildItem $dest -Directory | Where-Object { $_.Name -like "ffmpeg-*" } | Select-Object -First 1 | ForEach-Object { $_.FullName + "\\bin" } ;',
-          '$userPath = [Environment]::GetEnvironmentVariable("Path", "User");',
-          'if ($userPath -notlike "*" + $binPath + "*") { [Environment]::SetEnvironmentVariable("Path", $userPath + ";" + $binPath, "User") }'
-        ].join(" ; ");
-        await this.runPowerShell(script, "Install FFmpeg");
+      this.ensureFfmpegPath();
+      const hasFfmpeg = this.isFfmpegAvailable();
+      if (!hasFfmpeg) {
+        await this.runStep("ffmpeg", "Installing FFmpeg", async () => {
+          const script = 'winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements';
+          await this.runPowerShell(script, "FFmpeg");
+          this.ensureFfmpegPath();
+          if (!this.isFfmpegAvailable()) {
+            throw new Error("FFmpeg installation did not complete successfully.");
+          }
+        });
+      } else {
+        this.emitConsole("[ffmpeg] FFmpeg already installed; skipping install.");
+        this.emitProgress({ step: "ffmpeg", message: "FFmpeg already installed.", progress: 100, state: "success" });
+      }
+
+      await this.runStep("ffmpeg-env", "Ensuring FFmpeg PATH setup", async () => {
+        await this.ensureFfmpegUserPath();
+        this.ensureFfmpegPath();
+        if (!this.isFfmpegAvailable()) {
+          throw new Error("FFmpeg not available on PATH after setup.");
+        }
       });
 
       // Ensure MSYS2 toolchain and packages
@@ -390,6 +399,72 @@ export class CompileManager extends EventEmitter {
     }
 
     return null;
+  }
+
+  private isFfmpegAvailable(): boolean {
+    this.ensureFfmpegPath();
+    try {
+      const result = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" });
+      return result.status === 0;
+    } catch {
+      return false;
+    }
+  }
+
+  private ensureFfmpegPath(): void {
+    const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
+    const linksDir = path.join(localAppData, "Microsoft", "WinGet", "Links");
+    const ffmpegExe = path.join(linksDir, "ffmpeg.exe");
+
+    if (!fs.existsSync(ffmpegExe)) {
+      return;
+    }
+
+    if (this.isDirectoryOnPath(linksDir)) {
+      return;
+    }
+
+    const currentPath = process.env.PATH ?? "";
+    process.env.PATH = `${linksDir}${path.delimiter}${currentPath}`;
+  }
+
+  private isDirectoryOnPath(dir: string): boolean {
+    const currentPath = process.env.PATH ?? "";
+    const normalized = path.resolve(dir).toLowerCase();
+    return currentPath
+      .split(path.delimiter)
+      .some((entry) => entry && path.resolve(entry).toLowerCase() === normalized);
+  }
+
+  private async ensureFfmpegUserPath(): Promise<void> {
+    if (process.platform !== "win32") {
+      return;
+    }
+
+    const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
+    const linksDir = path.join(localAppData, "Microsoft", "WinGet", "Links");
+    const ffmpegExe = path.join(linksDir, "ffmpeg.exe");
+
+    if (!fs.existsSync(ffmpegExe)) {
+      return;
+    }
+
+    const script = [
+      "$links = Join-Path $env:LOCALAPPDATA 'Microsoft\\WinGet\\Links'",
+      "if (-not (Test-Path $links)) { return }",
+      "$ffmpeg = Join-Path $links 'ffmpeg.exe'",
+      "if (-not (Test-Path $ffmpeg)) { return }",
+      "$userPath = [Environment]::GetEnvironmentVariable('Path','User')",
+      "if ($null -eq $userPath) { $userPath = '' }",
+      "$parts = @()",
+      "if ($userPath) { $parts = $userPath -split ';' | Where-Object { $_ -and $_.Trim().Length -gt 0 } }",
+      "if ($parts -notcontains $links) {",
+      "  $updated = if ($parts.Count -gt 0) { ($parts + $links) -join ';' } else { $links };",
+      "  [Environment]::SetEnvironmentVariable('Path', $updated, 'User');",
+      "}"
+    ].join(" ; ");
+
+    await this.runPowerShell(script, "FFmpegPath");
   }
 
   private async prepareToolchain(workRoot: string, force: boolean): Promise<ToolchainContext> {
