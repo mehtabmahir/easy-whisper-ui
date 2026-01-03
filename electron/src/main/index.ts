@@ -115,12 +115,18 @@ function registerIpcChannels(): void {
 
         if (bundlePath) {
           // Prefer moving to Trash for safety; fall back to forced removal.
-          const moved = shell.moveItemToTrash(bundlePath);
-          if (!moved) {
+          let trashed = false;
+          try {
+            await shell.trashItem(bundlePath);
+            trashed = true;
+            console.log("Moved app bundle to Trash:", bundlePath);
+          } catch (trashError) {
+            console.warn("Failed to move app bundle to Trash, falling back to rm:", trashError);
+          }
+
+          if (!trashed) {
             await fsp.rm(bundlePath, { recursive: true, force: true });
             console.log("Removed app bundle:", bundlePath);
-          } else {
-            console.log("Moved app bundle to Trash:", bundlePath);
           }
         } else {
           console.log("App bundle not found for removal.");
