@@ -116,7 +116,7 @@ export class CompileManager extends EventEmitter {
       });
 
       await this.runStep("packages", "Updating MSYS2 packages", async () => {
-        await this.installPackages(toolchain);
+        await this.installPackages(toolchain, true);
       });
 
       const sourceDir = path.join(workRoot, "whisper.cpp");
@@ -178,7 +178,8 @@ export class CompileManager extends EventEmitter {
     }
 
     if (this.running) {
-      return { success: false, error: "Another operation is already in progress." };
+      this.emitConsole("[deps] Dependency workflow already running; ignoring duplicate request.");
+      return { success: true };
     }
 
     this.running = true;
@@ -197,24 +198,24 @@ export class CompileManager extends EventEmitter {
       const toolchain = await this.prepareToolchain(workRoot, options.force === true);
 
       // Install Git via winget if not available
-        await this.runStep("git", "Ensuring Git is installed", async () => {
-          const script = [
-            'if (Get-Command git.exe -ErrorAction SilentlyContinue) { Write-Output "git-present"; return }',
-            'winget source update --name winget | Out-Null',
-            'winget install --id Git.Git --source winget -e --accept-source-agreements --accept-package-agreements'
-          ].join("; ");
-          await this.runPowerShell(script, "Git");
-        });
+      await this.runStep("git", "Ensuring Git is installed", async () => {
+        const script = [
+          'if (Get-Command git.exe -ErrorAction SilentlyContinue) { return }',
+          'winget source update --name winget | Out-Null',
+          'winget install --id Git.Git --source winget -e --accept-source-agreements --accept-package-agreements | Out-Null'
+        ].join("; ");
+        await this.runPowerShell(script, "Git", { quiet: true });
+      });
 
       // Install Vulkan SDK via winget (skip if already present)
       const hasVulkanSdk = Boolean(toolchain.vulkanSdkPath);
       if (!hasVulkanSdk) {
         await this.runStep("vulkan", "Installing Vulkan SDK", async () => {
-            const script = [
-              'winget source update --name winget | Out-Null',
-              'winget install --id KhronosGroup.VulkanSDK --source winget -e --accept-source-agreements --accept-package-agreements'
-            ].join("; ");
-          await this.runPowerShell(script, "VulkanSDK");
+          const script = [
+            'winget source update --name winget | Out-Null',
+            'winget install --id KhronosGroup.VulkanSDK --source winget -e --accept-source-agreements --accept-package-agreements'
+          ].join("; ");
+          await this.runPowerShell(script, "VulkanSDK", { quiet: true });
           toolchain.vulkanSdkPath = this.resolveVulkanSdkPath() ?? undefined;
         });
       } else {
@@ -224,7 +225,15 @@ export class CompileManager extends EventEmitter {
 
       if (toolchain.vulkanSdkPath) {
         await this.runStep("vulkan-env", "Setting VULKAN_SDK environment variable", async () => {
-          const script = `$v = Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Khronos\\Vulkan\\RT' ; $env:VULKAN_SDK = $v.VulkanSDK ; [System.Environment]::SetEnvironmentVariable('VULKAN_SDK', $v.VulkanSDK, 'Process')`;
+          const script = [
+            "$key = 'HKLM:\\SOFTWARE\\Khronos\\Vulkan\\RT'",
+            "if (-not (Test-Path $key)) { Write-Output 'Vulkan registry key missing; skipping VULKAN_SDK.'; return }",
+            "$value = Get-ItemProperty -Path $key -ErrorAction Stop",
+            "if (-not $value.VulkanSDK) { Write-Output 'Vulkan registry entry missing VulkanSDK value; skipping.'; return }",
+            "$env:VULKAN_SDK = $value.VulkanSDK",
+            "[System.Environment]::SetEnvironmentVariable('VULKAN_SDK', $value.VulkanSDK, 'Process')",
+            "Write-Output \"VULKAN_SDK set to $($value.VulkanSDK)\""
+          ].join(" ; ");
           await this.runPowerShell(script, "SetVulkanEnv");
         });
       } else {
@@ -257,11 +266,11 @@ export class CompileManager extends EventEmitter {
 
       // Ensure MSYS2 toolchain and packages
       await this.runStep("msys", "Ensuring MSYS2 toolchain", async () => {
-        await this.ensureMsys(toolchain);
+        await this.ensureMsys(toolchain, true);
       });
 
       await this.runStep("packages", "Installing required toolchain packages", async () => {
-        await this.installPackages(toolchain);
+        await this.installPackages(toolchain, true);
       });
 
       this.emitConsole("[deps] Dependency installation sequence completed.");
@@ -487,7 +496,7 @@ export class CompileManager extends EventEmitter {
       "}"
     ].join(" ; ");
 
-    await this.runPowerShell(script, "FFmpegPath");
+    await this.runPowerShell(script, "FFmpegPath", { quiet: true });
   }
 
   private async prepareToolchain(workRoot: string, force: boolean): Promise<ToolchainContext> {
@@ -584,7 +593,7 @@ export class CompileManager extends EventEmitter {
     return value.replace(/\\/g, "/");
   }
 
-  private async ensureMsys(context: ToolchainContext): Promise<void> {
+  private async ensureMsys(context: ToolchainContext, quiet = false): Promise<void> {
     if (fs.existsSync(context.cmakePath)) {
       return;
     }
@@ -606,7 +615,7 @@ export class CompileManager extends EventEmitter {
       "if (-not (Test-Path (Join-Path $msysRoot 'usr\\bin\\bash.exe'))) { throw 'MSYS2 extraction failed.' }"
     ].join("; ");
 
-    await this.runPowerShell(script, "Install MSYS2");
+    await this.runPowerShell(script, "Install MSYS2", { quiet });
   }
 
   private async installFfmpeg(toolchain: ToolchainContext): Promise<void> {
@@ -637,7 +646,7 @@ export class CompileManager extends EventEmitter {
       "Remove-Item $extract -Recurse -Force"
     ].join("; ");
 
-    await this.runPowerShell(script, "FFmpegDownload");
+    await this.runPowerShell(script, "FFmpegDownload", { quiet: true });
 
     const ffmpegExe = path.join(bin, "ffmpeg.exe");
     if (!fs.existsSync(ffmpegExe)) {
@@ -674,21 +683,9 @@ export class CompileManager extends EventEmitter {
             return;
           }
 
-          const total = Number(response.headers["content-length"] ?? 0);
-          let received = 0;
-          let lastPercent = -1;
+          this.emitConsole(`[${label}] Downloading...`);
 
           const fileStream = fs.createWriteStream(tempPath);
-          response.on("data", (chunk) => {
-            received += chunk.length;
-            if (total > 0) {
-              const percent = Math.floor((received / total) * 100);
-              if (percent !== lastPercent && percent % 5 === 0) {
-                lastPercent = percent;
-                this.emitConsole(`[${label}] Download ${percent}%`);
-              }
-            }
-          });
 
           pipeline(response, fileStream)
             .then(async () => {
@@ -702,13 +699,13 @@ export class CompileManager extends EventEmitter {
     });
   }
 
-  private async installPackages(context: ToolchainContext): Promise<void> {
+  private async installPackages(context: ToolchainContext, quiet = false): Promise<void> {
     if (!fs.existsSync(context.bashPath)) {
       throw new Error(`MSYS2 bash not found at ${context.bashPath}`);
     }
 
     const command = "pacman -Sy --noconfirm && pacman -S --needed --noconfirm mingw-w64-x86_64-toolchain base-devel mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2 ninja";
-    await this.spawnWithLogs(context.bashPath, ["--login", "-c", command], undefined, context.env);
+    await this.spawnWithLogs(context.bashPath, ["--login", "-c", command], undefined, context.env, { quiet });
   }
 
   private async ensureWhisperSource(sourceDir: string, force: boolean): Promise<void> {
@@ -781,7 +778,7 @@ export class CompileManager extends EventEmitter {
       this.emitConsole("[compile] Vulkan SDK not detected; building without Vulkan backend.");
     }
 
-    await this.spawnWithLogs(context.cmakePath, args, undefined, context.env);
+    await this.spawnWithLogs(context.cmakePath, args, undefined, context.env, { quiet: true });
   }
 
   private async buildBinaries(context: ToolchainContext, sourceDir: string): Promise<void> {
@@ -798,7 +795,7 @@ export class CompileManager extends EventEmitter {
       String(Math.max(1, os.cpus().length - 1))
     ];
 
-    await this.spawnWithLogs(context.cmakePath, args, undefined, context.env);
+    await this.spawnWithLogs(context.cmakePath, args, undefined, context.env, { quiet: true });
   }
 
   private async copyArtifacts(context: ToolchainContext, sourceDir: string, binDir: string): Promise<void> {
@@ -813,7 +810,7 @@ export class CompileManager extends EventEmitter {
     }
   }
 
-  private async runPowerShell(script: string, label: string): Promise<void> {
+  private async runPowerShell(script: string, label: string, options: { quiet?: boolean } = {}): Promise<void> {
     const args = [
       "-NoLogo",
       "-NoProfile",
@@ -823,52 +820,98 @@ export class CompileManager extends EventEmitter {
       script
     ];
 
-    await this.spawnWithLogs("powershell.exe", args, label);
+    await this.spawnWithLogs("powershell.exe", args, label, undefined, options);
   }
 
-  private async spawnWithLogs(command: string, args: string[], label?: string, env?: NodeJS.ProcessEnv): Promise<void> {
-    this.emitConsole(`Running ${command} ${args.join(" ")}`);
+  private async spawnWithLogs(
+    command: string,
+    args: string[],
+    label?: string,
+    env?: NodeJS.ProcessEnv,
+    options: { quiet?: boolean } = {}
+  ): Promise<void> {
+    const quiet = options.quiet === true;
+    const stdio: Array<"ignore" | "pipe"> = quiet ? ["ignore", "ignore", "ignore"] : ["ignore", "pipe", "pipe"];
 
     await new Promise<void>((resolve, reject) => {
       const child = spawn(command, args, {
-        stdio: ["ignore", "pipe", "pipe"],
+        stdio,
         env: env ?? process.env
       });
 
-      child.stdout.on("data", (data) => {
-        const text = this.formatOutput(label, data.toString());
-        if (text) {
-          this.emitConsole(text);
-        }
-      });
+      let stdoutBuffer = "";
+      let stderrBuffer = "";
 
-      child.stderr.on("data", (data) => {
-        const text = this.formatOutput(label, data.toString());
-        if (text) {
-          this.emitConsole(text);
+      const flushBuffer = (buffer: string): string => {
+        const lines = buffer.split(/\r?\n/);
+        const trailing = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            continue;
+          }
+          if (!quiet) {
+            const prefix = label ?? command;
+            this.emitConsole(`[${prefix}] ${trimmed}`);
+          }
         }
-      });
+        return trailing;
+      };
+
+      if (child.stdout) {
+        child.stdout.on("data", (data) => {
+          stdoutBuffer += data.toString();
+          if (quiet) {
+            return;
+          }
+          stdoutBuffer = flushBuffer(stdoutBuffer);
+        });
+      }
+
+      if (child.stderr) {
+        child.stderr.on("data", (data) => {
+          stderrBuffer += data.toString();
+          if (quiet) {
+            return;
+          }
+          stderrBuffer = flushBuffer(stderrBuffer);
+        });
+      }
 
       child.once("error", (error) => {
         reject(error);
       });
 
       child.once("close", (code) => {
+        if (!quiet) {
+          const prefix = label ?? command;
+          if (stdoutBuffer.trim()) {
+            this.emitConsole(`[${prefix}] ${stdoutBuffer.trim()}`);
+          }
+          if (stderrBuffer.trim()) {
+            this.emitConsole(`[${prefix}] ${stderrBuffer.trim()}`);
+          }
+        }
+
         if (code === 0) {
+          if (quiet && stderrBuffer.trim()) {
+            const prefix = label ?? command;
+            this.emitConsole(`[${prefix}] ${stderrBuffer.trim()}`);
+          }
           resolve();
         } else {
+          const prefix = label ?? command;
+          const details = `${stdoutBuffer}${stderrBuffer}`.trim();
+          if (quiet) {
+            if (details) {
+              this.emitConsole(`[${prefix}] ${details}`);
+            }
+            this.emitConsole(`[${prefix}] ${command} exited with code ${code}`);
+          }
           reject(new Error(`${command} exited with code ${code}`));
         }
       });
     });
-  }
-
-  private formatOutput(label: string | undefined, raw: string): string {
-    const text = raw.toString().trim();
-    if (!text) {
-      return "";
-    }
-    return label ? `[${label}] ${text}` : text;
   }
 
   private hasBinariesInDir(binDir: string): boolean {
