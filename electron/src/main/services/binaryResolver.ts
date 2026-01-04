@@ -1,4 +1,5 @@
 import { app } from "electron";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { WORK_ROOT_NAME } from "./compileManager";
@@ -16,9 +17,37 @@ interface ResolveOptions {
 
 export function resolveBinary(baseName: string, options: ResolveOptions = {}): BinaryResolution {
   const exeName = process.platform === "win32" ? `${baseName}.exe` : baseName;
+  const fallback = process.platform === "win32" ? `${baseName}.exe` : baseName;
+
+  if (baseName === "ffmpeg") {
+    const toolchainBin = path.join(app.getPath("userData"), WORK_ROOT_NAME, "toolchain", "ffmpeg", "bin");
+    const toolchainExe = path.join(toolchainBin, exeName);
+    const searched = [toolchainExe, fallback];
+
+    try {
+      if (fs.existsSync(toolchainExe) && fs.statSync(toolchainExe).isFile()) {
+        return { command: toolchainExe, found: true, searched };
+      }
+    } catch {
+      // ignore filesystem races
+    }
+
+    try {
+      const result = spawnSync(fallback, ["-version"], { stdio: "ignore" });
+      if (result.status === 0) {
+        return { command: fallback, found: true, searched };
+      }
+    } catch {
+      // ignore spawn failures and fall through to not found
+    }
+
+    return { command: fallback, found: false, searched };
+  }
+
   const candidates: string[] = [];
 
   const workspaceBin = path.join(app.getPath("userData"), WORK_ROOT_NAME, "bin");
+
   const workspaceCandidate = path.join(workspaceBin, exeName);
   candidates.push(workspaceCandidate);
 
@@ -69,7 +98,6 @@ export function resolveBinary(baseName: string, options: ResolveOptions = {}): B
   }
 
   const fallbackAllowed = options.allowSystemFallback !== false;
-  const fallback = process.platform === "win32" ? `${baseName}.exe` : baseName;
 
   if (fallbackAllowed) {
     return { command: fallback, found: false, searched: uniqueCandidates };

@@ -3,8 +3,10 @@ import { spawn, spawnSync } from "node:child_process";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
+import https from "node:https";
 import path from "node:path";
 import os from "node:os";
+import { pipeline } from "node:stream/promises";
 import { CompileOptions, CompileProgressEvent, CompileResult } from "../../types/easy-whisper";
 
 export const WORK_ROOT_NAME = "whisper-workspace";
@@ -13,6 +15,8 @@ const MAC_BUNDLE_DIR_NAME = "mac-bin";
 
 const TOOLCHAIN_DIR_NAME = "toolchain";
 const DOWNLOADS_DIR_NAME = "downloads";
+const FFMPEG_DIR_NAME = "ffmpeg";
+const FFMPEG_DOWNLOAD_URL = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
 const REQUIRED_DLLS = [
   "libwinpthread-1.dll",
   "libstdc++-6.dll",
@@ -25,6 +29,8 @@ interface ToolchainContext {
   workRoot: string;
   toolchainRoot: string;
   downloadsDir: string;
+  ffmpegRoot: string;
+  ffmpegBin: string;
   msysRoot: string;
   mingwBin: string;
   usrBin: string;
@@ -190,20 +196,24 @@ export class CompileManager extends EventEmitter {
       const workRoot = await this.ensureWorkDirs();
       const toolchain = await this.prepareToolchain(workRoot, options.force === true);
 
-      // Install Git (portable) if not available
-      await this.runStep("git", "Ensuring Git is installed", async () => {
-        const script = [
-          'if (Get-Command git.exe -ErrorAction SilentlyContinue) { Write-Output "git-present"; exit 0 }',
-          'winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements'
-        ].join(" ; ");
-        await this.runPowerShell(script, "Git");
-      });
+      // Install Git via winget if not available
+        await this.runStep("git", "Ensuring Git is installed", async () => {
+          const script = [
+            'if (Get-Command git.exe -ErrorAction SilentlyContinue) { Write-Output "git-present"; return }',
+            'winget source update --name winget | Out-Null',
+            'winget install --id Git.Git --source winget -e --accept-source-agreements --accept-package-agreements'
+          ].join("; ");
+          await this.runPowerShell(script, "Git");
+        });
 
       // Install Vulkan SDK via winget (skip if already present)
       const hasVulkanSdk = Boolean(toolchain.vulkanSdkPath);
       if (!hasVulkanSdk) {
         await this.runStep("vulkan", "Installing Vulkan SDK", async () => {
-          const script = "winget install --id KhronosGroup.VulkanSDK -e --accept-source-agreements --accept-package-agreements";
+            const script = [
+              'winget source update --name winget | Out-Null',
+              'winget install --id KhronosGroup.VulkanSDK --source winget -e --accept-source-agreements --accept-package-agreements'
+            ].join("; ");
           await this.runPowerShell(script, "VulkanSDK");
           toolchain.vulkanSdkPath = this.resolveVulkanSdkPath() ?? undefined;
         });
@@ -222,14 +232,13 @@ export class CompileManager extends EventEmitter {
         this.emitProgress({ step: "vulkan-env", message: "Vulkan SDK not detected; skipping environment setup.", progress: 100, state: "success" });
       }
 
-      this.ensureFfmpegPath();
-      const hasFfmpeg = this.isFfmpegAvailable();
+      this.ensureFfmpegPath(toolchain.ffmpegBin);
+      const hasFfmpeg = this.isFfmpegAvailable(toolchain.ffmpegBin);
       if (!hasFfmpeg) {
         await this.runStep("ffmpeg", "Installing FFmpeg", async () => {
-          const script = 'winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements';
-          await this.runPowerShell(script, "FFmpeg");
-          this.ensureFfmpegPath();
-          if (!this.isFfmpegAvailable()) {
+          await this.installFfmpeg(toolchain);
+          this.ensureFfmpegPath(toolchain.ffmpegBin);
+          if (!this.isFfmpegAvailable(toolchain.ffmpegBin)) {
             throw new Error("FFmpeg installation did not complete successfully.");
           }
         });
@@ -239,9 +248,9 @@ export class CompileManager extends EventEmitter {
       }
 
       await this.runStep("ffmpeg-env", "Ensuring FFmpeg PATH setup", async () => {
-        await this.ensureFfmpegUserPath();
-        this.ensureFfmpegPath();
-        if (!this.isFfmpegAvailable()) {
+        await this.ensureFfmpegUserPath(toolchain.ffmpegBin);
+        this.ensureFfmpegPath(toolchain.ffmpegBin);
+        if (!this.isFfmpegAvailable(toolchain.ffmpegBin)) {
           throw new Error("FFmpeg not available on PATH after setup.");
         }
       });
@@ -401,8 +410,27 @@ export class CompileManager extends EventEmitter {
     return null;
   }
 
-  private isFfmpegAvailable(): boolean {
-    this.ensureFfmpegPath();
+  private getFfmpegPaths(toolchainRoot?: string): { root: string; bin: string } {
+    const baseToolchainRoot = toolchainRoot ?? path.join(app.getPath("userData"), WORK_ROOT_NAME, TOOLCHAIN_DIR_NAME);
+    const root = path.join(baseToolchainRoot, FFMPEG_DIR_NAME);
+    return { root, bin: path.join(root, "bin") };
+  }
+
+  private isFfmpegAvailable(binDir?: string): boolean {
+    const target = binDir ?? this.getFfmpegPaths().bin;
+    this.ensureFfmpegPath(target);
+    const executable = path.join(target, "ffmpeg.exe");
+    try {
+      if (fs.existsSync(executable)) {
+        const result = spawnSync(executable, ["-version"], { stdio: "ignore" });
+        if (result.status === 0) {
+          return true;
+        }
+      }
+    } catch {
+      // fall back to PATH lookup below
+    }
+
     try {
       const result = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" });
       return result.status === 0;
@@ -411,21 +439,19 @@ export class CompileManager extends EventEmitter {
     }
   }
 
-  private ensureFfmpegPath(): void {
-    const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
-    const linksDir = path.join(localAppData, "Microsoft", "WinGet", "Links");
-    const ffmpegExe = path.join(linksDir, "ffmpeg.exe");
-
-    if (!fs.existsSync(ffmpegExe)) {
+  private ensureFfmpegPath(binDir?: string): void {
+    const target = binDir ?? this.getFfmpegPaths().bin;
+    if (!target) {
       return;
     }
-
-    if (this.isDirectoryOnPath(linksDir)) {
+    if (!fs.existsSync(target)) {
       return;
     }
-
+    if (this.isDirectoryOnPath(target)) {
+      return;
+    }
     const currentPath = process.env.PATH ?? "";
-    process.env.PATH = `${linksDir}${path.delimiter}${currentPath}`;
+    process.env.PATH = `${target}${path.delimiter}${currentPath}`;
   }
 
   private isDirectoryOnPath(dir: string): boolean {
@@ -436,30 +462,27 @@ export class CompileManager extends EventEmitter {
       .some((entry) => entry && path.resolve(entry).toLowerCase() === normalized);
   }
 
-  private async ensureFfmpegUserPath(): Promise<void> {
+  private async ensureFfmpegUserPath(binDir?: string): Promise<void> {
     if (process.platform !== "win32") {
       return;
     }
 
-    const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
-    const linksDir = path.join(localAppData, "Microsoft", "WinGet", "Links");
-    const ffmpegExe = path.join(linksDir, "ffmpeg.exe");
-
-    if (!fs.existsSync(ffmpegExe)) {
+    const targetDir = binDir ?? this.getFfmpegPaths().bin;
+    if (!fs.existsSync(targetDir)) {
       return;
     }
 
     const script = [
-      "$links = Join-Path $env:LOCALAPPDATA 'Microsoft\\WinGet\\Links'",
-      "if (-not (Test-Path $links)) { return }",
-      "$ffmpeg = Join-Path $links 'ffmpeg.exe'",
-      "if (-not (Test-Path $ffmpeg)) { return }",
+      `$target = '${this.toPosixPath(targetDir)}'`,
+      "if (-not (Test-Path $target)) { return }",
       "$userPath = [Environment]::GetEnvironmentVariable('Path','User')",
       "if ($null -eq $userPath) { $userPath = '' }",
       "$parts = @()",
-      "if ($userPath) { $parts = $userPath -split ';' | Where-Object { $_ -and $_.Trim().Length -gt 0 } }",
-      "if ($parts -notcontains $links) {",
-      "  $updated = if ($parts.Count -gt 0) { ($parts + $links) -join ';' } else { $links };",
+      "if ($userPath) {",
+      "  $parts = $userPath -split ';' | Where-Object { $_ -and $_.Trim().Length -gt 0 } | ForEach-Object { $_.Trim() }",
+      "}",
+      "if ($parts -notcontains $target) {",
+      "  $updated = if ($parts.Count -gt 0) { ($parts + $target) -join ';' } else { $target };",
       "  [Environment]::SetEnvironmentVariable('Path', $updated, 'User');",
       "}"
     ].join(" ; ");
@@ -481,6 +504,8 @@ export class CompileManager extends EventEmitter {
     const msysRoot = path.join(toolchainRoot, "msys64");
     const mingwBin = path.join(msysRoot, "mingw64", "bin");
     const usrBin = path.join(msysRoot, "usr", "bin");
+    const ffmpegRoot = path.join(toolchainRoot, FFMPEG_DIR_NAME);
+    const ffmpegBin = path.join(ffmpegRoot, "bin");
 
     const originalPath = process.env.PATH ?? "";
     const filteredEntries = originalPath
@@ -495,6 +520,9 @@ export class CompileManager extends EventEmitter {
     });
 
     const pathEntries = [mingwBin, usrBin];
+    if (fs.existsSync(ffmpegBin)) {
+      pathEntries.unshift(ffmpegBin);
+    }
     const vulkanSdkPathResolved = this.resolveVulkanSdkPath() ?? undefined;
     if (vulkanSdkPathResolved) {
       pathEntries.unshift(path.join(vulkanSdkPathResolved, "Bin"));
@@ -527,11 +555,16 @@ export class CompileManager extends EventEmitter {
     if (vulkanSdkPathResolved) {
       env.VULKAN_SDK = vulkanSdkPathResolved;
     }
+    if (fs.existsSync(ffmpegBin)) {
+      env.FFMPEG_BIN = ffmpegBin;
+    }
 
     return {
       workRoot,
       toolchainRoot,
       downloadsDir,
+      ffmpegRoot,
+      ffmpegBin,
       msysRoot,
       mingwBin,
       usrBin,
@@ -574,6 +607,99 @@ export class CompileManager extends EventEmitter {
     ].join("; ");
 
     await this.runPowerShell(script, "Install MSYS2");
+  }
+
+  private async installFfmpeg(toolchain: ToolchainContext): Promise<void> {
+    const { root, bin } = this.getFfmpegPaths(toolchain.toolchainRoot);
+    const zipPath = path.join(toolchain.downloadsDir, "ffmpeg.zip");
+    const extractDir = path.join(toolchain.downloadsDir, "ffmpeg-extract");
+
+    await fsp.rm(root, { recursive: true, force: true });
+    await fsp.rm(extractDir, { recursive: true, force: true });
+    await fsp.rm(zipPath, { force: true });
+
+    await fsp.mkdir(path.dirname(zipPath), { recursive: true });
+    await this.downloadArchive(FFMPEG_DOWNLOAD_URL, zipPath, "ffmpeg");
+
+    const script = [
+      `$zip = '${this.toPosixPath(zipPath)}'`,
+      `$extract = '${this.toPosixPath(extractDir)}'`,
+      `$dest = '${this.toPosixPath(root)}'`,
+      "if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }",
+      "if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }",
+      "if (-not (Test-Path $zip)) { throw 'FFmpeg download failed: archive missing.' }",
+      "Expand-Archive -LiteralPath $zip -DestinationPath $extract -Force",
+      "$candidate = Get-ChildItem $extract -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1",
+      "if ($null -eq $candidate) { throw 'FFmpeg archive missing expected directory.' }",
+      "New-Item -ItemType Directory -Path (Split-Path $dest -Parent) -Force | Out-Null",
+      "Move-Item -Path $candidate.FullName -Destination $dest",
+      "Remove-Item $zip -Force",
+      "Remove-Item $extract -Recurse -Force"
+    ].join("; ");
+
+    await this.runPowerShell(script, "FFmpegDownload");
+
+    const ffmpegExe = path.join(bin, "ffmpeg.exe");
+    if (!fs.existsSync(ffmpegExe)) {
+      throw new Error("FFmpeg binary not found after extraction.");
+    }
+
+    this.ensureFfmpegPath(bin);
+  }
+
+  private async downloadArchive(url: string, destination: string, label: string, redirectDepth = 0): Promise<void> {
+    if (redirectDepth > 5) {
+      throw new Error(`Too many redirects while downloading ${label}.`);
+    }
+
+    const tempPath = `${destination}.download`;
+    await fsp.rm(tempPath, { force: true });
+
+    await new Promise<void>((resolve, reject) => {
+      https
+        .get(url, (response) => {
+          const status = response.statusCode ?? 0;
+
+          if (status >= 300 && status < 400 && response.headers.location) {
+            response.resume();
+            this.downloadArchive(response.headers.location, destination, label, redirectDepth + 1)
+              .then(resolve)
+              .catch(reject);
+            return;
+          }
+
+          if (status >= 400) {
+            response.resume();
+            reject(new Error(`Failed to download ${label}: ${status}`));
+            return;
+          }
+
+          const total = Number(response.headers["content-length"] ?? 0);
+          let received = 0;
+          let lastPercent = -1;
+
+          const fileStream = fs.createWriteStream(tempPath);
+          response.on("data", (chunk) => {
+            received += chunk.length;
+            if (total > 0) {
+              const percent = Math.floor((received / total) * 100);
+              if (percent !== lastPercent && percent % 5 === 0) {
+                lastPercent = percent;
+                this.emitConsole(`[${label}] Download ${percent}%`);
+              }
+            }
+          });
+
+          pipeline(response, fileStream)
+            .then(async () => {
+              await fsp.rename(tempPath, destination);
+              this.emitConsole(`[${label}] Download complete.`);
+              resolve();
+            })
+            .catch((error) => reject(error));
+        })
+        .on("error", (error) => reject(error));
+    });
   }
 
   private async installPackages(context: ToolchainContext): Promise<void> {
