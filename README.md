@@ -2,96 +2,116 @@
 
 ![EasyWhisperUI logo](resources/icon.png)
 
-A fast, native desktop UI for transcribing media using Whisper — built entirely in modern C++.
+##  HUGE ANNOUNCEMENT: EasyWhisperUI is now Electron-based
 
-<table>
-  <tr>
-    <td align="center">
-      <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/main/resources/preview.png" width="450"/><br/>
-      <p><strong>Windows</strong></p>
-    </td>
-    <td align="center">
-      <img src="https://github.com/mehtabmahir/easy-whisper-ui/blob/mac/preview.png" width="400"/><br/>
-      <p><strong>macOS</strong></p>
-    </td>
-  </tr>
-</table>
+EasyWhisperUI has been **migrated to an Electron architecture (React + Electron + IPC)** to provide a **consistent cross-platform UI experience** (Windows + macOS **(and Linux very soon)**) and a **faster, more reliable development workflow** going forward.
 
-## 🍎 Initial macOS Support
+### Summary of the Electron migration
 
-Thanks to the incredible contribution from [celerycoloured](https://github.com/celerycoloured), EasyWhisperUI now runs on macOS! 
-Check it out on the `releases` page. 
+* **Unified UI across platforms** (Windows + macOS **(and Linux very soon)**) with the same layout, features, and behavior.
+* **Faster iteration and development** (React + Vite hot reload, cleaner UI changes, easier feature expansion).
+* **Hardened process boundaries**:
+
+  * Renderer UI is isolated (no direct Node access)
+  * Privileged work lives in the Electron main process
+  * A narrow preload bridge (`window.easyWhisper`) handles IPC safely
+* **Cleaner installs and runtime management**:
+
+  * App manages its own per-user workspace under AppData / userData
+  * Whisper binaries, models, toolchains, and downloads are staged predictably
+* **Foundation for long-term improvements** (UI polish, new tools, better UX, more consistent releases)
+
+This migration took **countless hours of work**: rewriting core UI flows, designing a safe IPC contract, implementing dependency/install workflows, and ensuring Windows/macOS behavior stays stable and consistent.
+
+**I heard all the feedback/complaints, this new Electron build has been rigorously tested on a fresh Windows system multiple times** to verify clean installs, dependency setup, and end-to-end transcription behavior.
+
+---
+
+A local, desktop app for transcribing audio/video using **Whisper (whisper.cpp)** — with GPU acceleration where available.
+
+![Windows preview](https://github.com/mehtabmahir/easy-whisper-ui/blob/main/resources/preview.png)
+
+---
 
 ## Features
-- Now with Live Transcriptions! (beta)
-- Supports translation for 100+ languages.
-- Supports batch processing — drag in multiple files or select many at once; they transcribe one by one in a queue.
-- Installer handles everything for you — from downloading dependencies to compiling/optimizing Whisper for your specific hardware.
-- Choice of `.txt` files, or `.srt` files with timestamps!
-- Drag & drop or use “Open With” to load media.
-- Automatically converts media to `.mp3` if needed using FFmpeg.
-- Dropdown menu to select the model (e.g. `tiny`, `medium-en`, `large-v3`).
-- Dropdown to select language (e.g. `en` for English).
-- Textbox for additional arguments.
-- Automatically downloads the chosen model if missing.
-- Shows all output in a console box.
-- Opens final transcript in Notepad.
 
+* **Live transcription** (beta)
+* **Batch transcription queue** (multiple files processed sequentially)
+* **Translation** support for 100+ languages
+* Outputs:
 
-- Fully portable MacOS release!
-- Windows Acrylic blur theme!
-- Fully C++ implementation — no Python!
-- Uses Vulkan API for cross-platform GPU acceleration!
-- Uses Metal API for GPU acceleration on Apple Silicon on MacOS!
-- More coming soon!
+  * `.txt`
+  * `.srt` (timestamps)
+* Drag & drop and **Open With** support
+* Automatically converts media to the required audio format using **FFmpeg**
+* Model selection (e.g. `tiny`, `medium-en`, `large-v3`)
+* Language selection (e.g. `en`)
+* Optional “additional arguments” textbox
+* Automatically downloads models when missing
+* Console output view during processing
+
+### Acceleration
+
+* **Windows**: Vulkan acceleration (supported GPUs)
+* **macOS (Apple Silicon)**: Metal acceleration
 
 ---
 
 ## Requirements
 
-Windows 10/11:
+### Windows 10/11
 
-- AMD, Intel, or NVIDIA Graphics Card with Vulkan support. (Pretty much all GPUs including Integrated)
-   - Virtual Machines won't work unless it supports `VulkanSDK` (e.g GPU passthrough)
+* AMD / Intel / NVIDIA GPU with **Vulkan** support
+  *(Most modern discrete + integrated GPUs work.)*
+* Virtual machines require Vulkan support (e.g., GPU passthrough)
 
-MacOS:
+### macOS
 
-- All Apple Silicon (M1 M2 M3 M4 etc)
+* Apple Silicon (M1 / M2 / M3 / M4 / M5)
+
+### Linux
+
+* Not supported yet (install/compile flow not implemented)
 
 ---
 
-## Setup
+## Install
 
-1. **Download** the latest installer.  
-2. **Run** the application.
+### Windows
+
+1. Download the latest **Windows installer** from **Releases**
+2. Run it (installs per-user under AppData / LocalAppData)
+3. Desktop + Start Menu shortcuts are created
+
+### macOS
+
+1. Download the `.dmg` from **Releases**
+2. Open it and drag **EasyWhisperUI** into **Applications**
 
 ---
 
 ## Donate
 
 THANK YOU!:
-- Craig H: $50 
-- Minh P: $5
-- Rödvarg R: $2
 
-This project takes **tons of hours of work** — ensuring everything works smoothly across systems takes a LOT of time testing. It's all built in my free time, and I’m not getting paid for it.
+* Craig H: $50
+* Minh P: $5
+* Rödvarg R: $2
 
-If you’ve found EasyWhisperUI useful, please consider supporting its development:
+This project takes a lot of time to maintain and test across systems.
+
+If EasyWhisperUI helped you, consider supporting development:
 
 👉 [**Donate via PayPal**](https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD)
-
-Your support truly helps and is greatly appreciated!
-
 
 ---
 
 ## Credits
 
-- [whisper.cpp](https://github.com/ggerganov/whisper.cpp) by Georgi Gerganov  
-- [FFmpeg Windows builds](https://www.gyan.dev/ffmpeg/) by Gyan.dev  
-- Built with [Qt](https://www.qt.io)  
-- Installer created using [Inno Setup](https://jrsoftware.org/isinfo.php)
-- Huge thanks to [celerycoloured](https://github.com/celerycoloured) for the initial macOS port!
+* [whisper.cpp](https://github.com/ggerganov/whisper.cpp) by Georgi Gerganov
+* [FFmpeg](https://ffmpeg.org)
+* Windows FFmpeg builds: [gyan.dev](https://www.gyan.dev/ffmpeg/)
+* Electron packaging: `electron-builder`
 
 ---
 
@@ -110,62 +130,47 @@ This application includes the following open-source components:
 
 ---
 
-whisper.cpp by Georgi Gerganov  
-License: MIT  
+whisper.cpp by Georgi Gerganov
+License: MIT
 https://github.com/ggerganov/whisper.cpp
 
 ---
 
-FFmpeg  
-License: LGPL 2.1  
-https://ffmpeg.org  
+FFmpeg
+License: LGPL 2.1
+https://ffmpeg.org
 Windows builds by: https://www.gyan.dev/ffmpeg/
 
 The FFmpeg binary is provided as a separate file and may be replaced with a compatible version.
-
----
-
-Qt Framework  
-License: LGPL 3.0  
-https://www.qt.io
-
-The Qt libraries are dynamically linked and may be replaced with compatible versions.
-
----
-
-Installer built with Inno Setup  
-License: Free for commercial and non-commercial use  
-https://jrsoftware.org/isinfo.php
-
 ```
 
 ---
 
 ## Build Steps (For Developers)
 
-Windows:
+### Electron app
 
-1. **Install [Qt Creator](https://www.qt.io/product/development-tools)**  
-   – Use a kit with a compatible C++ compiler (e.g. MinGW).
-2. **Install [Inno Setup](https://jrsoftware.org/isdl.php)**  
-   – Required to build the installer.
-3. **Clone this repository**
-   ```bash
-   git clone https://github.com/mehtabmahir/easy-whisper-ui.git
-   ```
-4. **Open `CMakeLists.txt` in Qt Creator**  
-   – Located in the root of the cloned folder.
-5. **Use a build kit with a C++ compiler and CMake**
-6. **Build the project**  
-   – Press `Ctrl + B` or click the Build button.
-7. Installer and build will be in `build\Installer` and `build\Final` respectively.
+From the `electron/` folder:
 
-MacOS:
+```bash
+npm install
+npm run dev
+```
 
-- Instructions coming soon!
+Production build:
+
+```bash
+npm run build
+```
+
+Package (generates installer artifacts):
+
+```bash
+npm run dist
+```
+
+Outputs are written to:
+
+* `build/electron-dist`
 
 ---
-
-
-
-
