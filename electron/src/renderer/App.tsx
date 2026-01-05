@@ -929,24 +929,26 @@ function App(): JSX.Element {
               </div>
             </div>
 
-            <div className={styles.installUninstallCluster}>
-              <button
-                type="button"
-                className={styles.installUninstallButton}
-                onClick={handleCompile}
-                disabled={!apiAvailable || isCompiling || isMac}
-              >
-                {isMac ? "Not supported on macOS" : (isInstalled ? "Installed" : "Install")}
-              </button>
-              <button
-                type="button"
-                className={`${styles.installUninstallButton} ${styles.dangerButton}`}
-                onClick={handleUninstall}
-                disabled={!apiAvailable || isCompiling || (!isMac && compileInfo.state !== "success")}
-              >
-                Uninstall
-              </button>
-            </div>
+            {!isMac && (
+              <div className={styles.installUninstallCluster}>
+                <button
+                  type="button"
+                  className={styles.installUninstallButton}
+                  onClick={handleCompile}
+                  disabled={!apiAvailable || isCompiling}
+                >
+                  {isInstalled ? "Installed" : "Install"}
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.installUninstallButton} ${styles.dangerButton}`}
+                  onClick={handleUninstall}
+                  disabled={!apiAvailable || isCompiling || compileInfo.state !== "success"}
+                >
+                  Uninstall
+                </button>
+              </div>
+            )}
           </aside>
 
           <main className={styles.rightPanel}>
