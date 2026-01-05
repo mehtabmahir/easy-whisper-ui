@@ -68,9 +68,14 @@
       {
         "from": "../resources/icon.ico",
         "to": "icon.ico"
+      },
+      {
+        "from": "../resources/icon.icns",
+        "to": "icon.icns"
       }
     ],
     "mac": {
+      "icon": "buildResources/icon.icns",
       "target": "dmg",
       "extraResources": [
         {
@@ -79,6 +84,9 @@
           "filter": ["**/*"]
         }
       ]
+    },
+    "dmg": {
+      "icon": "buildResources/icon.icns"
     },
     "win": {
       "target": "nsis",

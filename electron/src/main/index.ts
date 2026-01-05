@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme, shell } from "electron";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
@@ -23,11 +23,24 @@ if (process.platform === "win32") {
 }
 
 function resolveAppIcon(): string | undefined {
-  const iconFile = process.platform === "win32" ? "icon.ico" : "icon.png";
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, iconFile);
+  const resourceRoot = app.isPackaged ? process.resourcesPath : path.join(__dirname, "../../../resources");
+  const candidates: string[] = [];
+
+  if (process.platform === "win32") {
+    candidates.push("icon.ico", "icon.png");
+  } else if (process.platform === "darwin") {
+    candidates.push("icon.icns", "icon.png");
+  } else {
+    candidates.push("icon.png");
   }
-  return path.join(__dirname, "../../../resources", iconFile);
+
+  for (const fileName of candidates) {
+    const candidatePath = path.join(resourceRoot, fileName);
+    if (fs.existsSync(candidatePath)) {
+      return candidatePath;
+    }
+  }
+  return undefined;
 }
 
 async function createMainWindow(): Promise<void> {
@@ -251,6 +264,16 @@ function registerIpcChannels(): void {
 }
 
 app.whenReady().then(() => {
+  if (process.platform === "darwin") {
+    const iconPath = resolveAppIcon();
+    if (iconPath) {
+      const dockImage = nativeImage.createFromPath(iconPath);
+      if (!dockImage.isEmpty()) {
+        app.dock.setIcon(dockImage);
+      }
+    }
+  }
+
   registerIpcChannels();
   console.log("userData path:", app.getPath("userData"));
   return createMainWindow();
