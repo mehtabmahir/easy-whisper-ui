@@ -1,169 +1,104 @@
 # EasyWhisperUI (Electron)
 
-Electron-based desktop app for **EasyWhisperUI**, built with:
+This folder contains the **Electron-based desktop app** for EasyWhisperUI.
 
-* **Main**: Electron main process (privileged work + IPC handlers)
-* **Preload**: `contextBridge` exposing `window.easyWhisper`
-* **Renderer**: React + Vite (UI only; no direct Node access)
+## Overview
 
-## Workspace layout (per-user)
+The app is split into three layers:
 
-The app manages a per-user workspace under Electron `userData`:
+* **Renderer (React + Vite)**: UI only (no Node/Electron privileged access)
+* **Preload (contextBridge)**: exposes a small `window.easyWhisper` API
+* **Main (Electron main process)**: owns all privileged work (dialogs, window controls, installing/building/staging binaries, spawning FFmpeg/Whisper, streaming logs/events)
+
+## Per-user workspace
+
+At runtime the app manages a per-user workspace under Electron’s `userData` directory:
 
 * `.../EasyWhisperUI/whisper-workspace/bin` — staged executables
-* `.../EasyWhisperUI/whisper-workspace/models` — downloaded `ggml-*.bin` models
-* `.../EasyWhisperUI/whisper-workspace/toolchain` — Windows toolchain (MSYS2 + FFmpeg)
-* `.../EasyWhisperUI/whisper-workspace/downloads` — Windows cached archives
+* `.../EasyWhisperUI/whisper-workspace/models` — downloaded `ggml-*.bin` model files
+* `.../EasyWhisperUI/whisper-workspace/toolchain` — **Windows only**: MSYS2 + FFmpeg toolchain
+* `.../EasyWhisperUI/whisper-workspace/downloads` — **Windows only**: cached archives
 
-`whisper-workspace` is the expected workspace root name used by the main-process services. ([GitHub][1])
+## Project layout
 
----
+### Config
 
-## Repo structure
+* `package.json`
 
-### Top-level config
+  * npm scripts for dev/build/dist
+  * `electron-builder` config under `build`
+* `vite.config.ts`
 
-* `package.json` — scripts + `electron-builder` config
-* `vite.config.ts` — renderer build: root `src/renderer`, output `dist/renderer`, `base: "./"`, `publicDir` points to repo `resources`
-* `tsconfig.main.json` — builds **main** → `dist/main` (CJS)
-* `tsconfig.preload.json` — builds **preload** → `dist/preload` (CJS)
-* `tsconfig.renderer.json` — typecheck only (`noEmit`)
+  * renderer root `src/renderer`
+  * output `dist/renderer`
+  * `base: "./"`
+  * `publicDir` points at repo top-level `resources`
+* `tsconfig.main.json` → builds Electron **main** → `dist/main` (CommonJS)
+* `tsconfig.preload.json` → builds **preload** → `dist/preload` (CommonJS)
+* `tsconfig.renderer.json` → typecheck only (`noEmit`) because Vite bundles
 * `.eslintrc.json`, `.gitignore`
 
-### Source
-
-#### Main (`src/main`)
+### Main process (`src/main`)
 
 * `src/main/index.ts`
 
-  * Creates the main `BrowserWindow`
-  * Registers IPC handlers via `ipcMain.handle(...)`
-  * Pushes async events to renderer via `webContents.send(...)`
-
+  * creates the `BrowserWindow` (security-focused settings)
+  * registers IPC handlers via `ipcMain.handle(...)`
+  * pushes async events to renderer via `webContents.send(...)`
 * `src/main/services/compileManager.ts`
 
-  * Windows: installs toolchain components and builds whisper binaries into the workspace
-  * macOS: stages prebuilt app-bundled binaries into the workspace (see macOS section) ([GitHub][1])
-
+  * dependency workflow (Windows) + compilation/staging orchestration
+  * emits progress + console events
 * `src/main/services/binaryResolver.ts`
 
-  * Resolves runtime executables.
-  * `ffmpeg` resolution:
-
-    * Prefer workspace toolchain `.../toolchain/ffmpeg/bin/ffmpeg(.exe)`
-    * Otherwise fallback to system `ffmpeg` (validated via `-version` check) ([GitHub][2])
-
+  * locates `ffmpeg`, `whisper-cli`, `whisper-stream`
+  * prefers staged workspace binaries; can fall back to packaged resources / PATH (ffmpeg)
 * `src/main/services/transcriptionManager.ts`
 
-  * Queue-based batch transcription (ffmpeg → whisper-cli)
-  * Downloads models (Hugging Face `ggerganov/whisper.cpp`) into workspace models folder
-  * Emits console + queue events
-
+  * queue-based batch transcription
+  * converts inputs to WAV via `ffmpeg` when needed
+  * downloads models from Hugging Face (`ggerganov/whisper.cpp`)
+  * runs `whisper-cli` and streams logs + queue state
 * `src/main/services/liveManager.ts`
 
-  * Starts/stops `whisper-stream`
-  * Forwards stdout lines to renderer as live text events
-  * Ensures model artifacts exist (same model flow as batch)
+  * starts/stops live transcription using `whisper-stream`
+  * forwards stdout lines to renderer as live text events
+  * ensures the selected model exists
 
-#### Preload (`src/preload`)
+### Preload (`src/preload`)
 
 * `src/preload/index.ts`
 
-  * Exposes `window.easyWhisper` via `contextBridge.exposeInMainWorld`
-  * Forwards renderer calls to main IPC (`ipcRenderer.invoke`) and subscribes to main push events
+  * exposes `window.easyWhisper` using `contextBridge.exposeInMainWorld`
+  * forwards calls to main via IPC
 
-#### Renderer (`src/renderer`)
+### Renderer (`src/renderer`)
 
-* `src/renderer/App.tsx` — main UI + settings + queue/log rendering
-* `src/renderer/FirstLaunchLoader.tsx` — first-run overlay
-* `src/renderer/styles/*` — CSS modules + global styles
+* `src/renderer/App.tsx`
 
-The first-launch overlay uses a localStorage flag (`easy-whisper-ui.first-launch`) and is wired into `App.tsx`. ([GitHub][3])
+  * main UI + settings stored in `localStorage`
+  * custom titlebar buttons call `window.easyWhisper.*Window()`
+  * first-launch loader that runs install/compile checks and subscribes to progress
+  * queue UI + console output UI
+* `src/renderer/FirstLaunchLoader.tsx`
 
-#### Shared types (`src/types`)
+  * full-screen setup overlay (install/compile progress)
+* `src/renderer/styles/*`
+
+  * CSS modules + global styles
+
+### Shared types
 
 * `src/types/easy-whisper.d.ts`
 
-  * Strongly typed contract shared across renderer / preload / main
-  * Defines the `EasyWhisperApi` surface on `window`
+  * typed contract for renderer ↔ preload ↔ main
+  * defines `CompileProgressEvent`, `QueueState`, `LiveRequest`, and `EasyWhisperApi`
 
----
+## IPC + `window.easyWhisper` API
 
-## Development
+Renderer calls privileged operations through `window.easyWhisper` (preload), which forwards to main via IPC.
 
-From the `electron/` folder:
-
-### Dev mode
-
-```bash
-npm run dev
-```
-
-Runs main + preload `tsc -w`, Vite dev server, then launches Electron.
-
-### Production build
-
-```bash
-npm run build
-```
-
-* Builds main/preload to `dist/main` and `dist/preload`
-* Bundles renderer to `dist/renderer`
-
-### Packaging
-
-```bash
-npm run dist
-```
-
-Packages with `electron-builder` into `../build/electron-dist`.
-
----
-
-## Packaging details
-
-* Uses `asar: true`
-* Packages built outputs under:
-
-  * `dist/main/**/*`
-  * `dist/preload/**/*`
-  * `dist/renderer/**/*`
-  * `package.json`
-
-### macOS bundled binaries
-
-macOS builds include `buildResources/mac-bin` inside the packaged app via `electron-builder` `extraResources`, copied into the app’s resources as `mac-bin`. ([GitHub][1])
-
-At runtime on macOS, the main process stages these prebuilt binaries into the per-user workspace. ([GitHub][1])
-
----
-
-## Platform behavior
-
-### Windows
-
-* `ensureDependencies()` / `compileWhisper()` manage toolchain + builds into the workspace.
-* `ffmpeg` is expected under the workspace toolchain path when installed; system `ffmpeg` is used only as a fallback. ([GitHub][2])
-
-### macOS
-
-* Packaged app ships prebuilt binaries under `mac-bin` and stages them into the workspace during install/compile flow. ([GitHub][1])
-* `checkInstall()` considers both workspace binaries and the bundled mac-bin directory. ([GitHub][1])
-* Uninstall removes the workspace and also attempts to remove the `.app` from `/Applications` (prefers moving it to Trash). ([GitHub][4])
-
-### Linux
-
-* Not implemented (returns a platform not supported message for install/compile flows).
-
----
-
-## IPC + preload API
-
-Renderer never calls Node/Electron APIs directly. Everything privileged goes through `window.easyWhisper`.
-
-### IPC channels
-
-Renderer → Main (`ipcRenderer.invoke` / `ipcMain.handle`):
+### Renderer → Main (invoke/handle)
 
 * `easy-whisper:open-dialog`
 * `easy-whisper:ensure-deps`
@@ -179,7 +114,7 @@ Renderer → Main (`ipcRenderer.invoke` / `ipcMain.handle`):
 * `window:toggle-maximize`
 * `window:get-state`
 
-Main → Renderer (push via `webContents.send`, subscribe via `ipcRenderer.on`):
+### Main → Renderer (push events)
 
 * `easy-whisper:compile-progress`
 * `easy-whisper:console`
@@ -188,39 +123,116 @@ Main → Renderer (push via `webContents.send`, subscribe via `ipcRenderer.on`):
 * `easy-whisper:live-state`
 * `window:maximize-state`
 
-### Window controls (frameless)
+## Dev / Build / Package
 
-The app supports a frameless window with custom titlebar controls exposed over IPC (close/minimize/toggle maximize + state). ([GitHub][5])
+### Dev mode (`npm run dev`)
 
----
+Runs four processes:
+
+1. `dev:main` → `tsc -w -p tsconfig.main.json`
+2. `dev:preload` → `tsc -w -p tsconfig.preload.json`
+3. `dev:renderer` → `vite` dev server (`http://localhost:5173`)
+4. `dev:electron` → waits for outputs + dev server, then launches Electron via `electronmon`
+
+In dev, the main process loads the renderer via `VITE_DEV_SERVER_URL`.
+
+### Production build (`npm run build`)
+
+* `tsc` builds main/preload → `dist/main`, `dist/preload`
+* `vite build` bundles renderer → `dist/renderer`
+
+### Packaging (`npm run dist`)
+
+* runs the production build
+* packages via `electron-builder` to `../build/electron-dist`
 
 ## Runtime flows
 
-### First launch / install
+### 1) First-launch setup / install
 
-1. Renderer shows `FirstLaunchLoader`
-2. Calls `ensureDependencies({ force: false })` (Windows)
-3. Calls `compileWhisper()` (Windows; macOS stages bundled binaries)
-4. Subscribes to compile progress + console events
-5. Confirms install via `checkInstall()`
+**Windows**
 
-### Batch transcription
+1. Renderer shows the loader overlay
+2. Runs `ensureDependencies({ force: false })`
+3. Runs `compileWhisper({ force: false })`
+4. Subscribes to compile progress events and updates UI
+5. Verifies installation with `checkInstall()`
 
-1. `openAudioFiles()` → native file picker
-2. `enqueueTranscriptions({ files, settings })`
-3. Main converts to WAV via `ffmpeg` (if needed)
-4. Main ensures model is downloaded
-5. Main runs `whisper-cli` and streams logs + queue state
+**macOS**
 
-### Live transcription
+* Works out of the box (binaries are bundled/staged; no dependency install step)
 
-1. `startLiveTranscription({ settings, stepMs, lengthMs })`
-2. Main ensures model is present
+**Linux**
+
+* Dependency installation / compilation flows are currently not implemented
+
+### 2) Batch transcription
+
+**Windows / macOS**
+
+1. Renderer clicks **Open** → `openAudioFiles()`
+2. Renderer calls `enqueueTranscriptions({ files, settings })`
+3. Main converts to `.wav` via `ffmpeg` (if needed)
+4. Main downloads the selected model if missing
+5. Main runs `whisper-cli` and streams console + queue events
+
+**Linux**
+
+* Not implemented (install/compile and binary execution are not supported yet)
+
+### 3) Live transcription
+
+**Windows / macOS**
+
+1. Renderer clicks **Live** → `startLiveTranscription({ settings, stepMs, lengthMs })`
+2. Main downloads the selected model if missing
 3. Main runs `whisper-stream`
-4. stdout is forwarded as `easy-whisper:live-text`
+4. Renderer receives text via `easy-whisper:live-text` and state via `easy-whisper:live-state`
 
-[1]: https://github.com/mehtabmahir/easy-whisper-ui/commit/caede5b7298e0709f213271da1e5a862befe82f4 "Prepare binaries for macOS · mehtabmahir/easy-whisper-ui@caede5b · GitHub"
-[2]: https://github.com/mehtabmahir/easy-whisper-ui/commit/49ff811dca027a1072ff01bf637c2911c8078d72 "fix several issues with dependencies · mehtabmahir/easy-whisper-ui@49ff811 · GitHub"
-[3]: https://github.com/mehtabmahir/easy-whisper-ui/commit/e8ae9337ffdac71eb9c0a2d72aee5be1afe4fc00 "First time installer implementation · mehtabmahir/easy-whisper-ui@e8ae933 · GitHub"
-[4]: https://github.com/mehtabmahir/easy-whisper-ui/commit/627781156e8c3905917ed0bb13bcccac23cc5e3b "disable compiling and fix uninstall on macOS · mehtabmahir/easy-whisper-ui@6277811 · GitHub"
-[5]: https://github.com/mehtabmahir/easy-whisper-ui/commit/2dcfc81d3e201a3eefc8e523108194971dfc3c45 "frameless window · mehtabmahir/easy-whisper-ui@2dcfc81 · GitHub"
+**Linux**
+
+* Not implemented
+
+---
+
+
+### 2) Batch transcription
+
+1. Renderer clicks **Open** → `openAudioFiles()`
+2. Renderer calls `enqueueTranscriptions({ files, settings })`
+3. Main processes sequentially:
+
+   * convert to `.wav` via `ffmpeg` (if needed)
+   * download `ggml-<model>.bin` if missing
+   * run `whisper-cli`
+4. Renderer receives:
+
+   * console logs via `easy-whisper:console`
+   * queue state via `easy-whisper:queue`
+
+### 3) Live transcription
+
+1. Renderer clicks **Live** → `startLiveTranscription({ settings, stepMs, lengthMs })`
+2. Main ensures the model exists and spawns `whisper-stream`
+3. Renderer receives:
+
+   * text lines via `easy-whisper:live-text`
+   * start/stop state via `easy-whisper:live-state`
+
+## Troubleshooting
+
+* **“Preload bridge unavailable”**
+
+  * verify `dist/preload/index.js` exists
+  * verify the `BrowserWindow` preload path points to it
+* **Windows: dependency install requires `winget`**
+
+  * Windows Package Manager must be ensured available
+  * agreement acceptance is handled by the install script
+* **Models won’t download**
+
+  * confirm outbound HTTPS access to Hugging Face
+* **FFmpeg missing**
+
+  * Windows: expected under `.../toolchain/ffmpeg/bin`
+  * otherwise: `ffmpeg` must be on PATH
