@@ -218,21 +218,3 @@ In dev, the main process loads the renderer via `VITE_DEV_SERVER_URL`.
 
    * text lines via `easy-whisper:live-text`
    * start/stop state via `easy-whisper:live-state`
-
-## Troubleshooting
-
-* **“Preload bridge unavailable”**
-
-  * verify `dist/preload/index.js` exists
-  * verify the `BrowserWindow` preload path points to it
-* **Windows: dependency install requires `winget`**
-
-  * Windows Package Manager must be ensured available
-  * agreement acceptance is handled by the install script
-* **Models won’t download**
-
-  * confirm outbound HTTPS access to Hugging Face
-* **FFmpeg missing**
-
-  * Windows: expected under `.../toolchain/ffmpeg/bin`
-  * otherwise: `ffmpeg` must be on PATH

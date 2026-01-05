@@ -81,7 +81,7 @@
       ]
     },
     "win": {
-      "target": "portable",
+      "target": "nsis",
       "icon": "../resources/icon.ico"
     },
     "linux": {
