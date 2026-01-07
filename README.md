@@ -4,11 +4,11 @@
 
 ##  HUGE ANNOUNCEMENT: EasyWhisperUI is now Electron-based
 
-EasyWhisperUI has been **migrated to an Electron architecture (React + Electron + IPC)** to provide a **consistent cross-platform UI experience** (Windows + macOS **(and Linux very soon)**) and a **faster, more reliable development workflow** going forward.
+EasyWhisperUI has been **migrated to an Electron architecture (React + Electron + IPC)** to provide a **consistent cross-platform UI experience** (Windows + macOS + Linux) and a **faster, more reliable development workflow** going forward.
 
 ### Summary of the Electron migration
 
-* **Unified UI across platforms** (Windows + macOS **(and Linux very soon)**) with the same layout, features, and behavior.
+* **Unified UI across platforms** (Windows + macOS + Linux) with the same layout, features, and behavior.
 * **Faster iteration and development** (React + Vite hot reload, cleaner UI changes, easier feature expansion).
 * **Hardened process boundaries**:
 
@@ -71,7 +71,10 @@ A local, desktop app for transcribing audio/video using **Whisper (whisper.cpp)*
 
 ### Linux
 
-* Not supported yet (install/compile flow not implemented)
+* Build dependencies (for developers building from source):
+  * cmake, ninja, gcc, g++
+  * SDL2 development libraries (e.g., `libsdl2-dev` on Ubuntu/Debian, `SDL2-devel` on Fedora)
+  * curl
 
 ---
 
@@ -87,6 +90,12 @@ A local, desktop app for transcribing audio/video using **Whisper (whisper.cpp)*
 
 1. Download the `.dmg` from **Releases**
 2. Open it and drag **EasyWhisperUI** into **Applications**
+
+### Linux
+
+1. Download the **AppImage** from **Releases**
+2. Make it executable: `chmod +x EasyWhisperUI-x.x.x.AppImage`
+3. Run it: `./EasyWhisperUI-x.x.x.AppImage`
 
 ---
 

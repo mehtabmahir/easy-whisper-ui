@@ -12,6 +12,7 @@ import { CompileOptions, CompileProgressEvent, CompileResult } from "../../types
 export const WORK_ROOT_NAME = "whisper-workspace";
 const WINDOWS_BINARY_TARGETS = ["whisper-cli.exe", "whisper-stream.exe"];
 const MAC_BUNDLE_DIR_NAME = "mac-bin";
+const LINUX_BUNDLE_DIR_NAME = "linux-bin";
 
 const TOOLCHAIN_DIR_NAME = "toolchain";
 const DOWNLOADS_DIR_NAME = "downloads";
@@ -73,6 +74,15 @@ export class CompileManager extends EventEmitter {
     if (process.platform === "darwin") {
       try {
         return await this.stagePrebuiltMacBinaries(options.force === true);
+      } catch (error) {
+        const err = error as Error;
+        return { success: false, error: err.message };
+      }
+    }
+
+    if (process.platform === "linux") {
+      try {
+        return await this.stagePrebuiltLinuxBinaries(options.force === true);
       } catch (error) {
         const err = error as Error;
         return { success: false, error: err.message };
@@ -169,12 +179,13 @@ export class CompileManager extends EventEmitter {
       return { success: true };
     }
 
+    if (process.platform === "linux") {
+      this.emitProgress({ step: "prebuilt", message: "Linux detected — no deps to install.", progress: 100, state: "success" });
+      return { success: true };
+    }
+
     if (process.platform !== "win32") {
-      const msg = process.platform === "linux"
-        ? "Dependency installation currently implemented only for Windows. Linux support coming later."
-        : "Dependency installation not required on this platform.";
-      this.emitProgress({ step: "dependencies", message: msg, progress: 100, state: "success" });
-      return { success: false, error: msg };
+      return { success: false, error: "This platform is not supported for dependency installation." };
     }
 
     if (this.running) {
@@ -296,6 +307,11 @@ export class CompileManager extends EventEmitter {
 
     if (process.platform === "darwin") {
       const bundleDir = this.resolveMacBundleDir();
+      return bundleDir ? { installed: true, outputDir: bundleDir } : { installed: false };
+    }
+
+    if (process.platform === "linux") {
+      const bundleDir = this.resolveLinuxBundleDir();
       return bundleDir ? { installed: true, outputDir: bundleDir } : { installed: false };
     }
 
@@ -931,6 +947,15 @@ export class CompileManager extends EventEmitter {
       }
     }
 
+    if (process.platform === "linux") {
+      try {
+        const files = fs.readdirSync(binDir);
+        return files.includes("whisper-cli") && files.includes("whisper-stream");
+      } catch {
+        return false;
+      }
+    }
+
     return false;
   }
 
@@ -966,6 +991,38 @@ export class CompileManager extends EventEmitter {
     return { success: true, outputDir: binDir };
   }
 
+  private async stagePrebuiltLinuxBinaries(force: boolean): Promise<CompileResult> {
+    const workRoot = await this.ensureWorkDirs();
+    const binDir = path.join(workRoot, "bin");
+
+    if (this.hasBinariesInDir(binDir) && !force) {
+      this.emitProgress({
+        step: "prebuilt",
+        message: "Prebuilt Linux binaries already staged.",
+        progress: 100,
+        state: "success"
+      });
+      return { success: true, outputDir: binDir };
+    }
+
+    const sourceDir = this.resolveLinuxBundleDir();
+    if (!sourceDir) {
+      throw new Error("Prebuilt Linux binaries are not bundled with the application.");
+    }
+
+    await fsp.mkdir(binDir, { recursive: true });
+    await fsp.cp(sourceDir, binDir, { recursive: true, force: true });
+
+    this.emitProgress({
+      step: "prebuilt",
+      message: "Prebuilt Linux binaries staged.",
+      progress: 100,
+      state: "success"
+    });
+
+    return { success: true, outputDir: binDir };
+  }
+
   private resolveMacBundleDir(): string | null {
     const candidates: string[] = [];
 
@@ -976,6 +1033,27 @@ export class CompileManager extends EventEmitter {
     candidates.push(
       path.join(app.getAppPath(), "buildResources", MAC_BUNDLE_DIR_NAME),
       path.join(__dirname, "../../..", "buildResources", MAC_BUNDLE_DIR_NAME)
+    );
+
+    for (const candidate of candidates) {
+      if (candidate && fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  private resolveLinuxBundleDir(): string | null {
+    const candidates: string[] = [];
+
+    if (process.resourcesPath) {
+      candidates.push(path.join(process.resourcesPath, LINUX_BUNDLE_DIR_NAME));
+    }
+
+    candidates.push(
+      path.join(app.getAppPath(), "buildResources", LINUX_BUNDLE_DIR_NAME),
+      path.join(__dirname, "../../..", "buildResources", LINUX_BUNDLE_DIR_NAME)
     );
 
     for (const candidate of candidates) {

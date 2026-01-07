@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=EasyWhisperUI
+Comment=Local desktop app for transcribing audio/video using Whisper
+Exec=EasyWhisperUI
+Icon=EasyWhisperUI
+Type=Application
+Categories=AudioVideo;Audio;Utility;
+StartupNotify=true
+StartupWMClass=EasyWhisperUI

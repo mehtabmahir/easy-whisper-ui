@@ -22,7 +22,20 @@ export function resolveBinary(baseName: string, options: ResolveOptions = {}): B
   if (baseName === "ffmpeg") {
     const toolchainBin = path.join(app.getPath("userData"), WORK_ROOT_NAME, "toolchain", "ffmpeg", "bin");
     const toolchainExe = path.join(toolchainBin, exeName);
-    const searched = [toolchainExe, fallback];
+    const searched: string[] = [toolchainExe, fallback];
+
+    if (process.platform === "linux" || process.platform === "darwin") {
+      const workspaceBin = path.join(app.getPath("userData"), WORK_ROOT_NAME, "bin");
+      const workspaceFfmpeg = path.join(workspaceBin, exeName);
+      searched.unshift(workspaceFfmpeg);
+      try {
+        if (fs.existsSync(workspaceFfmpeg) && fs.statSync(workspaceFfmpeg).isFile()) {
+          return { command: workspaceFfmpeg, found: true, searched };
+        }
+      } catch {
+        // ignore filesystem races
+      }
+    }
 
     try {
       if (fs.existsSync(toolchainExe) && fs.statSync(toolchainExe).isFile()) {
@@ -53,16 +66,31 @@ export function resolveBinary(baseName: string, options: ResolveOptions = {}): B
 
   if (process.resourcesPath) {
     candidates.push(path.join(process.resourcesPath, exeName));
-    candidates.push(path.join(process.resourcesPath, "mac-bin", exeName));
+    if (process.platform === "darwin") {
+      candidates.push(path.join(process.resourcesPath, "mac-bin", exeName));
+    } else if (process.platform === "linux") {
+      candidates.push(path.join(process.resourcesPath, "linux-bin", exeName));
+    }
   }
 
   candidates.push(
     path.join(app.getAppPath(), exeName),
-    path.join(app.getAppPath(), "buildResources", exeName),
-    path.join(app.getAppPath(), "buildResources", "mac-bin", exeName),
-    path.join(__dirname, "../../../buildResources", exeName),
-    path.join(__dirname, "../../../buildResources", "mac-bin", exeName)
+    path.join(app.getAppPath(), "buildResources", exeName)
   );
+
+  if (process.platform === "darwin") {
+    candidates.push(
+      path.join(app.getAppPath(), "buildResources", "mac-bin", exeName),
+      path.join(__dirname, "../../../buildResources", "mac-bin", exeName)
+    );
+  } else if (process.platform === "linux") {
+    candidates.push(
+      path.join(app.getAppPath(), "buildResources", "linux-bin", exeName),
+      path.join(__dirname, "../../../buildResources", "linux-bin", exeName)
+    );
+  }
+
+  candidates.push(path.join(__dirname, "../../../buildResources", exeName));
 
   const uniqueCandidates = Array.from(new Set(candidates));
 

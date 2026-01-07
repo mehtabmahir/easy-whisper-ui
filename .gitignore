@@ -2,3 +2,4 @@
 /Output
 CMakeLists.txt.user
 .DS_Store
+electron/buildResources/linux-bin/

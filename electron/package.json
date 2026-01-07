@@ -93,7 +93,21 @@
       "icon": "../resources/icon.ico"
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "icon": "../resources/icon.png",
+      "category": "AudioVideo",
+      "desktop": {
+        "Name": "EasyWhisperUI",
+        "Comment": "Local desktop app for transcribing audio/video using Whisper",
+        "Categories": "AudioVideo;Audio;Utility"
+      },
+      "extraResources": [
+        {
+          "from": "buildResources/linux-bin",
+          "to": "linux-bin",
+          "filter": ["**/*"]
+        }
+      ]
     }
   }
 }
