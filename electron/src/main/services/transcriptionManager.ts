@@ -202,9 +202,11 @@ export class TranscriptionManager extends EventEmitter {
     // Handle custom model URL
     if (settings.customModelUrl && settings.customModelUrl.trim().length > 0) {
       const customUrl = settings.customModelUrl.trim();
-      // Extract filename from URL or generate one
+      // Extract filename from URL and sanitize it
       const urlParts = customUrl.split('/');
-      const fileName = urlParts[urlParts.length - 1] || 'custom-model.bin';
+      const rawFileName = urlParts[urlParts.length - 1] || 'custom-model.bin';
+      // Sanitize filename: remove path separators and limit to safe characters
+      const fileName = path.basename(rawFileName).replace(/[^a-zA-Z0-9._-]/g, '_');
       const modelPath = path.join(modelsDir, fileName);
 
       if (fs.existsSync(modelPath)) {
@@ -216,6 +218,11 @@ export class TranscriptionManager extends EventEmitter {
       await this.downloadFile(customUrl, modelPath);
       this.emitConsole({ source: "transcription", message: `Custom model downloaded: ${fileName}` });
       return modelPath;
+    }
+
+    // Reject if model is set to "custom" but no URL or path provided
+    if (settings.model === "custom") {
+      throw new Error("Custom model selected but no URL or local path provided.");
     }
 
     // Default behavior for standard models

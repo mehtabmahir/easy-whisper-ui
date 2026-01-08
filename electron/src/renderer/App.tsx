@@ -907,21 +907,21 @@ function App(): JSX.Element {
               {model === "custom" && (
                 <>
                   <label className={styles.selectorLabel}>
-                    <span>Custom Model URL</span>
-                    <input
-                      type="text"
-                      placeholder="https://huggingface.co/user/repo/resolve/main/model.bin"
-                      value={customModelUrl}
-                      onChange={(event) => setCustomModelUrl(event.target.value)}
-                    />
-                  </label>
-                  <label className={styles.selectorLabel}>
-                    <span>Or Local Path</span>
+                    <span>Local Path (priority)</span>
                     <input
                       type="text"
                       placeholder="/path/to/local/model.bin"
                       value={customModelPath}
                       onChange={(event) => setCustomModelPath(event.target.value)}
+                    />
+                  </label>
+                  <label className={styles.selectorLabel}>
+                    <span>Or Custom Model URL</span>
+                    <input
+                      type="text"
+                      placeholder="https://huggingface.co/user/repo/resolve/main/model.bin"
+                      value={customModelUrl}
+                      onChange={(event) => setCustomModelUrl(event.target.value)}
                     />
                   </label>
                 </>
