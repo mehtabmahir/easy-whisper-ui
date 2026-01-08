@@ -188,6 +188,23 @@ export class TranscriptionManager extends EventEmitter {
     const modelsDir = path.join(workRoot, "models");
     await fsp.mkdir(modelsDir, { recursive: true });
 
+    // Handle custom model path (local file)
+    if (settings.customModelPath && settings.customModelPath.trim().length > 0) {
+      const customPath = settings.customModelPath.trim();
+      if (fs.existsSync(customPath)) {
+        this.emitConsole({ source: "transcription", message: `Using custom model from ${customPath}` });
+        return customPath;
+      } else {
+        throw new Error(`Custom model path not found: ${customPath}`);
+      }
+    }
+
+    // Reject if model is set to "custom" but no path provided
+    if (settings.model === "custom") {
+      throw new Error("Custom model selected but no file path provided.");
+    }
+
+    // Default behavior for standard models
     const modelFile = `ggml-${settings.model}.bin`;
     const modelPath = path.join(modelsDir, modelFile);
 

@@ -6,7 +6,7 @@ import fsp from "node:fs/promises";
 import https from "node:https";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
-import { ConsoleEvent, LiveRequest } from "../../types/easy-whisper";
+import { ConsoleEvent, LiveRequest, ModelSettings } from "../../types/easy-whisper";
 import { WORK_ROOT_NAME } from "./compileManager";
 import { resolveBinary } from "./binaryResolver";
 
@@ -49,7 +49,7 @@ export class LiveManager extends EventEmitter {
     const exe = streamBinary.command;
     const exeLabel = path.basename(exe);
 
-    const modelPath = await this.ensureModel(request.settings.model);
+    const modelPath = await this.ensureModel(request.settings);
 
     const args = [
       "-m",
@@ -128,11 +128,29 @@ export class LiveManager extends EventEmitter {
     this.emit("console", event);
   }
 
-  private async ensureModel(modelName: string, redirectDepth = 0): Promise<string> {
+  private async ensureModel(settings: ModelSettings, redirectDepth = 0): Promise<string> {
     const workRoot = path.join(app.getPath("userData"), WORK_ROOT_NAME);
     const modelsDir = path.join(workRoot, "models");
     await fsp.mkdir(modelsDir, { recursive: true });
-    const modelFile = `ggml-${modelName}.bin`;
+
+    // Handle custom model path (local file)
+    if (settings.customModelPath && settings.customModelPath.trim().length > 0) {
+      const customPath = settings.customModelPath.trim();
+      if (fs.existsSync(customPath)) {
+        this.emitConsole({ source: "live", message: `Using custom model from ${customPath}` });
+        return customPath;
+      } else {
+        throw new Error(`Custom model path not found: ${customPath}`);
+      }
+    }
+
+    // Reject if model is set to "custom" but no path provided
+    if (settings.model === "custom") {
+      throw new Error("Custom model selected but no file path provided.");
+    }
+
+    // Default behavior for standard models
+    const modelFile = `ggml-${settings.model}.bin`;
     const modelPath = path.join(modelsDir, modelFile);
 
     if (fs.existsSync(modelPath)) {

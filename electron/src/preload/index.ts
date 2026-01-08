@@ -5,6 +5,7 @@ const api: EasyWhisperApi = {
   platform: () => process.platform,
   arch: () => process.arch,
   openAudioFiles: () => ipcRenderer.invoke("easy-whisper:open-dialog"),
+  openModelFile: () => ipcRenderer.invoke("easy-whisper:open-model-dialog"),
   compileWhisper: (options) => ipcRenderer.invoke("easy-whisper:compile", options),
   onCompileProgress: (callback) => {
     const channel = "easy-whisper:compile-progress";
