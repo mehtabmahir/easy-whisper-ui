@@ -401,6 +401,20 @@
   padding: 0 12px;
 }
 
+.selectorLabel input {
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 66, 92, 0.6);
+  background: rgba(9, 13, 21, 0.95);
+  color: #f0f3ff;
+  padding: 0 12px;
+  font-size: 0.9rem;
+}
+
+.selectorLabel input::placeholder {
+  color: rgba(160, 170, 200, 0.5);
+}
+
 .argumentsBlock {
   display: flex;
   flex-direction: column;

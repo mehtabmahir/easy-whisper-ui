@@ -30,7 +30,8 @@ const MODEL_OPTIONS = [
   "tiny",
   "tiny.en",
   "base",
-  "base.en"
+  "base.en",
+  "custom"
 ];
 
 const LANGUAGE_OPTIONS = [
@@ -150,6 +151,8 @@ type PersistedSettings = {
   outputSrt?: boolean;
   openAfterComplete?: boolean;
   extraArgs?: string;
+  customModelUrl?: string;
+  customModelPath?: string;
 };
 
 function loadPersistedSettings(): PersistedSettings {
@@ -231,6 +234,8 @@ function App(): JSX.Element {
   const [cpuOnly, setCpuOnly] = useState<boolean>(persisted.cpuOnly ?? false);
   const [outputTxt, setOutputTxt] = useState<boolean>(persisted.outputTxt ?? true);
   const [outputSrt, setOutputSrt] = useState<boolean>(persisted.outputSrt ?? false);
+  const [customModelUrl, setCustomModelUrl] = useState<string>(persisted.customModelUrl ?? "");
+  const [customModelPath, setCustomModelPath] = useState<string>(persisted.customModelPath ?? "");
   const [openAfterComplete, setOpenAfterComplete] = useState<boolean>(persisted.openAfterComplete ?? true);
   const [extraArgs, setExtraArgs] = useState<string>(persisted.extraArgs ?? DEFAULT_ARGS);
   const [platform, setPlatform] = useState<string>("...");
@@ -602,8 +607,10 @@ function App(): JSX.Element {
     outputTxt,
     outputSrt,
     openAfterComplete,
-    extraArgs
-  }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs]);
+    extraArgs,
+    customModelUrl,
+    customModelPath
+  }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelUrl, customModelPath]);
 
   useEffect(() => {
     savePersistedSettings({
@@ -613,9 +620,11 @@ function App(): JSX.Element {
       outputTxt,
       outputSrt,
       openAfterComplete,
-      extraArgs
+      extraArgs,
+      customModelUrl,
+      customModelPath
     });
-  }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs]);
+  }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelUrl, customModelPath]);
 
   const handleCompile = useCallback(async () => {
     const bridge = window.easyWhisper;
@@ -894,6 +903,29 @@ function App(): JSX.Element {
                   ))}
                 </select>
               </label>
+
+              {model === "custom" && (
+                <>
+                  <label className={styles.selectorLabel}>
+                    <span>Custom Model URL</span>
+                    <input
+                      type="text"
+                      placeholder="https://huggingface.co/user/repo/resolve/main/model.bin"
+                      value={customModelUrl}
+                      onChange={(event) => setCustomModelUrl(event.target.value)}
+                    />
+                  </label>
+                  <label className={styles.selectorLabel}>
+                    <span>Or Local Path</span>
+                    <input
+                      type="text"
+                      placeholder="/path/to/local/model.bin"
+                      value={customModelPath}
+                      onChange={(event) => setCustomModelPath(event.target.value)}
+                    />
+                  </label>
+                </>
+              )}
 
               <div className={styles.linkCluster}>
                 <a

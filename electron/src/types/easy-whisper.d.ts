@@ -26,6 +26,8 @@ export interface ModelSettings {
   outputSrt: boolean;
   openAfterComplete: boolean;
   extraArgs: string;
+  customModelUrl?: string;
+  customModelPath?: string;
 }
 
 export interface TranscriptionRequest {
