@@ -114,31 +114,37 @@ export class TranscriptionManager extends EventEmitter {
   }
 
   private async ensureMp3(filePath: string): Promise<string> {
+    const isMac = process.platform === "darwin";
     const ext = path.extname(filePath).toLowerCase();
-    if (ext === ".mp3") {
+
+    // On macOS, prefer AAC (.m4a) using AudioToolbox for faster hardware encode while keeping 44.1k audio.
+    if (isMac && ext === ".m4a") {
+      this.emitConsole({ source: "transcription", message: "Input already M4A, skipping conversion." });
+      return filePath;
+    }
+
+    if (!isMac && ext === ".mp3") {
       this.emitConsole({ source: "transcription", message: "Input already MP3, skipping conversion." });
       return filePath;
     }
 
     const parsed = path.parse(filePath);
-    const target = path.join(parsed.dir, `${parsed.name}.mp3`);
+    const targetExt = isMac ? ".m4a" : ".mp3";
+    const target = path.join(parsed.dir, `${parsed.name}${targetExt}`);
     const conversionLabel = path.basename(target);
-    this.emitConsole({ source: "transcription", message: `Converting to MP3 (128kbps): ${conversionLabel}` });
+    this.emitConsole({
+      source: "transcription",
+      message: isMac
+        ? `Converting to M4A AAC (44.1k mono 128kbps): ${conversionLabel}`
+        : `Converting to MP3 (128kbps): ${conversionLabel}`
+    });
     const ffmpeg = resolveBinary("ffmpeg");
 
     try {
-      const availableCpus = Math.max(1, os.cpus().length);
-      const threadCount = Math.min(8, availableCpus);
-      const threadArgs = [
-        "-threads",
-        String(threadCount),
-        "-filter_threads",
-        String(threadCount),
-        "-filter_complex_threads",
-        String(threadCount)
-      ];
+      const availableCpus = Math.max(1, os.cpus().length - 1); // leave a core free for whisper/UI
+      const threadArgs = ["-threads", String(availableCpus)];
 
-      const args = [
+      const commonArgs = [
         "-y",
         "-hide_banner",
         "-loglevel",
@@ -153,17 +159,34 @@ export class TranscriptionManager extends EventEmitter {
         "-sn",
         "-dn",
         "-map_metadata",
-        "-1",
-        "-ac",
-        "1",
-        "-ar",
-        "44100",
-        "-c:a",
-        "libmp3lame",
-        "-b:a",
-        "128k",
-        target
+        "-1"
       ];
+
+      const args = isMac
+        ? [
+            ...commonArgs,
+            "-ac",
+            "1",
+            "-ar",
+            "44100",
+            "-c:a",
+            "aac_at",
+            "-b:a",
+            "128k",
+            target
+          ]
+        : [
+            ...commonArgs,
+            "-ac",
+            "1",
+            "-ar",
+            "44100",
+            "-c:a",
+            "libmp3lame",
+            "-b:a",
+            "128k",
+            target
+          ];
 
       const started = Date.now();
       await this.spawnWithLogs(ffmpeg.command, args);
