@@ -1049,7 +1049,7 @@ function App(): JSX.Element {
                 ref={consoleRef}
                 id="console"
                 className={styles.consoleArea}
-                placeholder="FFmpeg and whisper output will appear here."
+                placeholder="Output will appear here."
                 rows={14}
                 readOnly
                 value={consoleText}
