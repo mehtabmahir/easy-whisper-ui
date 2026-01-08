@@ -151,7 +151,6 @@ type PersistedSettings = {
   outputSrt?: boolean;
   openAfterComplete?: boolean;
   extraArgs?: string;
-  customModelUrl?: string;
   customModelPath?: string;
 };
 
@@ -234,7 +233,6 @@ function App(): JSX.Element {
   const [cpuOnly, setCpuOnly] = useState<boolean>(persisted.cpuOnly ?? false);
   const [outputTxt, setOutputTxt] = useState<boolean>(persisted.outputTxt ?? true);
   const [outputSrt, setOutputSrt] = useState<boolean>(persisted.outputSrt ?? false);
-  const [customModelUrl, setCustomModelUrl] = useState<string>(persisted.customModelUrl ?? "");
   const [customModelPath, setCustomModelPath] = useState<string>(persisted.customModelPath ?? "");
   const [openAfterComplete, setOpenAfterComplete] = useState<boolean>(persisted.openAfterComplete ?? true);
   const [extraArgs, setExtraArgs] = useState<string>(persisted.extraArgs ?? DEFAULT_ARGS);
@@ -608,9 +606,8 @@ function App(): JSX.Element {
     outputSrt,
     openAfterComplete,
     extraArgs,
-    customModelUrl,
     customModelPath
-  }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelUrl, customModelPath]);
+  }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath]);
 
   useEffect(() => {
     savePersistedSettings({
@@ -621,10 +618,9 @@ function App(): JSX.Element {
       outputSrt,
       openAfterComplete,
       extraArgs,
-      customModelUrl,
       customModelPath
     });
-  }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelUrl, customModelPath]);
+  }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath]);
 
   const handleCompile = useCallback(async () => {
     const bridge = window.easyWhisper;
@@ -709,6 +705,23 @@ function App(): JSX.Element {
   const handleClear = useCallback(() => {
     setConsoleLines([]);
   }, []);
+
+  const handleSelectModelFile = useCallback(async () => {
+    const bridge = window.easyWhisper;
+    if (!bridge) {
+      appendConsole("[system] Preload bridge unavailable.");
+      return;
+    }
+    try {
+      const filePath = await bridge.openModelFile();
+      if (filePath) {
+        setCustomModelPath(filePath);
+      }
+    } catch (error) {
+      const err = error as Error;
+      appendConsole(`[system] ${err.message}`);
+    }
+  }, [appendConsole]);
 
   const handleCloseWindow = useCallback(() => {
     const bridge = window.easyWhisper;
@@ -905,26 +918,25 @@ function App(): JSX.Element {
               </label>
 
               {model === "custom" && (
-                <>
+                <div className={styles.customModelSection}>
                   <label className={styles.selectorLabel}>
-                    <span>Local Path (priority)</span>
-                    <input
-                      type="text"
-                      placeholder="/path/to/local/model.bin"
-                      value={customModelPath}
-                      onChange={(event) => setCustomModelPath(event.target.value)}
-                    />
+                    <span>Custom Model</span>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={handleSelectModelFile}
+                      disabled={!apiAvailable}
+                    >
+                      Select Model File
+                    </button>
                   </label>
-                  <label className={styles.selectorLabel}>
-                    <span>Or Custom Model URL</span>
-                    <input
-                      type="text"
-                      placeholder="https://huggingface.co/user/repo/resolve/main/model.bin"
-                      value={customModelUrl}
-                      onChange={(event) => setCustomModelUrl(event.target.value)}
-                    />
-                  </label>
-                </>
+                  {customModelPath && (
+                    <div className={styles.selectedModelPath}>
+                      <span className={styles.selectedModelLabel}>Selected:</span>
+                      <span className={styles.selectedModelValue}>{customModelPath}</span>
+                    </div>
+                  )}
+                </div>
               )}
 
               <div className={styles.linkCluster}>

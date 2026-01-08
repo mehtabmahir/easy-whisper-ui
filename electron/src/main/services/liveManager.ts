@@ -144,30 +144,9 @@ export class LiveManager extends EventEmitter {
       }
     }
 
-    // Handle custom model URL
-    if (settings.customModelUrl && settings.customModelUrl.trim().length > 0) {
-      const customUrl = settings.customModelUrl.trim();
-      // Extract filename from URL and sanitize it
-      const urlParts = customUrl.split('/');
-      const rawFileName = urlParts[urlParts.length - 1] || 'custom-model.bin';
-      // Sanitize filename: remove path separators and limit to safe characters
-      const fileName = path.basename(rawFileName).replace(/[^a-zA-Z0-9._-]/g, '_');
-      const modelPath = path.join(modelsDir, fileName);
-
-      if (fs.existsSync(modelPath)) {
-        this.emitConsole({ source: "live", message: `Using cached custom model ${fileName}` });
-        return modelPath;
-      }
-
-      this.emitConsole({ source: "live", message: `Downloading custom model from ${customUrl}` });
-      await this.downloadFile(customUrl, modelPath, redirectDepth);
-      this.emitConsole({ source: "live", message: `Custom model ready ${fileName}` });
-      return modelPath;
-    }
-
-    // Reject if model is set to "custom" but no URL or path provided
+    // Reject if model is set to "custom" but no path provided
     if (settings.model === "custom") {
-      throw new Error("Custom model selected but no URL or local path provided.");
+      throw new Error("Custom model selected but no file path provided.");
     }
 
     // Default behavior for standard models

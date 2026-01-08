@@ -26,7 +26,6 @@ export interface ModelSettings {
   outputSrt: boolean;
   openAfterComplete: boolean;
   extraArgs: string;
-  customModelUrl?: string;
   customModelPath?: string;
 }
 
@@ -58,6 +57,7 @@ export type EasyWhisperApi = {
   platform: () => NodeJS.Platform;
   arch: () => string;
   openAudioFiles: () => Promise<string[]>;
+  openModelFile: () => Promise<string | null>;
   compileWhisper: (options?: CompileOptions) => Promise<CompileResult>;
   ensureDependencies: (options?: CompileOptions) => Promise<CompileResult>;
   onCompileProgress: (callback: (event: CompileProgressEvent) => void) => () => void;

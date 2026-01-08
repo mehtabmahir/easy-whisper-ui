@@ -45,7 +45,7 @@ A local, desktop app for transcribing audio/video using **Whisper (whisper.cpp)*
 * Drag & drop and **Open With** support
 * Automatically converts media to the required audio format using **FFmpeg**
 * Model selection (e.g. `tiny`, `medium-en`, `large-v3`)
-* **Custom model support**: Use models from Hugging Face or local paths
+* **Custom model support**: Use custom models from local files
 * Language selection (e.g. `en`)
 * Optional “additional arguments” textbox
 * Automatically downloads models when missing
@@ -54,16 +54,14 @@ A local, desktop app for transcribing audio/video using **Whisper (whisper.cpp)*
 
 ### Custom Models
 
-EasyWhisperUI now supports using custom Whisper models from Hugging Face or local paths:
+EasyWhisperUI now supports using custom Whisper models from local files:
 
 1. Select **"custom"** from the Model dropdown
-2. Enter either:
-   * **Custom Model URL**: A direct link to a `.bin` model file (e.g., `https://huggingface.co/user/repo/resolve/main/model.bin`)
-   * **Or Local Path**: An absolute path to a model file on your system (e.g., `/path/to/model.bin`)
+2. Click **"Select Model File"** to open a file picker
+3. Choose your custom whisper.cpp-compatible model file (`.bin` or `.ggml`)
 
 **Example custom models:**
-* [Pomni/distil-large-v3.5-ggml-allquants](https://huggingface.co/Pomni/distil-large-v3.5-ggml-allquants)
-* Any other whisper.cpp-compatible GGML model
+* [Pomni/distil-large-v3.5-ggml-allquants](https://huggingface.co/Pomni/distil-large-v3.5-ggml-allquants) (download first, then select via file picker)
 
 ### Acceleration
 
