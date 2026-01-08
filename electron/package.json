@@ -1,7 +1,7 @@
 {
   "name": "easy-whisper-electron",
   "author": "Mehtab Mahir",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Electron frontend shell for EasyWhisperUI",
   "private": true,
   "main": "dist/main/index.js",
@@ -91,6 +91,9 @@
     "win": {
       "target": "nsis",
       "icon": "../resources/icon.ico"
+    },
+    "nsis": {
+      "deleteAppDataOnUninstall": true
     },
     "linux": {
       "target": "AppImage"
