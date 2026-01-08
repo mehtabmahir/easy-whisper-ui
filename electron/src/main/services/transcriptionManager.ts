@@ -89,7 +89,7 @@ export class TranscriptionManager extends EventEmitter {
     this.emitQueue();
 
     try {
-      const audioPath = await this.ensureWav(nextItem.file);
+      const audioPath = await this.ensureMp3(nextItem.file);
       const modelPath = await this.ensureModel(nextItem.settings);
       await this.runWhisper(audioPath, modelPath, nextItem.settings);
       if (nextItem.settings.openAfterComplete) {
@@ -113,17 +113,17 @@ export class TranscriptionManager extends EventEmitter {
     }
   }
 
-  private async ensureWav(filePath: string): Promise<string> {
+  private async ensureMp3(filePath: string): Promise<string> {
     const ext = path.extname(filePath).toLowerCase();
-    if (ext === ".wav") {
-      this.emitConsole({ source: "transcription", message: "Input already WAV, skipping conversion." });
+    if (ext === ".mp3") {
+      this.emitConsole({ source: "transcription", message: "Input already MP3, skipping conversion." });
       return filePath;
     }
 
     const parsed = path.parse(filePath);
-    const target = path.join(parsed.dir, `${parsed.name}.wav`);
+    const target = path.join(parsed.dir, `${parsed.name}.mp3`);
     const conversionLabel = path.basename(target);
-    this.emitConsole({ source: "transcription", message: `Converting to WAV: ${conversionLabel}` });
+    this.emitConsole({ source: "transcription", message: `Converting to MP3 (128kbps): ${conversionLabel}` });
     const ffmpeg = resolveBinary("ffmpeg");
 
     try {
@@ -159,7 +159,9 @@ export class TranscriptionManager extends EventEmitter {
         "-ar",
         "44100",
         "-c:a",
-        "pcm_s16le",
+        "libmp3lame",
+        "-b:a",
+        "128k",
         target
       ];
 
