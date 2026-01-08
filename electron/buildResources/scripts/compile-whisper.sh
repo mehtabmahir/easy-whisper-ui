@@ -122,18 +122,23 @@ for dylib in "$MAC_BIN_DIR"/*.dylib; do
   adjust_rpaths "$dylib"
 done
 
-# Bundle ffmpeg so conversions work out of the box
+# Bundle ffmpeg so conversions work out of the box on Apple silicon
 FFMPEG_DEST="$MAC_BIN_DIR/ffmpeg"
-FFMPEG_VERSION="6.1.1"
-FFMPEG_URL="https://evermeet.cx/ffmpeg/ffmpeg-${FFMPEG_VERSION}.zip"
+FFMPEG_URL="https://ffmpeg.martin-riedl.de/redirect/latest/macos/arm64/snapshot/ffmpeg.zip"
+
+# Remove old download when a build requests a refresh so we always stage the ARM64 snapshot.
+if [[ -n "${FFMPEG_FORCE_DOWNLOAD:-}" && -e "$FFMPEG_DEST" ]]; then
+  log "Replacing cached FFmpeg because FFMPEG_FORCE_DOWNLOAD is set"
+  rm -f "$FFMPEG_DEST"
+fi
 
 if [[ -x "$FFMPEG_DEST" ]]; then
   log "ffmpeg already present; skipping download"
 else
-  log "Downloading ffmpeg ${FFMPEG_VERSION}"
+  log "Downloading latest FFmpeg release"
   TMP_DIR="$(mktemp -d)"
   ZIP_PATH="$TMP_DIR/ffmpeg.zip"
-  curl -L "$FFMPEG_URL" -o "$ZIP_PATH"
+  curl -JL "$FFMPEG_URL" -o "$ZIP_PATH"
   unzip -o "$ZIP_PATH" ffmpeg -d "$TMP_DIR" >/dev/null
   mv "$TMP_DIR/ffmpeg" "$FFMPEG_DEST"
   chmod +x "$FFMPEG_DEST"
