@@ -215,7 +215,7 @@ export class TranscriptionManager extends EventEmitter {
       }
 
       this.emitConsole({ source: "transcription", message: `Downloading custom model from ${customUrl}` });
-      await this.downloadFile(customUrl, modelPath);
+      await this.downloadFile(customUrl, modelPath, 0);
       this.emitConsole({ source: "transcription", message: `Custom model downloaded: ${fileName}` });
       return modelPath;
     }
