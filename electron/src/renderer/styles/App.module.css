@@ -4,68 +4,6 @@
   flex-direction: column;
   min-height: 0;
 }
-.installUninstallButton {
-  height: 40px;
-  min-width: 0;
-  border-radius: 12px;
-  font-size: 0.92rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  padding: 0 18px;
-  border: 1px solid rgba(56, 66, 92, 0.85);
-  background: rgba(13, 18, 29, 0.78);
-  color: #dbe3f5;
-  cursor: pointer;
-  transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease;
-}
-
-.installUninstallButton:hover {
-  background: rgba(19, 27, 41, 0.9);
-  border-color: rgba(82, 96, 128, 0.9);
-}
-
-.installUninstallButton:active {
-  transform: translateY(1px);
-}
-
-.installUninstallButton.dangerButton {
-  background: rgba(60, 22, 26, 0.85);
-  border-color: rgba(168, 52, 61, 0.8);
-  color: #ffb6bb;
-}
-.installUninstallButton.dangerButton:hover {
-  background: rgba(82, 34, 40, 0.9);
-  border-color: rgba(219, 94, 105, 0.9);
-  color: #ffe3e5;
-}
-.installUninstallButton.dangerButton:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-/* Cluster for install/uninstall buttons below social links */
-.installUninstallCluster {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 18px;
-  align-items: flex-start;
-}
-.installUninstallButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 14px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  border: 1px solid rgba(56, 66, 92, 0.85);
-  background: rgba(13, 18, 29, 0.78);
-  color: #dbe3f5;
-  cursor: pointer;
-  transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease;
-  box-sizing: border-box;
-}
 .linkCluster {
   display: flex;
   gap: 12px;

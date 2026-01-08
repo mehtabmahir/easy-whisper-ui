@@ -114,53 +114,6 @@ function registerIpcChannels(): void {
     return compileManager.ensureDependencies(options ?? {});
   });
 
-  ipcMain.handle("easy-whisper:uninstall", async () => {
-    const result = await compileManager.uninstall();
-
-    // On macOS, also attempt to remove the installed .app bundle from /Applications
-    if (process.platform === "darwin") {
-      try {
-        const bundleName = `${app.getName()}.app`;
-        const primaryPath = path.join("/Applications", bundleName);
-        const execBundle = path.resolve(process.execPath, "../../..");
-        let bundlePath: string | null = null;
-
-        if (fs.existsSync(primaryPath)) {
-          bundlePath = primaryPath;
-        } else if (fs.existsSync(execBundle)) {
-          bundlePath = execBundle;
-        }
-
-        if (bundlePath) {
-          // Prefer moving to Trash for safety; fall back to forced removal.
-          let trashed = false;
-          try {
-            await shell.trashItem(bundlePath);
-            trashed = true;
-            console.log("Moved app bundle to Trash:", bundlePath);
-          } catch (trashError) {
-            console.warn("Failed to move app bundle to Trash, falling back to rm:", trashError);
-          }
-
-          if (!trashed) {
-            await fsp.rm(bundlePath, { recursive: true, force: true });
-            console.log("Removed app bundle:", bundlePath);
-          }
-        } else {
-          console.log("App bundle not found for removal.");
-        }
-      } catch (err) {
-        console.error("Failed to remove macOS app bundle:", err);
-        return {
-          success: false,
-          error: `Failed to remove app bundle: ${(err as Error).message}`
-        };
-      }
-    }
-
-    return result;
-  });
-
   ipcMain.handle("easy-whisper:open-dialog", async () => {
     const result = await dialog.showOpenDialog({
       title: "Open Audio/Video Files",
