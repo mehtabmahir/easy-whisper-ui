@@ -5,9 +5,9 @@
   min-height: 0;
 }
 .linkCluster {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
 }
 .windowContainer {
   min-height: 100vh;
@@ -194,8 +194,8 @@
 .socialButton {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: 6px;
+  padding: 8px 12px;
   border-radius: 12px;
   border: 1px solid rgba(82, 96, 128, 0.5);
   background: rgba(14, 19, 29, 0.65);
@@ -203,8 +203,15 @@
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 500;
+  line-height: 1;
   transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
   -webkit-app-region: no-drag;
+  width: 100%;
+  justify-content: center;
+}
+
+.donateButton {
+  gap: 4px;
 }
 
 .socialButton:hover {
@@ -218,8 +225,16 @@
 }
 
 .socialIcon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.heartIcon {
+  width: 20px;
+  height: 20px;
+  align-self: center;
 }
 
 .workspace {

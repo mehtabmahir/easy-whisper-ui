@@ -139,8 +139,9 @@ const LANGUAGE_OPTIONS = [
 const DEFAULT_ARGS = "-tp 0.0 -mc 64 -et 3.0";
 const SETTINGS_KEY = "easy-whisper-ui.settings";
 const LOGO_URL = "./icon.png";
-const GITHUB_URL = "https://github.com/mehtabmahir/easy-whisper-ui";
+const GITHUB_URL = "https://github.com/mehtabmahir/easy-whisper-ui/releases";
 const WEBSITE_URL = "https://mehtabmahir.me";
+const DONATE_URL = "https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD";
 
 type PersistedSettings = {
   model?: string;
@@ -840,39 +841,74 @@ function App(): JSX.Element {
                   ))}
                 </select>
               </label>
-
-              <div className={styles.linkCluster}>
-                <a
-                  href={GITHUB_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={styles.socialButton}
-                  title="View EasyWhisperUI on GitHub"
-                >
-                  <svg className={styles.socialIcon} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path
-                      fill="currentColor"
-                      d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.6-3.37-1.34-3.37-1.34-.45-1.17-1.11-1.48-1.11-1.48-.91-.62.07-.61.07-.61 1 .07 1.52 1.04 1.52 1.04.9 1.52 2.36 1.08 2.94.83.09-.65.35-1.08.64-1.33-2.22-.25-4.55-1.11-4.55-4.95 0-1.09.39-1.99 1.03-2.69-.1-.26-.45-1.29.1-2.68 0 0 .85-.27 2.78 1.03a9.63 9.63 0 0 1 5.06 0c1.93-1.3 2.78-1.03 2.78-1.03.55 1.39.2 2.42.1 2.68.64.7 1.03 1.6 1.03 2.69 0 3.85-2.33 4.69-4.56 4.94.36.31.68.92.68 1.86 0 1.34-.01 2.42-.01 2.75 0 .26.18.58.69.48A10 10 0 0 0 12 2Z"
-                    />
-                  </svg>
-                  <span>GitHub</span>
-                </a>
-                <a
-                  href={WEBSITE_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={styles.socialButton}
-                  title="Visit mehtabmahir.me"
-                >
-                  <svg className={styles.socialIcon} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path
-                      fill="currentColor"
-                      d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm6.93 9h-2.61a15.25 15.25 0 0 0-1.17-5 8.06 8.06 0 0 1 3.78 5Zm-5.93 9.95a13.4 13.4 0 0 1-3.16-6.95h6.32a13.4 13.4 0 0 1-3.16 6.95ZM9.84 11a13.4 13.4 0 0 1 3.16-6.95A13.4 13.4 0 0 1 16.16 11Zm-1.02-5a15.25 15.25 0 0 0-1.17 5H5.04a8.06 8.06 0 0 1 3.78-5Zm-3.78 7h2.61a15.25 15.25 0 0 0-1.17 5 8.06 8.06 0 0 1-3.78-5Zm11.92 5a15.25 15.25 0 0 0 1.17-5h2.61a8.06 8.06 0 0 1-3.78 5Z"
-                    />
-                  </svg>
-                  <span>Website</span>
-                </a>
-              </div>
+              {model === "custom" && (
+                <div className={styles.customModelSection}>
+                  <label className={styles.selectorLabel}>
+                    <span>Custom Model</span>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={handleSelectModelFile}
+                      disabled={!apiAvailable}
+                    >
+                      Select Model File
+                    </button>
+                  </label>
+                  {customModelPath && (
+                    <div className={styles.selectedModelPath}>
+                      <span className={styles.selectedModelLabel}>Selected:</span>
+                      <span className={styles.selectedModelValue}>{customModelPath}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className={styles.linkCluster}>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.socialButton}
+                title="Download the latest EasyWhisperUI release"
+              >
+                <svg className={styles.socialIcon} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    fill="currentColor"
+                    d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.6-3.37-1.34-3.37-1.34-.45-1.17-1.11-1.48-1.11-1.48-.91-.62.07-.61.07-.61 1 .07 1.52 1.04 1.52 1.04.9 1.52 2.36 1.08 2.94.83.09-.65.35-1.08.64-1.33-2.22-.25-4.55-1.11-4.55-4.95 0-1.09.39-1.99 1.03-2.69-.1-.26-.45-1.29.1-2.68 0 0 .85-.27 2.78 1.03a9.63 9.63 0 0 1 5.06 0c1.93-1.3 2.78-1.03 2.78-1.03.55 1.39.2 2.42.1 2.68.64.7 1.03 1.6 1.03 2.69 0 3.85-2.33 4.69-4.56 4.94.36.31.68.92.68 1.86 0 1.34-.01 2.42-.01 2.75 0 .26.18.58.69.48A10 10 0 0 0 12 2Z"
+                  />
+                </svg>
+                <span>Update</span>
+              </a>
+              <a
+                href={DONATE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={`${styles.socialButton} ${styles.donateButton}`}
+                title="Support development via PayPal"
+              >
+                <svg className={`${styles.socialIcon} ${styles.heartIcon}`} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    fill="currentColor"
+                    d="M12.1 4.44c1.35-1.58 3.86-1.66 5.3-.17 1.4 1.44 1.25 3.73-.32 5.08l-4.98 4.35a.3.3 0 0 1-.4 0l-4.98-4.35c-1.57-1.35-1.72-3.64-.32-5.08 1.44-1.49 3.95-1.41 5.3.17l.21.24.19-.24Z"
+                  />
+                </svg>
+                <span>Donate</span>
+              </a>
+              <a
+                href={WEBSITE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.socialButton}
+                title="Visit mehtabmahir.me"
+              >
+                <svg className={styles.socialIcon} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    fill="currentColor"
+                    d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm6.93 9h-2.61a15.25 15.25 0 0 0-1.17-5 8.06 8.06 0 0 1 3.78 5Zm-5.93 9.95a13.4 13.4 0 0 1-3.16-6.95h6.32a13.4 13.4 0 0 1-3.16 6.95ZM9.84 11a13.4 13.4 0 0 1 3.16-6.95A13.4 13.4 0 0 1 16.16 11Zm-1.02-5a15.25 15.25 0 0 0-1.17 5H5.04a8.06 8.06 0 0 1 3.78-5Zm-3.78 7h2.61a15.25 15.25 0 0 0-1.17 5 8.06 8.06 0 0 1-3.78-5Zm11.92 5a15.25 15.25 0 0 0 1.17-5h2.61a8.06 8.06 0 0 1-3.78 5Z"
+                  />
+                </svg>
+                <span>Website</span>
+              </a>
             </div>
           </aside>
 
