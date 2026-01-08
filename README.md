@@ -1,6 +1,6 @@
 # EasyWhisperUI
 
-![EasyWhisperUI logo](resources/icon.png)
+<img src="resources/icon.png" alt="EasyWhisperUI logo" width="140" />
 
 ##  HUGE ANNOUNCEMENT: EasyWhisperUI is now Electron-based
 
