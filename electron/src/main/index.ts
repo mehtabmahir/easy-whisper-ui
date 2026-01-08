@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme, screen, shell } from "electron";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
@@ -47,11 +47,15 @@ async function createMainWindow(): Promise<void> {
   // Ensure high contrast themes match OS defaults for readability.
   nativeTheme.themeSource = "system";
 
+  const { workAreaSize } = screen.getPrimaryDisplay();
+  const targetWidth = Math.round(workAreaSize.width * 0.6);
+  const targetHeight = Math.round(workAreaSize.height * 0.7);
+
   const mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 920,
-    minWidth: 1280,
-    minHeight: 920,
+    width: targetWidth,
+    height: targetHeight,
+    minWidth: targetWidth,
+    minHeight: targetHeight,
     title: "EasyWhisperUI",
     frame: false,
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
@@ -60,7 +64,8 @@ async function createMainWindow(): Promise<void> {
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      zoomFactor: 0.85
     }
   });
 
