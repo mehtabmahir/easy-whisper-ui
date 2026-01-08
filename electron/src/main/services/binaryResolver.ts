@@ -20,28 +20,76 @@ export function resolveBinary(baseName: string, options: ResolveOptions = {}): B
   const fallback = process.platform === "win32" ? `${baseName}.exe` : baseName;
 
   if (baseName === "ffmpeg") {
+    const allowSystemFallback = options.allowSystemFallback !== false;
+
+    const workspaceBin = path.join(app.getPath("userData"), WORK_ROOT_NAME, "bin");
+    const workspaceCandidate = path.join(workspaceBin, exeName);
     const toolchainBin = path.join(app.getPath("userData"), WORK_ROOT_NAME, "toolchain", "ffmpeg", "bin");
     const toolchainExe = path.join(toolchainBin, exeName);
-    const searched = [toolchainExe, fallback];
 
-    try {
-      if (fs.existsSync(toolchainExe) && fs.statSync(toolchainExe).isFile()) {
-        return { command: toolchainExe, found: true, searched };
-      }
-    } catch {
-      // ignore filesystem races
+    const candidates: string[] = [workspaceCandidate, toolchainExe];
+
+    if (process.resourcesPath) {
+      candidates.push(
+        path.join(process.resourcesPath, exeName),
+        path.join(process.resourcesPath, "mac-bin", exeName)
+      );
     }
 
-    try {
-      const result = spawnSync(fallback, ["-version"], { stdio: "ignore" });
-      if (result.status === 0) {
-        return { command: fallback, found: true, searched };
+    const appPath = app.getAppPath();
+    candidates.push(
+      path.join(appPath, exeName),
+      path.join(appPath, "buildResources", exeName),
+      path.join(appPath, "buildResources", "mac-bin", exeName),
+      path.join(__dirname, "../../../buildResources", exeName),
+      path.join(__dirname, "../../../buildResources", "mac-bin", exeName)
+    );
+
+    const uniqueCandidates = Array.from(new Set(candidates));
+
+    for (const candidate of uniqueCandidates) {
+      try {
+        if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+          if (candidate !== workspaceCandidate) {
+            try {
+              fs.mkdirSync(path.dirname(workspaceCandidate), { recursive: true });
+              fs.copyFileSync(candidate, workspaceCandidate);
+              try {
+                fs.chmodSync(workspaceCandidate, 0o755);
+              } catch {
+                // ignore chmod failures on non-posix filesystems
+              }
+              return {
+                command: workspaceCandidate,
+                found: true,
+                searched: uniqueCandidates,
+                staged: true
+              };
+            } catch {
+              // fallback to original candidate if staging fails
+              return { command: candidate, found: true, searched: uniqueCandidates };
+            }
+          }
+
+          return { command: candidate, found: true, searched: uniqueCandidates };
+        }
+      } catch {
+        // ignore filesystem races
       }
-    } catch {
-      // ignore spawn failures and fall through to not found
     }
 
-    return { command: fallback, found: false, searched };
+    if (allowSystemFallback) {
+      try {
+        const result = spawnSync(fallback, ["-version"], { stdio: "ignore" });
+        if (result.status === 0) {
+          return { command: fallback, found: true, searched: uniqueCandidates.concat(fallback) };
+        }
+      } catch {
+        // ignore spawn failures and fall through to not found
+      }
+    }
+
+    return { command: fallback, found: false, searched: uniqueCandidates.concat(fallback) };
   }
 
   const candidates: string[] = [];
