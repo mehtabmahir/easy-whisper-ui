@@ -48,8 +48,8 @@ async function createMainWindow(): Promise<void> {
   nativeTheme.themeSource = "system";
 
   const { workAreaSize } = screen.getPrimaryDisplay();
-  const targetWidth = Math.round(workAreaSize.width * 0.6);
-  const targetHeight = Math.round(workAreaSize.height * 0.7);
+  const targetWidth = 1000;
+  const targetHeight = 700;
 
   const mainWindow = new BrowserWindow({
     width: targetWidth,
@@ -65,7 +65,7 @@ async function createMainWindow(): Promise<void> {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
-      zoomFactor: 0.85
+      zoomFactor: 0.80
     }
   });
 
