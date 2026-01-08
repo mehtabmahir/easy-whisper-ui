@@ -306,48 +306,6 @@ export class CompileManager extends EventEmitter {
     return { installed: false };
   }
 
-  async uninstall(): Promise<CompileResult> {
-    if (this.running) {
-      return { success: false, error: "Compilation already in progress." };
-    }
-
-    this.running = true;
-
-    try {
-      const workRoot = path.join(app.getPath("userData"), WORK_ROOT_NAME);
-      this.emitProgress({
-        step: "uninstall",
-        message: "Removing Whisper workspace...",
-        progress: 0,
-        state: "running"
-      });
-
-      await fsp.rm(workRoot, { recursive: true, force: true });
-
-      this.emitProgress({
-        step: "uninstall",
-        message: "Whisper binaries removed. Install to rebuild.",
-        progress: 0,
-        state: "pending"
-      });
-      this.emitConsole("[compile] Whisper workspace removed.");
-
-      return { success: true };
-    } catch (error) {
-      const err = error as Error;
-      this.emitProgress({
-        step: "uninstall",
-        message: "Failed to remove Whisper workspace.",
-        progress: 100,
-        state: "error",
-        error: err.message
-      });
-      return { success: false, error: err.message };
-    } finally {
-      this.running = false;
-    }
-  }
-
   private async runStep(step: string, message: string, action: () => Promise<void>): Promise<void> {
     this.emitProgress({ step, message, progress: 0, state: "running" });
     this.emitConsole(`[${step}] ${message}`);

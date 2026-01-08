@@ -622,59 +622,6 @@ function App(): JSX.Element {
     });
   }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath]);
 
-  const handleCompile = useCallback(async () => {
-    const bridge = window.easyWhisper;
-    if (!bridge) {
-      appendConsole("[system] Cannot compile without preload bridge.");
-      return;
-    }
-    if (compileInfo.state === "success") {
-      appendConsole("[system] Whisper binaries already installed; skipping reinstall.");
-      return;
-    }
-    try {
-      appendConsole("[system] Ensuring dependencies (Git, Vulkan SDK, FFmpeg, MSYS2)...");
-      const deps = await bridge.ensureDependencies({ force: false });
-      if (!deps.success) {
-        appendConsole(`[system] Dependency installation failed: ${deps.error ?? "Unknown error"}`);
-        return;
-      }
-      appendConsole("[system] Dependencies installed.");
-      const result = await bridge.compileWhisper();
-      if (!result.success && result.error) {
-        appendConsole(`[compile] ${result.error}`);
-      }
-    } catch (error) {
-      const err = error as Error;
-      appendConsole(`[compile] ${err.message}`);
-    }
-  }, [appendConsole, compileInfo.state]);
-
-  const handleUninstall = useCallback(async () => {
-    const bridge = window.easyWhisper;
-    if (!bridge || !bridge.uninstallWhisper) {
-      appendConsole("[system] Cannot uninstall without preload bridge.");
-      return;
-    }
-    try {
-      const result = await bridge.uninstallWhisper();
-      if (result.success) {
-        appendConsole("[compile] Whisper workspace removed.");
-        setCompileInfo({
-          step: "uninstall",
-          message: "Whisper binaries removed. Install to rebuild.",
-          progress: 0,
-          state: "pending"
-        });
-      } else if (result.error) {
-        appendConsole(`[compile] ${result.error}`);
-      }
-    } catch (error) {
-      const err = error as Error;
-      appendConsole(`[compile] ${err.message}`);
-    }
-  }, [appendConsole]);
-
   const handleOpen = useCallback(async () => {
     const bridge = window.easyWhisper;
     if (!bridge) {
@@ -800,7 +747,6 @@ function App(): JSX.Element {
   const queuedCount = queueState.awaiting.length;
   const isCompiling = compileInfo.state === "running";
   const isProcessing = queueState.isProcessing;
-  const isInstalled = compileInfo.state === "success";
 
   return (
     <>
@@ -972,27 +918,6 @@ function App(): JSX.Element {
                 </a>
               </div>
             </div>
-
-            {!isMac && (
-              <div className={styles.installUninstallCluster}>
-                <button
-                  type="button"
-                  className={styles.installUninstallButton}
-                  onClick={handleCompile}
-                  disabled={!apiAvailable || isCompiling}
-                >
-                  {isInstalled ? "Installed" : "Install"}
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.installUninstallButton} ${styles.dangerButton}`}
-                  onClick={handleUninstall}
-                  disabled={!apiAvailable || isCompiling || compileInfo.state !== "success"}
-                >
-                  Uninstall
-                </button>
-              </div>
-            )}
           </aside>
 
           <main className={styles.rightPanel}>

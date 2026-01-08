@@ -54,7 +54,6 @@ const api: EasyWhisperApi = {
   },
   getWindowState: () => ipcRenderer.invoke("window:get-state"),
   checkInstall: () => ipcRenderer.invoke("easy-whisper:check-install"),
-  uninstallWhisper: () => ipcRenderer.invoke("easy-whisper:uninstall"),
   ensureDependencies: (options) => ipcRenderer.invoke("easy-whisper:ensure-deps", options)
 };
 
