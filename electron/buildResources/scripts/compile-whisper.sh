@@ -113,12 +113,48 @@ adjust_rpaths() {
   install_name_tool -add_rpath "@loader_path" "$target" 2>/dev/null || true
 }
 
+# First, fix the install name (ID) of each dylib to use @rpath
+log "Fixing dylib install names to use @rpath"
+for dylib in "$MAC_BIN_DIR"/*.dylib; do
+  [ -e "$dylib" ] || continue
+  [ -L "$dylib" ] && continue  # Skip symlinks
+  
+  dylib_name="$(basename "$dylib")"
+  install_name_tool -id "@rpath/$dylib_name" "$dylib" 2>/dev/null || true
+done
+
+# Second, fix dependency references in executables to use @rpath
+log "Fixing executable dependencies to use @rpath"
 for bin in "$MAC_BIN_DIR/whisper-cli" "$MAC_BIN_DIR/whisper-stream"; do
+  [ -e "$bin" ] || continue
+  
+  # Get list of dependencies and fix them
+  otool -L "$bin" | grep -E '^\s+/' | awk '{print $1}' | while read -r dep; do
+    dep_name="$(basename "$dep")"
+    # Only fix dependencies that reference absolute paths
+    if [[ "$dep" == /* ]] && [[ "$dep" != /usr/* ]] && [[ "$dep" != /System/* ]]; then
+      install_name_tool -change "$dep" "@rpath/$dep_name" "$bin" 2>/dev/null || true
+    fi
+  done
+  
   adjust_rpaths "$bin"
 done
 
+# Third, fix dependency references in dylibs to use @rpath
+log "Fixing dylib dependencies to use @rpath"
 for dylib in "$MAC_BIN_DIR"/*.dylib; do
   [ -e "$dylib" ] || continue
+  [ -L "$dylib" ] && continue  # Skip symlinks
+  
+  # Get list of dependencies and fix them
+  otool -L "$dylib" | grep -E '^\s+/' | awk '{print $1}' | while read -r dep; do
+    dep_name="$(basename "$dep")"
+    # Only fix dependencies that reference absolute paths
+    if [[ "$dep" == /* ]] && [[ "$dep" != /usr/* ]] && [[ "$dep" != /System/* ]]; then
+      install_name_tool -change "$dep" "@rpath/$dep_name" "$dylib" 2>/dev/null || true
+    fi
+  done
+  
   adjust_rpaths "$dylib"
 done
 
