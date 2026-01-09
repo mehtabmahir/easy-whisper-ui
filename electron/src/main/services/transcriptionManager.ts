@@ -88,16 +88,18 @@ export class TranscriptionManager extends EventEmitter {
     this.current = nextItem;
     this.emitQueue();
 
+    let audio: { path: string; deleteAfter: boolean } | undefined;
+
     try {
-      const audioPath = await this.ensureMp3(nextItem.file);
+      audio = await this.ensureMp3(nextItem.file);
       const modelPath = await this.ensureModel(nextItem.settings);
-      await this.runWhisper(audioPath, modelPath, nextItem.settings);
+      await this.runWhisper(audio.path, modelPath, nextItem.settings);
       if (nextItem.settings.openAfterComplete) {
-        const outputTxt = `${audioPath}.txt`;
+        const outputTxt = `${audio.path}.txt`;
         if (fs.existsSync(outputTxt)) {
           await shell.showItemInFolder(outputTxt);
         } else {
-          await shell.showItemInFolder(audioPath);
+          await shell.showItemInFolder(audio.path);
         }
       }
       this.emitConsole({ source: "transcription", message: `Completed: ${path.basename(nextItem.file)}` });
@@ -105,6 +107,20 @@ export class TranscriptionManager extends EventEmitter {
       const err = error as Error;
       this.emitConsole({ source: "transcription", message: `Error processing ${nextItem.file}: ${err.message}` });
     } finally {
+      if (audio?.deleteAfter) {
+        try {
+          await fsp.unlink(audio.path);
+          this.emitConsole({ source: "transcription", message: `Deleted temporary audio ${path.basename(audio.path)}` });
+        } catch (cleanupError) {
+          const err = cleanupError as NodeJS.ErrnoException;
+          if (err.code !== "ENOENT") {
+            this.emitConsole({
+              source: "transcription",
+              message: `Warning: could not delete temporary audio ${path.basename(audio.path)}: ${err.message}`
+            });
+          }
+        }
+      }
       this.current = undefined;
       this.processing = false;
       this.activeProcess = undefined;
@@ -113,29 +129,25 @@ export class TranscriptionManager extends EventEmitter {
     }
   }
 
-  private async ensureMp3(filePath: string): Promise<string> {
+  private async ensureMp3(filePath: string): Promise<{ path: string; deleteAfter: boolean }> {
     const isMac = process.platform === "darwin";
     const ext = path.extname(filePath).toLowerCase();
 
-    // On macOS, prefer AAC (.m4a) using AudioToolbox for faster hardware encode while keeping 44.1k audio.
-    if (isMac && ext === ".m4a") {
-      this.emitConsole({ source: "transcription", message: "Input already M4A, skipping conversion." });
-      return filePath;
-    }
+    const targetExt = isMac ? ".wav" : ".mp3";
+    const targetCodec = isMac ? "pcm_s16le" : "libmp3lame";
 
-    if (!isMac && ext === ".mp3") {
-      this.emitConsole({ source: "transcription", message: "Input already MP3, skipping conversion." });
-      return filePath;
+    if (ext === targetExt) {
+      this.emitConsole({ source: "transcription", message: `Input already ${targetExt.toUpperCase()} compatible, skipping conversion.` });
+      return { path: filePath, deleteAfter: false };
     }
 
     const parsed = path.parse(filePath);
-    const targetExt = isMac ? ".m4a" : ".mp3";
     const target = path.join(parsed.dir, `${parsed.name}${targetExt}`);
     const conversionLabel = path.basename(target);
     this.emitConsole({
       source: "transcription",
       message: isMac
-        ? `Converting to M4A AAC (44.1k mono 128kbps): ${conversionLabel}`
+        ? `Converting to WAV PCM (44.1k mono): ${conversionLabel}`
         : `Converting to MP3 (128kbps): ${conversionLabel}`
     });
     const ffmpeg = resolveBinary("ffmpeg");
@@ -162,31 +174,19 @@ export class TranscriptionManager extends EventEmitter {
         "-1"
       ];
 
-      const args = isMac
-        ? [
-            ...commonArgs,
-            "-ac",
-            "1",
-            "-ar",
-            "44100",
-            "-c:a",
-            "aac_at",
-            "-b:a",
-            "128k",
-            target
-          ]
-        : [
-            ...commonArgs,
-            "-ac",
-            "1",
-            "-ar",
-            "44100",
-            "-c:a",
-            "libmp3lame",
-            "-b:a",
-            "128k",
-            target
-          ];
+      const bitrateArgs = targetCodec === "pcm_s16le" ? [] : ["-b:a", "128k"];
+
+      const args = [
+        ...commonArgs,
+        "-ac",
+        "1",
+        "-ar",
+        "44100",
+        "-c:a",
+        targetCodec,
+        ...bitrateArgs,
+        target
+      ];
 
       const started = Date.now();
       await this.spawnWithLogs(ffmpeg.command, args);
@@ -205,7 +205,7 @@ export class TranscriptionManager extends EventEmitter {
       }
       throw err;
     }
-    return target;
+    return { path: target, deleteAfter: true };
   }
 
   private async ensureModel(settings: ModelSettings): Promise<string> {
