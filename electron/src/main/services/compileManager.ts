@@ -896,21 +896,13 @@ export class CompileManager extends EventEmitter {
     const workRoot = await this.ensureWorkDirs();
     const binDir = path.join(workRoot, "bin");
 
-    if (this.hasBinariesInDir(binDir) && !force) {
-      this.emitProgress({
-        step: "prebuilt",
-        message: "Prebuilt macOS binaries already staged.",
-        progress: 100,
-        state: "success"
-      });
-      return { success: true, outputDir: binDir };
-    }
-
     const sourceDir = this.resolveMacBundleDir();
     if (!sourceDir) {
       throw new Error("Prebuilt macOS binaries are not bundled with the application.");
     }
 
+    // Always refresh on macOS to avoid stale shared builds lingering in userData.
+    await fsp.rm(binDir, { recursive: true, force: true });
     await fsp.mkdir(binDir, { recursive: true });
     await fsp.cp(sourceDir, binDir, { recursive: true, force: true });
 

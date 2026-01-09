@@ -57,6 +57,7 @@ require_cmd unzip
 log "Configuring whisper.cpp with Metal + SDL2"
 cmake -S "$WHISPER_DIR" -B "$BUILD_DIR" \
   -G Ninja \
+  -DBUILD_SHARED_LIBS=OFF \
   -DGGML_METAL=ON \
   -DGGML_METAL_EMBED_LIBRARY=ON \
   -DWHISPER_BUILD_EXAMPLES=ON \
@@ -70,57 +71,10 @@ CPU_COUNT="$(sysctl -n hw.ncpu 2>/dev/null || echo 4)"
 log "Building targets: whisper-cli whisper-stream"
 cmake --build "$BUILD_DIR" --target whisper-cli whisper-stream --config Release -j "$CPU_COUNT"
 
-log "Staging binaries to mac-bin"
+log "Staging static binaries to mac-bin"
 cp -f "$BUILD_DIR/bin/whisper-cli"    "$MAC_BIN_DIR/whisper-cli"
 cp -f "$BUILD_DIR/bin/whisper-stream" "$MAC_BIN_DIR/whisper-stream"
 chmod +x "$MAC_BIN_DIR/whisper-cli" "$MAC_BIN_DIR/whisper-stream"
-
-log "Copying dylibs next to executables"
-find "$BUILD_DIR" -maxdepth 5 -type f -name "*.dylib" -print0 | while IFS= read -r -d '' dylib; do
-  cp -f "$dylib" "$MAC_BIN_DIR/$(basename "$dylib")"
-done
-
-# Create compatibility symlinks expected by install names
-pushd "$MAC_BIN_DIR" >/dev/null
-ln -sf libwhisper.1.8.2.dylib libwhisper.1.dylib
-ln -sf libwhisper.1.8.2.dylib libwhisper.dylib
-ln -sf libggml.0.9.4.dylib libggml.0.dylib
-ln -sf libggml.0.9.4.dylib libggml.dylib
-ln -sf libggml-cpu.0.9.4.dylib libggml-cpu.0.dylib
-ln -sf libggml-cpu.0.9.4.dylib libggml-cpu.dylib
-ln -sf libggml-blas.0.9.4.dylib libggml-blas.0.dylib
-ln -sf libggml-metal.0.9.4.dylib libggml-metal.0.dylib
-ln -sf libggml-base.0.9.4.dylib libggml-base.0.dylib
-ln -sf libggml-base.0.9.4.dylib libggml-base.dylib
-popd >/dev/null
-
-adjust_rpaths() {
-  local target="$1"
-  local delete_paths=(
-    "$BUILD_DIR/src"
-    "$BUILD_DIR/ggml/src"
-    "$BUILD_DIR/ggml/src/ggml-blas"
-    "$BUILD_DIR/ggml/src/ggml-metal"
-  )
-
-  for path in "${delete_paths[@]}"; do
-    if install_name_tool -delete_rpath "$path" "$target" 2>/dev/null; then
-      :
-    fi
-  done
-
-  install_name_tool -add_rpath "@executable_path" "$target" 2>/dev/null || true
-  install_name_tool -add_rpath "@loader_path" "$target" 2>/dev/null || true
-}
-
-for bin in "$MAC_BIN_DIR/whisper-cli" "$MAC_BIN_DIR/whisper-stream"; do
-  adjust_rpaths "$bin"
-done
-
-for dylib in "$MAC_BIN_DIR"/*.dylib; do
-  [ -e "$dylib" ] || continue
-  adjust_rpaths "$dylib"
-done
 
 # Bundle ffmpeg so conversions work out of the box on Apple silicon
 FFMPEG_DEST="$MAC_BIN_DIR/ffmpeg"
