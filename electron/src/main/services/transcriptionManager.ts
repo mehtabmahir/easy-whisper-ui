@@ -130,11 +130,10 @@ export class TranscriptionManager extends EventEmitter {
   }
 
   private async ensureMp3(filePath: string): Promise<{ path: string; deleteAfter: boolean }> {
-    const isMac = process.platform === "darwin";
     const ext = path.extname(filePath).toLowerCase();
 
-    const targetExt = isMac ? ".wav" : ".mp3";
-    const targetCodec = isMac ? "pcm_s16le" : "libmp3lame";
+    const targetExt = ".wav";
+    const targetCodec = "pcm_s16le";
 
     if (ext === targetExt) {
       this.emitConsole({ source: "transcription", message: `Input already ${targetExt.toUpperCase()} compatible, skipping conversion.` });
@@ -146,9 +145,7 @@ export class TranscriptionManager extends EventEmitter {
     const conversionLabel = path.basename(target);
     this.emitConsole({
       source: "transcription",
-      message: isMac
-        ? `Converting to WAV PCM (44.1k mono): ${conversionLabel}`
-        : `Converting to MP3 (128kbps): ${conversionLabel}`
+      message: `Converting to WAV PCM (44.1k mono): ${conversionLabel}`
     });
     const ffmpeg = resolveBinary("ffmpeg");
 
@@ -174,8 +171,6 @@ export class TranscriptionManager extends EventEmitter {
         "-1"
       ];
 
-      const bitrateArgs = targetCodec === "pcm_s16le" ? [] : ["-b:a", "128k"];
-
       const args = [
         ...commonArgs,
         "-ac",
@@ -184,7 +179,6 @@ export class TranscriptionManager extends EventEmitter {
         "44100",
         "-c:a",
         targetCodec,
-        ...bitrateArgs,
         target
       ];
 
