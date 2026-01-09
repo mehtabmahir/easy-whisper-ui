@@ -113,6 +113,18 @@ adjust_rpaths() {
   install_name_tool -add_rpath "@loader_path" "$target" 2>/dev/null || true
 }
 
+fix_dependencies() {
+  local target="$1"
+  # Get list of dependencies and fix them
+  otool -L "$target" | grep -E '^\s+/' | awk '{print $1}' | while read -r dep; do
+    dep_name="$(basename "$dep")"
+    # Only fix dependencies that reference absolute paths (excluding system paths)
+    if [[ "$dep" == /* ]] && [[ "$dep" != /usr/* ]] && [[ "$dep" != /System/* ]]; then
+      install_name_tool -change "$dep" "@rpath/$dep_name" "$target" 2>/dev/null || true
+    fi
+  done
+}
+
 # First, fix the install name (ID) of each dylib to use @rpath
 log "Fixing dylib install names to use @rpath"
 for dylib in "$MAC_BIN_DIR"/*.dylib; do
@@ -127,16 +139,7 @@ done
 log "Fixing executable dependencies to use @rpath"
 for bin in "$MAC_BIN_DIR/whisper-cli" "$MAC_BIN_DIR/whisper-stream"; do
   [ -e "$bin" ] || continue
-  
-  # Get list of dependencies and fix them
-  otool -L "$bin" | grep -E '^\s+/' | awk '{print $1}' | while read -r dep; do
-    dep_name="$(basename "$dep")"
-    # Only fix dependencies that reference absolute paths
-    if [[ "$dep" == /* ]] && [[ "$dep" != /usr/* ]] && [[ "$dep" != /System/* ]]; then
-      install_name_tool -change "$dep" "@rpath/$dep_name" "$bin" 2>/dev/null || true
-    fi
-  done
-  
+  fix_dependencies "$bin"
   adjust_rpaths "$bin"
 done
 
@@ -145,16 +148,7 @@ log "Fixing dylib dependencies to use @rpath"
 for dylib in "$MAC_BIN_DIR"/*.dylib; do
   [ -e "$dylib" ] || continue
   [ -L "$dylib" ] && continue  # Skip symlinks
-  
-  # Get list of dependencies and fix them
-  otool -L "$dylib" | grep -E '^\s+/' | awk '{print $1}' | while read -r dep; do
-    dep_name="$(basename "$dep")"
-    # Only fix dependencies that reference absolute paths
-    if [[ "$dep" == /* ]] && [[ "$dep" != /usr/* ]] && [[ "$dep" != /System/* ]]; then
-      install_name_tool -change "$dep" "@rpath/$dep_name" "$dylib" 2>/dev/null || true
-    fi
-  done
-  
+  fix_dependencies "$dylib"
   adjust_rpaths "$dylib"
 done
 
