@@ -53,7 +53,8 @@ const api: EasyWhisperApi = {
   },
   getWindowState: () => ipcRenderer.invoke("window:get-state"),
   checkInstall: () => ipcRenderer.invoke("easy-whisper:check-install"),
-  ensureDependencies: (options) => ipcRenderer.invoke("easy-whisper:ensure-deps", options)
+  ensureDependencies: (options) => ipcRenderer.invoke("easy-whisper:ensure-deps", options),
+  openModelFile: () => ipcRenderer.invoke("easy-whisper:open-model-file")
 };
 
 contextBridge.exposeInMainWorld("easyWhisper", api);

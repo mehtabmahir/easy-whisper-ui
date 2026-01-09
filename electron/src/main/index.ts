@@ -146,6 +146,23 @@ function registerIpcChannels(): void {
     return result.filePaths;
   });
 
+  ipcMain.handle("easy-whisper:open-model-file", async () => {
+    const result = await dialog.showOpenDialog({
+      title: "Select Whisper Model File",
+      properties: ["openFile"],
+      filters: [
+        { name: "Whisper Models", extensions: ["bin", "gguf", "ggml"] },
+        { name: "All Files", extensions: ["*"] }
+      ]
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return undefined;
+    }
+
+    return result.filePaths[0];
+  });
+
   ipcMain.handle("easy-whisper:enqueue", async (_event, request: TranscriptionRequest) => {
     transcriptionManager.enqueue(request);
   });

@@ -209,6 +209,18 @@ export class TranscriptionManager extends EventEmitter {
   }
 
   private async ensureModel(settings: ModelSettings): Promise<string> {
+    if (settings.model === "custom") {
+      const customPath = settings.customModelPath?.trim();
+      if (!customPath) {
+        throw new Error("Select a custom model file before starting transcription.");
+      }
+      if (!fs.existsSync(customPath)) {
+        throw new Error(`Custom model file not found: ${customPath}`);
+      }
+      this.emitConsole({ source: "transcription", message: `Using custom model file ${path.basename(customPath)}` });
+      return customPath;
+    }
+
     const workRoot = path.join(app.getPath("userData"), WORK_ROOT_NAME);
     const modelsDir = path.join(workRoot, "models");
     await fsp.mkdir(modelsDir, { recursive: true });

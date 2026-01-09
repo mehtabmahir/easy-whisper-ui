@@ -354,6 +354,34 @@
   padding: 0 12px;
 }
 
+.customModelSection {
+  border: 1px dashed rgba(82, 96, 128, 0.7);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(9, 13, 21, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.selectedModelPath {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #cbd5f5;
+  word-break: break-all;
+}
+
+.selectedModelLabel {
+  color: #8ea1d3;
+  font-weight: 600;
+}
+
+.selectedModelValue {
+  color: #e5e9f0;
+}
+
 .argumentsBlock {
   display: flex;
   flex-direction: column;

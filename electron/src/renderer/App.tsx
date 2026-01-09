@@ -30,7 +30,8 @@ const MODEL_OPTIONS = [
   "tiny",
   "tiny.en",
   "base",
-  "base.en"
+  "base.en",
+  "custom"
 ];
 
 const LANGUAGE_OPTIONS = [
@@ -151,6 +152,7 @@ type PersistedSettings = {
   outputSrt?: boolean;
   openAfterComplete?: boolean;
   extraArgs?: string;
+  customModelPath?: string;
 };
 
 function loadPersistedSettings(): PersistedSettings {
@@ -234,6 +236,7 @@ function App(): JSX.Element {
   const [outputSrt, setOutputSrt] = useState<boolean>(persisted.outputSrt ?? false);
   const [openAfterComplete, setOpenAfterComplete] = useState<boolean>(persisted.openAfterComplete ?? true);
   const [extraArgs, setExtraArgs] = useState<string>(persisted.extraArgs ?? DEFAULT_ARGS);
+  const [customModelPath, setCustomModelPath] = useState<string | undefined>(persisted.customModelPath);
   const [platform, setPlatform] = useState<string>("...");
   const [arch, setArch] = useState<string>("...");
   const [consoleLines, setConsoleLines] = useState<string[]>([]);
@@ -557,7 +560,6 @@ function App(): JSX.Element {
       cancelled = true;
     };
   }, [api]);
-
   const consoleText = useMemo(() => consoleLines.join("\n"), [consoleLines]);
   const consoleRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -567,6 +569,38 @@ function App(): JSX.Element {
       node.scrollTop = node.scrollHeight;
     }
   }, [consoleText]);
+
+  const ensureCustomModelReady = useCallback(() => {
+    if (model !== "custom") {
+      return true;
+    }
+    if (!customModelPath) {
+      appendConsole("[system] Select a custom model file before starting.");
+      return false;
+    }
+    return true;
+  }, [appendConsole, customModelPath, model]);
+
+  const handleSelectModelFile = useCallback(async () => {
+    const bridge = window.easyWhisper;
+    if (!bridge || !bridge.openModelFile) {
+      appendConsole("[system] Custom model picker unavailable.");
+      return;
+    }
+
+    try {
+      const selected = await bridge.openModelFile();
+      if (!selected) {
+        return;
+      }
+      setCustomModelPath(selected);
+      setModel("custom");
+      appendConsole(`[system] Custom model selected: ${selected}`);
+    } catch (error) {
+      const err = error as Error;
+      appendConsole(`[system] ${err.message}`);
+    }
+  }, [appendConsole]);
 
   useEffect(() => {
     if (!api) {
@@ -603,8 +637,9 @@ function App(): JSX.Element {
     outputTxt,
     outputSrt,
     openAfterComplete,
-    extraArgs
-  }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs]);
+    extraArgs,
+    customModelPath: model === "custom" ? customModelPath : undefined
+  }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath]);
 
   useEffect(() => {
     savePersistedSettings({
@@ -614,14 +649,18 @@ function App(): JSX.Element {
       outputTxt,
       outputSrt,
       openAfterComplete,
-      extraArgs
+      extraArgs,
+      customModelPath
     });
-  }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs]);
+  }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath]);
 
   const handleOpen = useCallback(async () => {
     const bridge = window.easyWhisper;
     if (!bridge) {
       appendConsole("[system] Preload bridge unavailable.");
+      return;
+    }
+    if (!ensureCustomModelReady()) {
       return;
     }
     try {
@@ -634,7 +673,7 @@ function App(): JSX.Element {
       const err = error as Error;
       appendConsole(`[system] ${err.message}`);
     }
-  }, [appendConsole, buildSettings]);
+  }, [appendConsole, buildSettings, ensureCustomModelReady]);
 
   const handleStop = useCallback(async () => {
     const bridge = window.easyWhisper;
@@ -686,6 +725,9 @@ function App(): JSX.Element {
       appendConsole("[system] Preload bridge unavailable.");
       return;
     }
+    if (!ensureCustomModelReady()) {
+      return;
+    }
     try {
       if (liveActive) {
         await bridge.stopLiveTranscription();
@@ -700,7 +742,7 @@ function App(): JSX.Element {
       const err = error as Error;
       appendConsole(`[live] ${err.message}`);
     }
-  }, [appendConsole, buildSettings, liveActive]);
+  }, [appendConsole, buildSettings, ensureCustomModelReady, liveActive]);
 
   const compileStateLabel = useMemo(() => {
     if (compileInfo.state === "error" && compileInfo.error) {

@@ -26,6 +26,7 @@ export interface ModelSettings {
   outputSrt: boolean;
   openAfterComplete: boolean;
   extraArgs: string;
+  customModelPath?: string;
 }
 
 export interface TranscriptionRequest {
@@ -58,6 +59,7 @@ export type EasyWhisperApi = {
   openAudioFiles: () => Promise<string[]>;
   compileWhisper: (options?: CompileOptions) => Promise<CompileResult>;
   ensureDependencies: (options?: CompileOptions) => Promise<CompileResult>;
+  openModelFile: () => Promise<string | undefined>;
   onCompileProgress: (callback: (event: CompileProgressEvent) => void) => () => void;
   enqueueTranscriptions: (request: TranscriptionRequest) => void;
   cancelAll: () => Promise<void>;
