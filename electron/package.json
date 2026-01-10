@@ -59,6 +59,28 @@
       "output": "../build/electron-dist",
       "buildResources": "buildResources"
     },
+    "fileAssociations": [
+      {
+        "ext": [
+          "wav",
+          "mp3",
+          "m4a",
+          "flac",
+          "ogg",
+          "opus",
+          "aac",
+          "wma",
+          "mp4",
+          "m4v",
+          "mov",
+          "mkv",
+          "avi"
+        ],
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      }
+    ],
     "asar": true,
     "extraResources": [
       {

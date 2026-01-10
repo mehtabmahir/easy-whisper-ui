@@ -57,6 +57,7 @@ export type EasyWhisperApi = {
   platform: () => NodeJS.Platform;
   arch: () => string;
   openAudioFiles: () => Promise<string[]>;
+  rendererReady: () => Promise<void>;
   compileWhisper: (options?: CompileOptions) => Promise<CompileResult>;
   ensureDependencies: (options?: CompileOptions) => Promise<CompileResult>;
   openModelFile: () => Promise<string | undefined>;
@@ -75,6 +76,7 @@ export type EasyWhisperApi = {
   onWindowState: (callback: (state: { maximized: boolean }) => void) => () => void;
   getWindowState: () => Promise<{ maximized: boolean }>;
   checkInstall: () => Promise<{ installed: boolean; outputDir?: string }>;
+  onExternalFiles: (callback: (files: string[]) => void) => () => void;
 };
 
 declare global {

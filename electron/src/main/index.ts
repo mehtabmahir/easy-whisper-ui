@@ -16,6 +16,57 @@ const compileManager = new CompileManager();
 const transcriptionManager = new TranscriptionManager();
 const liveManager = new LiveManager();
 
+const SUPPORTED_OPEN_EXTENSIONS = new Set([
+  "mp3",
+  "mp4",
+  "m4a",
+  "mkv",
+  "m4v",
+  "wav",
+  "mov",
+  "avi",
+  "ogg",
+  "flac",
+  "aac",
+  "wma",
+  "opus"
+]);
+
+let mainWindow: BrowserWindow | null = null;
+let rendererReady = false;
+const pendingExternalFiles: string[] = [];
+
+const gotInstanceLock = app.requestSingleInstanceLock();
+if (!gotInstanceLock) {
+  app.quit();
+  process.exit(0);
+}
+
+app.on("open-file", (event, filePath) => {
+  event.preventDefault();
+  broadcastExternalFiles(getSupportedFiles([filePath]));
+  const targetWindow = mainWindow ?? BrowserWindow.getAllWindows()[0];
+  if (targetWindow) {
+    if (targetWindow.isMinimized()) {
+      targetWindow.restore();
+    }
+    targetWindow.show();
+    targetWindow.focus();
+  }
+});
+
+app.on("second-instance", (_event, argv) => {
+  const files = getSupportedFiles(argv);
+  broadcastExternalFiles(files);
+  const existingWindow = mainWindow ?? BrowserWindow.getAllWindows()[0];
+  if (existingWindow) {
+    if (existingWindow.isMinimized()) {
+      existingWindow.restore();
+    }
+    existingWindow.focus();
+  }
+});
+
 app.setName("EasyWhisperUI");
 
 if (process.platform === "win32") {
@@ -43,6 +94,38 @@ function resolveAppIcon(): string | undefined {
   return undefined;
 }
 
+function getSupportedFiles(paths: string[]): string[] {
+  return paths
+    .map((p) => path.resolve(p))
+    .filter((p) => !p.startsWith("-"))
+    .filter((p) => fs.existsSync(p))
+    .filter((p) => SUPPORTED_OPEN_EXTENSIONS.has(path.extname(p).toLowerCase().replace(/^\./, "")));
+}
+
+function broadcastExternalFiles(files: string[]): void {
+  if (files.length === 0) {
+    return;
+  }
+
+  const unique = Array.from(new Set(files));
+
+  if (!rendererReady) {
+    pendingExternalFiles.push(...unique);
+    return;
+  }
+
+  broadcast("easy-whisper:external-files", unique);
+}
+
+function flushPendingExternalFiles(): void {
+  if (!rendererReady || pendingExternalFiles.length === 0) {
+    return;
+  }
+
+  const files = pendingExternalFiles.splice(0, pendingExternalFiles.length);
+  broadcast("easy-whisper:external-files", Array.from(new Set(files)));
+}
+
 async function createMainWindow(): Promise<void> {
   // Ensure high contrast themes match OS defaults for readability.
   nativeTheme.themeSource = "system";
@@ -51,7 +134,7 @@ async function createMainWindow(): Promise<void> {
   const targetWidth = 1000;
   const targetHeight = 700;
 
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: targetWidth,
     height: targetHeight,
     minWidth: targetWidth,
@@ -69,14 +152,15 @@ async function createMainWindow(): Promise<void> {
     }
   });
 
-    const emitWindowState = (): void => {
-      broadcast("window:maximize-state", { maximized: mainWindow.isMaximized() });
-    };
+  const emitWindowState = (): void => {
+    if (!mainWindow) return;
+    broadcast("window:maximize-state", { maximized: mainWindow.isMaximized() });
+  };
 
-    mainWindow.on("maximize", emitWindowState);
-    mainWindow.on("unmaximize", emitWindowState);
-    mainWindow.on("enter-full-screen", emitWindowState);
-    mainWindow.on("leave-full-screen", emitWindowState);
+  mainWindow.on("maximize", emitWindowState);
+  mainWindow.on("unmaximize", emitWindowState);
+  mainWindow.on("enter-full-screen", emitWindowState);
+  mainWindow.on("leave-full-screen", emitWindowState);
 
   if (process.platform === "darwin") {
     mainWindow.setWindowButtonVisibility(false);
@@ -92,7 +176,11 @@ async function createMainWindow(): Promise<void> {
     await mainWindow.loadFile(rendererHtmlPath);
   }
 
-    emitWindowState();
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
+
+  emitWindowState();
 }
 
 function broadcast(channel: string, payload: unknown): void {
@@ -112,6 +200,11 @@ function registerIpcChannels(): void {
 
   ipcMain.handle("easy-whisper:ensure-deps", async (_event, options) => {
     return compileManager.ensureDependencies(options ?? {});
+  });
+
+  ipcMain.handle("easy-whisper:renderer-ready", async () => {
+    rendererReady = true;
+    flushPendingExternalFiles();
   });
 
   ipcMain.handle("easy-whisper:open-dialog", async () => {
@@ -252,6 +345,8 @@ app.whenReady().then(() => {
   registerIpcChannels();
   console.log("userData path:", app.getPath("userData"));
   return createMainWindow();
+}).then(() => {
+  broadcastExternalFiles(getSupportedFiles(process.argv));
 }).catch((error) => {
   console.error("Failed to create main window", error);
 });

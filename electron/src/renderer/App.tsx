@@ -630,6 +630,16 @@ function App(): JSX.Element {
     });
   }, [api]);
 
+  useEffect(() => {
+    const bridge = window.easyWhisper;
+    if (!bridge?.rendererReady) {
+      return;
+    }
+    void bridge.rendererReady().catch(() => {
+      // Swallow renderer-ready handshake failures; main will retry via events.
+    });
+  }, [api]);
+
   const buildSettings = useCallback(() => ({
     model,
     language,
@@ -640,6 +650,23 @@ function App(): JSX.Element {
     extraArgs,
     customModelPath: model === "custom" ? customModelPath : undefined
   }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath]);
+
+  const enqueueFiles = useCallback((files: string[]) => {
+    const bridge = window.easyWhisper;
+    if (!bridge) {
+      appendConsole("[system] Preload bridge unavailable.");
+      return;
+    }
+    if (!ensureCustomModelReady()) {
+      return;
+    }
+    try {
+      bridge.enqueueTranscriptions({ files, settings: buildSettings() });
+    } catch (error) {
+      const err = error as Error;
+      appendConsole(`[system] ${err.message}`);
+    }
+  }, [appendConsole, buildSettings, ensureCustomModelReady]);
 
   useEffect(() => {
     savePersistedSettings({
@@ -660,20 +687,34 @@ function App(): JSX.Element {
       appendConsole("[system] Preload bridge unavailable.");
       return;
     }
-    if (!ensureCustomModelReady()) {
-      return;
-    }
     try {
       const files = await bridge.openAudioFiles();
       if (files.length === 0) {
         return;
       }
-      bridge.enqueueTranscriptions({ files, settings: buildSettings() });
+      enqueueFiles(files);
     } catch (error) {
       const err = error as Error;
       appendConsole(`[system] ${err.message}`);
     }
-  }, [appendConsole, buildSettings, ensureCustomModelReady]);
+  }, [appendConsole, enqueueFiles]);
+
+  useEffect(() => {
+    const bridge = window.easyWhisper;
+    if (!bridge?.onExternalFiles) {
+      return;
+    }
+
+    const remove = bridge.onExternalFiles((files) => {
+      if (!files || files.length === 0) {
+        return;
+      }
+      enqueueFiles(files);
+      appendConsole(`[system] Added ${files.length} file(s) from Open With.`);
+    });
+
+    return remove;
+  }, [appendConsole, enqueueFiles]);
 
   const handleStop = useCallback(async () => {
     const bridge = window.easyWhisper;

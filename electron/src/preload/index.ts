@@ -5,6 +5,7 @@ const api: EasyWhisperApi = {
   platform: () => process.platform,
   arch: () => process.arch,
   openAudioFiles: () => ipcRenderer.invoke("easy-whisper:open-dialog"),
+  rendererReady: () => ipcRenderer.invoke("easy-whisper:renderer-ready"),
   compileWhisper: (options) => ipcRenderer.invoke("easy-whisper:compile", options),
   onCompileProgress: (callback) => {
     const channel = "easy-whisper:compile-progress";
@@ -54,7 +55,13 @@ const api: EasyWhisperApi = {
   getWindowState: () => ipcRenderer.invoke("window:get-state"),
   checkInstall: () => ipcRenderer.invoke("easy-whisper:check-install"),
   ensureDependencies: (options) => ipcRenderer.invoke("easy-whisper:ensure-deps", options),
-  openModelFile: () => ipcRenderer.invoke("easy-whisper:open-model-file")
+  openModelFile: () => ipcRenderer.invoke("easy-whisper:open-model-file"),
+  onExternalFiles: (callback) => {
+    const channel = "easy-whisper:external-files";
+    const handler = (_event: Electron.IpcRendererEvent, files: string[]) => callback(files);
+    ipcRenderer.on(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
+  }
 };
 
 contextBridge.exposeInMainWorld("easyWhisper", api);
