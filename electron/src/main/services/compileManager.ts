@@ -56,6 +56,7 @@ type CompileListener<T extends CompileEventNames> = (event: CompileManagerEvents
 
 export class CompileManager extends EventEmitter {
   private running = false;
+  private logStream?: fs.WriteStream;
 
   on<T extends CompileEventNames>(event: T, listener: CompileListener<T>): this {
     return super.on(event, listener as any);
@@ -90,22 +91,24 @@ export class CompileManager extends EventEmitter {
     this.running = true;
 
     const workRoot = await this.ensureWorkDirs();
+    await this.startLog(workRoot);
     const binDir = path.join(workRoot, "bin");
     let toolchain!: ToolchainContext;
-    const existingBinaries = this.hasBinariesInDir(binDir);
-
-    if (existingBinaries && !options.force) {
-      this.emitProgress({
-        step: "check-cache",
-        message: "Ready.",
-        progress: 100,
-        state: "success"
-      });
-      this.running = false;
-      return { success: true, outputDir: binDir };
-    }
 
     try {
+      const existingBinaries = this.hasBinariesInDir(binDir);
+
+      if (existingBinaries && !options.force) {
+        this.emitProgress({
+          step: "check-cache",
+          message: "Ready.",
+          progress: 100,
+          state: "success"
+        });
+        this.running = false;
+        return { success: true, outputDir: binDir };
+      }
+
       await this.runStep("prepare", "Preparing workspace", async () => {
         await fsp.mkdir(binDir, { recursive: true });
         toolchain = await this.prepareToolchain(workRoot, options.force === true);
@@ -156,6 +159,8 @@ export class CompileManager extends EventEmitter {
       });
       this.running = false;
       return { success: false, error: err.message };
+    } finally {
+      this.stopLog();
     }
   }
 
@@ -185,6 +190,9 @@ export class CompileManager extends EventEmitter {
     this.running = true;
 
     try {
+      const workRoot = await this.ensureWorkDirs();
+      await this.startLog(workRoot);
+
       if (!options.force) {
         const existing = await this.hasExistingBinaries();
         if (existing.installed) {
@@ -194,7 +202,6 @@ export class CompileManager extends EventEmitter {
       }
 
       this.emitConsole("[deps] Starting dependency installation checks...");
-      const workRoot = await this.ensureWorkDirs();
       const toolchain = await this.prepareToolchain(workRoot, options.force === true);
 
       // Install Git via winget if not available
@@ -282,6 +289,8 @@ export class CompileManager extends EventEmitter {
       this.emitProgress({ step: "dependencies", message: "Failed to install dependencies.", progress: 100, state: "error", error: err.message });
       this.running = false;
       return { success: false, error: err.message };
+    } finally {
+      this.stopLog();
     }
   }
 
@@ -319,6 +328,25 @@ export class CompileManager extends EventEmitter {
 
   private emitConsole(message: string): void {
     this.emit("console", { source: "compile", message });
+  }
+
+  private async startLog(workRoot: string): Promise<void> {
+    const logPath = path.join(workRoot, "log.txt");
+    await fsp.rm(logPath, { force: true });
+    this.logStream = fs.createWriteStream(logPath, { flags: "w" });
+  }
+
+  private stopLog(): void {
+    if (this.logStream) {
+      this.logStream.end();
+      this.logStream = undefined;
+    }
+  }
+
+  private writeLog(data: string | Buffer): void {
+    if (this.logStream) {
+      this.logStream.write(data);
+    }
   }
 
   private async ensureWorkDirs(): Promise<string> {
@@ -789,7 +817,10 @@ export class CompileManager extends EventEmitter {
     options: { quiet?: boolean } = {}
   ): Promise<void> {
     const quiet = options.quiet === true;
-    const stdio: Array<"ignore" | "pipe"> = quiet ? ["ignore", "ignore", "ignore"] : ["ignore", "pipe", "pipe"];
+    const stdio: Array<"ignore" | "pipe"> = ["ignore", "pipe", "pipe"];
+
+    const commandLine = `${command} ${args.join(" ")}`.trim();
+    this.writeLog(`$ ${commandLine}\n`);
 
     await new Promise<void>((resolve, reject) => {
       const child = spawn(command, args, {
@@ -818,6 +849,7 @@ export class CompileManager extends EventEmitter {
 
       if (child.stdout) {
         child.stdout.on("data", (data) => {
+          this.writeLog(data);
           stdoutBuffer += data.toString();
           if (quiet) {
             return;
@@ -828,6 +860,7 @@ export class CompileManager extends EventEmitter {
 
       if (child.stderr) {
         child.stderr.on("data", (data) => {
+          this.writeLog(data);
           stderrBuffer += data.toString();
           if (quiet) {
             return;
@@ -841,6 +874,12 @@ export class CompileManager extends EventEmitter {
       });
 
       child.once("close", (code) => {
+        if (stdoutBuffer) {
+          this.writeLog(stdoutBuffer);
+        }
+        if (stderrBuffer) {
+          this.writeLog(stderrBuffer);
+        }
         if (!quiet) {
           const prefix = label ?? command;
           if (stdoutBuffer.trim()) {
@@ -852,10 +891,7 @@ export class CompileManager extends EventEmitter {
         }
 
         if (code === 0) {
-          if (quiet && stderrBuffer.trim()) {
-            const prefix = label ?? command;
-            this.emitConsole(`[${prefix}] ${stderrBuffer.trim()}`);
-          }
+          this.writeLog("\n");
           resolve();
         } else {
           const prefix = label ?? command;
@@ -866,6 +902,7 @@ export class CompileManager extends EventEmitter {
             }
             this.emitConsole(`[${prefix}] ${command} exited with code ${code}`);
           }
+          this.writeLog(`\n${command} exited with code ${code}\n`);
           reject(new Error(`${command} exited with code ${code}`));
         }
       });
