@@ -137,6 +137,22 @@ const LANGUAGE_OPTIONS = [
   "zh"
 ];
 
+const SUPPORTED_FILE_EXTENSIONS = new Set([
+  "mp3",
+  "mp4",
+  "m4a",
+  "mkv",
+  "m4v",
+  "wav",
+  "mov",
+  "avi",
+  "ogg",
+  "flac",
+  "aac",
+  "wma",
+  "opus"
+]);
+
 const DEFAULT_ARGS = "-tp 0.0 -mc 64 -et 3.0";
 const SETTINGS_KEY = "easy-whisper-ui.settings";
 const LOGO_URL = "./icon.png";
@@ -697,6 +713,43 @@ function App(): JSX.Element {
       const err = error as Error;
       appendConsole(`[system] ${err.message}`);
     }
+  }, [appendConsole, enqueueFiles]);
+
+  useEffect(() => {
+    const handleDragOver = (event: DragEvent) => {
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "copy";
+      }
+    };
+
+    const handleDrop = (event: DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const files = Array.from(event.dataTransfer?.files ?? [])
+        .map((file) => (file as File & { path?: string }).path)
+        .filter((filePath): filePath is string => Boolean(filePath))
+        .filter((filePath) => {
+          const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+          return SUPPORTED_FILE_EXTENSIONS.has(ext);
+        });
+
+      if (files.length === 0) {
+        return;
+      }
+
+      const unique = Array.from(new Set(files));
+      enqueueFiles(unique);
+      appendConsole(`[system] Added ${unique.length} file(s) from drag and drop.`);
+    };
+
+    window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("drop", handleDrop);
+
+    return () => {
+      window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("drop", handleDrop);
+    };
   }, [appendConsole, enqueueFiles]);
 
   useEffect(() => {
