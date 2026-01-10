@@ -76,6 +76,15 @@ cp -f "$BUILD_DIR/bin/whisper-cli"    "$MAC_BIN_DIR/whisper-cli"
 cp -f "$BUILD_DIR/bin/whisper-stream" "$MAC_BIN_DIR/whisper-stream"
 chmod +x "$MAC_BIN_DIR/whisper-cli" "$MAC_BIN_DIR/whisper-stream"
 
+log "Bundling SDL2 dylib for whisper-stream"
+SDL2_DYLIB="$(brew --prefix sdl2)/lib/libSDL2-2.0.0.dylib"
+if [[ -f "$SDL2_DYLIB" ]]; then
+  cp -f "$SDL2_DYLIB" "$MAC_BIN_DIR/libSDL2-2.0.0.dylib"
+  chmod +x "$MAC_BIN_DIR/libSDL2-2.0.0.dylib"
+else
+  echo "Warning: SDL2 dylib not found at $SDL2_DYLIB; whisper-stream may fail at runtime." >&2
+fi
+
 # Bundle ffmpeg so conversions work out of the box on Apple silicon
 FFMPEG_DEST="$MAC_BIN_DIR/ffmpeg"
 FFMPEG_URL="https://ffmpeg.martin-riedl.de/redirect/latest/macos/arm64/snapshot/ffmpeg.zip"
