@@ -53,7 +53,7 @@ This rewrite required reworking core UI flows, IPC, and install/dependency handl
 - **Windows**: Vulkan acceleration (supported GPUs)
 - **macOS (Apple Silicon)**: Metal acceleration
 
-> If GPU acceleration isn’t available, EasyWhisperUI will still run using CPU.
+If GPU acceleration isn’t available, EasyWhisperUI can still run using CPU only (slow).
 
 ---
 
@@ -63,9 +63,9 @@ EasyWhisperUI supports **custom Whisper models** now!
 
 ### Use a custom model
 
-1. Open the **Model** selector in EasyWhisperUI
-2. Choose **Browse / Select model file**
-3. Pick your local model file (`.gguf` / `.ggml`)
+1. Open the **Model** selector and select `custom`
+2. Choose **Select Model File**
+3. Pick your local model file (`.gguf`/`.ggml`/`.bin`)
 4. Start transcribing
 
 ---
@@ -163,14 +163,6 @@ From the `electron/` folder:
 
 ```bash
 npm install
-npm run dev
-````
-
-Production build:
-
-```bash
-npm run build
-```
 
 Package (generates installer artifacts):
 
