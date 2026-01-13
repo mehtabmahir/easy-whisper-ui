@@ -102,7 +102,8 @@ EasyWhisperUI supports **custom Whisper models** now!
 
 Thanks to supporters ❤️
 
-- Craig H: $50  
+- Craig H: $50
+- Jan P: $5 
 - Minh P: $5  
 - Rödvarg R: $2  
 
