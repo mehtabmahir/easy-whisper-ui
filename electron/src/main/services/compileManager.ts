@@ -11,6 +11,7 @@ import { CompileOptions, CompileProgressEvent, CompileResult } from "../../types
 
 export const WORK_ROOT_NAME = "whisper-workspace";
 const WINDOWS_BINARY_TARGETS = ["whisper-cli.exe", "whisper-stream.exe"];
+const LINUX_BINARY_TARGETS = ["whisper-cli", "whisper-stream"];
 const MAC_BUNDLE_DIR_NAME = "mac-bin";
 
 const TOOLCHAIN_DIR_NAME = "toolchain";
@@ -24,6 +25,8 @@ const REQUIRED_DLLS = [
   "libgomp-1.dll",
   "SDL2.dll"
 ];
+
+type LinuxPackageManager = "apt" | "dnf" | "yum" | "zypper" | "pacman";
 
 interface ToolchainContext {
   workRoot: string;
@@ -57,6 +60,8 @@ type CompileListener<T extends CompileEventNames> = (event: CompileManagerEvents
 export class CompileManager extends EventEmitter {
   private running = false;
   private logStream?: fs.WriteStream;
+  private linuxAptUpdated = false;
+  private linuxBootstrapDone = false;
 
   on<T extends CompileEventNames>(event: T, listener: CompileListener<T>): this {
     return super.on(event, listener as any);
@@ -80,7 +85,7 @@ export class CompileManager extends EventEmitter {
       }
     }
 
-    if (process.platform !== "win32") {
+    if (process.platform !== "win32" && process.platform !== "linux") {
       return { success: false, error: "This platform is not supported for compilation." };
     }
 
@@ -114,11 +119,11 @@ export class CompileManager extends EventEmitter {
         toolchain = await this.prepareToolchain(workRoot, options.force === true);
       });
 
-      await this.runStep("msys", "Ensuring MSYS2 toolchain", async () => {
+      await this.runStep("msys", process.platform === "linux" ? "Ensuring Linux build toolchain" : "Ensuring MSYS2 toolchain", async () => {
         await this.ensureMsys(toolchain);
       });
 
-      await this.runStep("packages", "Updating MSYS2 packages", async () => {
+      await this.runStep("packages", process.platform === "linux" ? "Installing Linux build packages" : "Updating MSYS2 packages", async () => {
         await this.installPackages(toolchain, true);
       });
 
@@ -174,12 +179,10 @@ export class CompileManager extends EventEmitter {
       return { success: true };
     }
 
-    if (process.platform !== "win32") {
-      const msg = process.platform === "linux"
-        ? "Dependency installation currently implemented only for Windows. Linux support coming later."
-        : "Dependency installation not required on this platform.";
+    if (process.platform !== "win32" && process.platform !== "linux") {
+      const msg = "Dependency installation not required on this platform.";
       this.emitProgress({ step: "dependencies", message: msg, progress: 100, state: "success" });
-      return { success: false, error: msg };
+      return { success: true };
     }
 
     if (this.running) {
@@ -204,55 +207,80 @@ export class CompileManager extends EventEmitter {
       this.emitConsole("[deps] Starting dependency installation checks...");
       const toolchain = await this.prepareToolchain(workRoot, options.force === true);
 
-      // Install Git via winget if not available
-      await this.runStep("git", "Ensuring Git is installed", async () => {
-        const script = [
-          'if (Get-Command git.exe -ErrorAction SilentlyContinue) { return }',
-          'winget source update --name winget | Out-Null',
-          'winget install --id Git.Git --source winget -e --accept-source-agreements --accept-package-agreements | Out-Null'
-        ].join("; ");
-        await this.runPowerShell(script, "Git", { quiet: true });
-      });
-
-      // Install Vulkan SDK via winget (skip if already present)
-      const hasVulkanSdk = Boolean(toolchain.vulkanSdkPath);
-      if (!hasVulkanSdk) {
-        await this.runStep("vulkan", "Installing Vulkan SDK", async () => {
+      if (process.platform === "win32") {
+        await this.runStep("git", "Ensuring Git is installed", async () => {
           const script = [
+            'if (Get-Command git.exe -ErrorAction SilentlyContinue) { return }',
             'winget source update --name winget | Out-Null',
-            'winget install --id KhronosGroup.VulkanSDK --source winget -e --accept-source-agreements --accept-package-agreements'
+            'winget install --id Git.Git --source winget -e --accept-source-agreements --accept-package-agreements | Out-Null'
           ].join("; ");
-          await this.runPowerShell(script, "VulkanSDK", { quiet: true });
+          await this.runPowerShell(script, "Git", { quiet: true });
+        });
+
+        const hasVulkanSdk = Boolean(toolchain.vulkanSdkPath);
+        if (!hasVulkanSdk) {
+          await this.runStep("vulkan", "Installing Vulkan SDK", async () => {
+            const script = [
+              'winget source update --name winget | Out-Null',
+              'winget install --id KhronosGroup.VulkanSDK --source winget -e --accept-source-agreements --accept-package-agreements'
+            ].join("; ");
+            await this.runPowerShell(script, "VulkanSDK", { quiet: true });
+            toolchain.vulkanSdkPath = this.resolveVulkanSdkPath() ?? undefined;
+          });
+        } else {
+          this.emitConsole("[vulkan] Vulkan SDK already installed; skipping install.");
+          this.emitProgress({ step: "vulkan", message: "Vulkan SDK already installed.", progress: 100, state: "success" });
+        }
+
+        if (toolchain.vulkanSdkPath) {
+          await this.runStep("vulkan-env", "Setting VULKAN_SDK environment variable", async () => {
+            const script = [
+              "$key = 'HKLM:\\SOFTWARE\\Khronos\\Vulkan\\RT'",
+              "if (-not (Test-Path $key)) { Write-Output 'Vulkan registry key missing; skipping VULKAN_SDK.'; return }",
+              "$value = Get-ItemProperty -Path $key -ErrorAction Stop",
+              "if (-not $value.VulkanSDK) { Write-Output 'Vulkan registry entry missing VulkanSDK value; skipping.'; return }",
+              "$env:VULKAN_SDK = $value.VulkanSDK",
+              "[System.Environment]::SetEnvironmentVariable('VULKAN_SDK', $value.VulkanSDK, 'Process')",
+              "Write-Output \"VULKAN_SDK set to $($value.VulkanSDK)\""
+            ].join(" ; ");
+            await this.runPowerShell(script, "SetVulkanEnv");
+          });
+        } else {
+          this.emitConsole("[vulkan] Vulkan SDK not detected; skipping VULKAN_SDK environment setup.");
+          this.emitProgress({ step: "vulkan-env", message: "Vulkan SDK not detected; skipping environment setup.", progress: 100, state: "success" });
+        }
+      } else {
+        await this.runStep("git", "Ensuring Git is installed", async () => {
+          await this.ensureLinuxPackages(["git"], "Git");
+        });
+
+        await this.runStep("vulkan", "Ensuring Vulkan development/runtime packages", async () => {
+          await this.ensureLinuxPackages(["vulkan", "glslc"], "Vulkan");
           toolchain.vulkanSdkPath = this.resolveVulkanSdkPath() ?? undefined;
         });
-      } else {
-        this.emitConsole("[vulkan] Vulkan SDK already installed; skipping install.");
-        this.emitProgress({ step: "vulkan", message: "Vulkan SDK already installed.", progress: 100, state: "success" });
-      }
 
-      if (toolchain.vulkanSdkPath) {
-        await this.runStep("vulkan-env", "Setting VULKAN_SDK environment variable", async () => {
-          const script = [
-            "$key = 'HKLM:\\SOFTWARE\\Khronos\\Vulkan\\RT'",
-            "if (-not (Test-Path $key)) { Write-Output 'Vulkan registry key missing; skipping VULKAN_SDK.'; return }",
-            "$value = Get-ItemProperty -Path $key -ErrorAction Stop",
-            "if (-not $value.VulkanSDK) { Write-Output 'Vulkan registry entry missing VulkanSDK value; skipping.'; return }",
-            "$env:VULKAN_SDK = $value.VulkanSDK",
-            "[System.Environment]::SetEnvironmentVariable('VULKAN_SDK', $value.VulkanSDK, 'Process')",
-            "Write-Output \"VULKAN_SDK set to $($value.VulkanSDK)\""
-          ].join(" ; ");
-          await this.runPowerShell(script, "SetVulkanEnv");
+        await this.runStep("vulkan-env", "Detecting Vulkan runtime", async () => {
+          if (this.hasCommand("vulkaninfo")) {
+            this.emitConsole("[vulkan] vulkaninfo detected on PATH.");
+          } else {
+            this.emitConsole("[vulkan] vulkaninfo not found; Vulkan packages may still be present.");
+          }
+          if (!this.hasCommand("glslc")) {
+            throw new Error("Vulkan toolchain is incomplete: missing glslc. Install it (Ubuntu: sudo apt-get install -y glslc or shaderc or glslang-tools).");
+          }
+          toolchain.vulkanSdkPath = this.resolveVulkanSdkPath() ?? undefined;
         });
-      } else {
-        this.emitConsole("[vulkan] Vulkan SDK not detected; skipping VULKAN_SDK environment setup.");
-        this.emitProgress({ step: "vulkan-env", message: "Vulkan SDK not detected; skipping environment setup.", progress: 100, state: "success" });
       }
 
       this.ensureFfmpegPath(toolchain.ffmpegBin);
       const hasFfmpeg = this.isFfmpegAvailable(toolchain.ffmpegBin);
       if (!hasFfmpeg) {
         await this.runStep("ffmpeg", "Installing FFmpeg", async () => {
-          await this.installFfmpeg(toolchain);
+          if (process.platform === "win32") {
+            await this.installFfmpeg(toolchain);
+          } else {
+            await this.ensureLinuxPackages(["ffmpeg"], "FFmpeg");
+          }
           this.ensureFfmpegPath(toolchain.ffmpegBin);
           if (!this.isFfmpegAvailable(toolchain.ffmpegBin)) {
             throw new Error("FFmpeg installation did not complete successfully.");
@@ -264,15 +292,16 @@ export class CompileManager extends EventEmitter {
       }
 
       await this.runStep("ffmpeg-env", "Ensuring FFmpeg PATH setup", async () => {
-        await this.ensureFfmpegUserPath(toolchain.ffmpegBin);
+        if (process.platform === "win32") {
+          await this.ensureFfmpegUserPath(toolchain.ffmpegBin);
+        }
         this.ensureFfmpegPath(toolchain.ffmpegBin);
         if (!this.isFfmpegAvailable(toolchain.ffmpegBin)) {
           throw new Error("FFmpeg not available on PATH after setup.");
         }
       });
 
-      // Ensure MSYS2 toolchain and packages
-      await this.runStep("msys", "Ensuring MSYS2 toolchain", async () => {
+      await this.runStep("msys", process.platform === "linux" ? "Ensuring Linux build toolchain" : "Ensuring MSYS2 toolchain", async () => {
         await this.ensureMsys(toolchain, true);
       });
 
@@ -306,10 +335,6 @@ export class CompileManager extends EventEmitter {
     if (process.platform === "darwin") {
       const bundleDir = this.resolveMacBundleDir();
       return bundleDir ? { installed: true, outputDir: bundleDir } : { installed: false };
-    }
-
-    if (process.platform !== "win32") {
-      return { installed: false };
     }
 
     return { installed: false };
@@ -361,8 +386,27 @@ export class CompileManager extends EventEmitter {
       return envPath;
     }
 
+    if (process.platform === "linux") {
+      try {
+        if (this.hasCommand("pkg-config")) {
+          const pkgConfig = spawnSync("pkg-config", ["--exists", "vulkan"], { stdio: "ignore" });
+          if (pkgConfig.status === 0) {
+            return "/usr";
+          }
+        }
+      } catch {
+        // Ignore pkg-config probe failures.
+      }
+
+      if (fs.existsSync("/usr/include/vulkan/vulkan.h")) {
+        return "/usr";
+      }
+
+      return null;
+    }
+
     if (process.platform !== "win32") {
-      return envPath ?? null;
+      return null;
     }
 
     try {
@@ -414,7 +458,7 @@ export class CompileManager extends EventEmitter {
   private isFfmpegAvailable(binDir?: string): boolean {
     const target = binDir ?? this.getFfmpegPaths().bin;
     this.ensureFfmpegPath(target);
-    const executable = path.join(target, "ffmpeg.exe");
+    const executable = path.join(target, process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg");
     try {
       if (fs.existsSync(executable)) {
         const result = spawnSync(executable, ["-version"], { stdio: "ignore" });
@@ -495,6 +539,43 @@ export class CompileManager extends EventEmitter {
 
     await fsp.mkdir(toolchainRoot, { recursive: true });
     await fsp.mkdir(downloadsDir, { recursive: true });
+
+    if (process.platform === "linux") {
+      const ffmpegRoot = path.join(toolchainRoot, FFMPEG_DIR_NAME);
+      const ffmpegBin = path.join(ffmpegRoot, "bin");
+      const env: NodeJS.ProcessEnv = {
+        ...process.env
+      };
+      const vulkanSdkPathResolved = this.resolveVulkanSdkPath() ?? undefined;
+
+      if (fs.existsSync(ffmpegBin) && !this.isDirectoryOnPath(ffmpegBin)) {
+        env.PATH = `${ffmpegBin}${path.delimiter}${env.PATH ?? ""}`;
+      }
+
+      if (vulkanSdkPathResolved) {
+        env.VULKAN_SDK = vulkanSdkPathResolved;
+      }
+
+      return {
+        workRoot,
+        toolchainRoot,
+        downloadsDir,
+        ffmpegRoot,
+        ffmpegBin,
+        msysRoot: "",
+        mingwBin: "",
+        usrBin: "",
+        cmakePath: "cmake",
+        bashPath: "bash",
+        gccPath: "gcc",
+        gxxPath: "g++",
+        arPath: "ar",
+        ranlibPath: "ranlib",
+        sdl2CMakeDir: "",
+        vulkanSdkPath: vulkanSdkPathResolved,
+        env
+      };
+    }
 
     const msysRoot = path.join(toolchainRoot, "msys64");
     const mingwBin = path.join(msysRoot, "mingw64", "bin");
@@ -580,6 +661,14 @@ export class CompileManager extends EventEmitter {
   }
 
   private async ensureMsys(context: ToolchainContext, quiet = false): Promise<void> {
+    if (process.platform === "linux") {
+      if (this.hasCommand("cmake") && this.hasCommand("ninja") && this.hasCommand("gcc") && this.hasCommand("g++")) {
+        return;
+      }
+      await this.ensureLinuxPackages(["build"], "BuildTools", quiet);
+      return;
+    }
+
     if (fs.existsSync(context.cmakePath)) {
       return;
     }
@@ -686,6 +775,11 @@ export class CompileManager extends EventEmitter {
   }
 
   private async installPackages(context: ToolchainContext, quiet = false): Promise<void> {
+    if (process.platform === "linux") {
+      await this.ensureLinuxPackages(["build", "sdl"], "LinuxPackages", quiet);
+      return;
+    }
+
     if (!fs.existsSync(context.bashPath)) {
       throw new Error(`MSYS2 bash not found at ${context.bashPath}`);
     }
@@ -700,6 +794,11 @@ export class CompileManager extends EventEmitter {
     }
 
     await fsp.rm(sourceDir, { recursive: true, force: true });
+
+    if (process.platform === "linux") {
+      await this.spawnWithLogs("git", ["clone", "--depth", "1", "https://github.com/ggerganov/whisper.cpp.git", sourceDir], "Fetch whisper.cpp", undefined, { quiet: true });
+      return;
+    }
 
     const script = [
       `$dest = '${sourceDir.replace(/\\/g, "/")}'`,
@@ -728,6 +827,33 @@ export class CompileManager extends EventEmitter {
     await fsp.mkdir(buildDir, { recursive: true });
 
     const enableVulkan = Boolean(context.vulkanSdkPath);
+
+    if (process.platform === "linux") {
+      if (!this.hasCommand("glslc")) {
+        throw new Error("Vulkan backend requested but glslc was not found on PATH.");
+      }
+
+      const args = [
+        "-S",
+        sourceDir,
+        "-B",
+        buildDir,
+        "-G",
+        "Ninja",
+        enableVulkan ? "-DGGML_VULKAN=1" : "-DGGML_VULKAN=0",
+        "-DWHISPER_SDL2=ON",
+        "-DWHISPER_BUILD_EXAMPLES=ON",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DGGML_CCACHE=OFF"
+      ];
+
+      if (!enableVulkan) {
+        this.emitConsole("[compile] Vulkan SDK not detected; building without Vulkan backend.");
+      }
+
+      await this.spawnWithLogs("cmake", args, undefined, context.env, { quiet: true });
+      return;
+    }
 
     const args = [
       "-S",
@@ -781,11 +907,22 @@ export class CompileManager extends EventEmitter {
       String(Math.max(1, os.cpus().length - 1))
     ];
 
-    await this.spawnWithLogs(context.cmakePath, args, undefined, context.env, { quiet: true });
+    await this.spawnWithLogs(process.platform === "linux" ? "cmake" : context.cmakePath, args, undefined, context.env, { quiet: true });
   }
 
   private async copyArtifacts(context: ToolchainContext, sourceDir: string, binDir: string): Promise<void> {
     const buildBinDir = path.join(sourceDir, "build", "bin");
+
+    if (process.platform === "linux") {
+      for (const target of LINUX_BINARY_TARGETS) {
+        const sourcePath = path.join(buildBinDir, target);
+        const destinationPath = path.join(binDir, target);
+        await fsp.copyFile(sourcePath, destinationPath);
+        await fsp.chmod(destinationPath, 0o755);
+      }
+      return;
+    }
+
     for (const target of WINDOWS_BINARY_TARGETS) {
       await fsp.copyFile(path.join(buildBinDir, target), path.join(binDir, target));
     }
@@ -926,7 +1063,214 @@ export class CompileManager extends EventEmitter {
       }
     }
 
+    if (process.platform === "linux") {
+      return LINUX_BINARY_TARGETS.every((bin) => fs.existsSync(path.join(binDir, bin)));
+    }
+
     return false;
+  }
+
+  private hasCommand(command: string): boolean {
+    try {
+      const check = spawnSync("sh", ["-lc", `command -v ${command}`], { stdio: "ignore" });
+      return check.status === 0;
+    } catch {
+      return false;
+    }
+  }
+
+  private detectLinuxPackageManager(): LinuxPackageManager | null {
+    if (this.hasCommand("apt-get")) {
+      return "apt";
+    }
+    if (this.hasCommand("dnf")) {
+      return "dnf";
+    }
+    if (this.hasCommand("yum")) {
+      return "yum";
+    }
+    if (this.hasCommand("zypper")) {
+      return "zypper";
+    }
+    if (this.hasCommand("pacman")) {
+      return "pacman";
+    }
+    return null;
+  }
+
+  private linuxInstallCommand(manager: LinuxPackageManager, group: "git" | "ffmpeg" | "vulkan" | "build" | "sdl" | "glslc"): string {
+    const packages: Record<LinuxPackageManager, Record<"git" | "ffmpeg" | "vulkan" | "build" | "sdl", string[]>> = {
+      apt: {
+        git: ["git"],
+        ffmpeg: ["ffmpeg"],
+        vulkan: ["libvulkan-dev", "vulkan-tools"],
+        build: ["build-essential", "cmake", "ninja-build", "pkg-config", "curl"],
+        sdl: ["libsdl2-dev"]
+      },
+      dnf: {
+        git: ["git"],
+        ffmpeg: ["ffmpeg"],
+        vulkan: ["vulkan-loader-devel", "vulkan-tools"],
+        build: ["gcc", "gcc-c++", "make", "cmake", "ninja-build", "pkgconf-pkg-config", "curl"],
+        sdl: ["SDL2-devel"]
+      },
+      yum: {
+        git: ["git"],
+        ffmpeg: ["ffmpeg"],
+        vulkan: ["vulkan-loader-devel", "vulkan-tools"],
+        build: ["gcc", "gcc-c++", "make", "cmake", "ninja-build", "pkgconfig", "curl"],
+        sdl: ["SDL2-devel"]
+      },
+      zypper: {
+        git: ["git"],
+        ffmpeg: ["ffmpeg"],
+        vulkan: ["vulkan-devel", "vulkan-tools"],
+        build: ["gcc", "gcc-c++", "make", "cmake", "ninja", "pkg-config", "curl"],
+        sdl: ["libSDL2-devel"]
+      },
+      pacman: {
+        git: ["git"],
+        ffmpeg: ["ffmpeg"],
+        vulkan: ["vulkan-headers", "vulkan-tools"],
+        build: ["base-devel", "cmake", "ninja", "pkgconf", "curl"],
+        sdl: ["sdl2"]
+      }
+    };
+
+    if (group === "glslc") {
+      if (manager === "apt") {
+        return "if command -v glslc >/dev/null 2>&1; then true; else DEBIAN_FRONTEND=noninteractive apt-get install -y glslc || DEBIAN_FRONTEND=noninteractive apt-get install -y shaderc || DEBIAN_FRONTEND=noninteractive apt-get install -y glslang-tools; fi";
+      }
+      if (manager === "dnf") {
+        return "(dnf install -y shaderc || dnf install -y glslang)";
+      }
+      if (manager === "yum") {
+        return "(yum install -y shaderc || yum install -y glslang)";
+      }
+      if (manager === "zypper") {
+        return "(zypper --non-interactive install --no-recommends shaderc || zypper --non-interactive install --no-recommends glslang)";
+      }
+      return "pacman -Sy --noconfirm --needed shaderc";
+    }
+
+    const selected = packages[manager][group];
+
+    if (manager === "apt") {
+      return `DEBIAN_FRONTEND=noninteractive apt-get install -y ${selected.join(" ")}`;
+    }
+    if (manager === "dnf") {
+      return `dnf install -y ${selected.join(" ")}`;
+    }
+    if (manager === "yum") {
+      return `yum install -y ${selected.join(" ")}`;
+    }
+    if (manager === "zypper") {
+      return `zypper --non-interactive install --no-recommends ${selected.join(" ")}`;
+    }
+
+    return `pacman -Sy --noconfirm --needed ${selected.join(" ")}`;
+  }
+
+  private async runLinuxInstall(command: string, label: string, quiet = false): Promise<void> {
+    if (process.getuid && process.getuid() === 0) {
+      await this.spawnWithLogs("sh", ["-lc", command], label, undefined, { quiet });
+      return;
+    }
+
+    if (this.hasCommand("sudo")) {
+      try {
+        await this.spawnWithLogs("sudo", ["-n", "sh", "-lc", command], label, undefined, { quiet });
+        return;
+      } catch {
+        // Fall through to pkexec/manual path.
+      }
+    }
+
+    if (this.hasCommand("pkexec")) {
+      try {
+        await this.spawnWithLogs("pkexec", ["sh", "-lc", command], label, undefined, { quiet });
+        return;
+      } catch {
+        // Fall through to manual guidance.
+      }
+    }
+
+    throw new Error(`Automatic installation requires root privileges. Please run manually as root: sh -lc \"${command}\"`);
+  }
+
+  private async ensureLinuxPackages(groups: Array<"git" | "ffmpeg" | "vulkan" | "build" | "sdl" | "glslc">, label: string, quiet = false): Promise<void> {
+    if (process.platform !== "linux") {
+      return;
+    }
+
+    const bootstrapGroups: Array<"git" | "ffmpeg" | "vulkan" | "build" | "sdl" | "glslc"> = ["git", "vulkan", "glslc", "ffmpeg", "build", "sdl"];
+    const selectedGroups = this.linuxBootstrapDone ? Array.from(new Set(groups)) : bootstrapGroups;
+    const missingGroups = selectedGroups.filter((group) => !this.isLinuxDependencyGroupSatisfied(group));
+    if (missingGroups.length === 0) {
+      this.emitConsole(`[${label}] Linux dependencies already satisfied; skipping install.`);
+      this.linuxBootstrapDone = true;
+      return;
+    }
+
+    const manager = this.detectLinuxPackageManager();
+    if (!manager) {
+      throw new Error("No supported Linux package manager detected (apt, dnf, yum, zypper, pacman).");
+    }
+
+    const commands: string[] = [];
+
+    if (manager === "apt" && !this.linuxAptUpdated) {
+      commands.push("apt-get update");
+    }
+
+    for (const group of missingGroups) {
+      commands.push(this.linuxInstallCommand(manager, group));
+    }
+
+    await this.runLinuxInstall(commands.join(" && "), label, quiet);
+
+    if (manager === "apt") {
+      this.linuxAptUpdated = true;
+    }
+    this.linuxBootstrapDone = true;
+  }
+
+  private isLinuxDependencyGroupSatisfied(group: "git" | "ffmpeg" | "vulkan" | "build" | "sdl" | "glslc"): boolean {
+    if (process.platform !== "linux") {
+      return true;
+    }
+
+    if (group === "git") {
+      return this.hasCommand("git");
+    }
+
+    if (group === "ffmpeg") {
+      return this.hasCommand("ffmpeg");
+    }
+
+    if (group === "glslc") {
+      return this.hasCommand("glslc");
+    }
+
+    if (group === "build") {
+      return this.hasCommand("cmake") && this.hasCommand("ninja") && this.hasCommand("gcc") && this.hasCommand("g++");
+    }
+
+    if (group === "sdl") {
+      if (!this.hasCommand("pkg-config")) {
+        return false;
+      }
+      try {
+        const check = spawnSync("pkg-config", ["--exists", "sdl2"], { stdio: "ignore" });
+        return check.status === 0;
+      } catch {
+        return false;
+      }
+    }
+
+    const hasHeaders = fs.existsSync("/usr/include/vulkan/vulkan.h");
+    const hasRuntime = this.hasCommand("vulkaninfo");
+    return hasHeaders && hasRuntime;
   }
 
   private async stagePrebuiltMacBinaries(force: boolean): Promise<CompileResult> {

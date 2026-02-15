@@ -1,8 +1,12 @@
 {
   "name": "easy-whisper-electron",
-  "author": "Mehtab Mahir",
+  "author": {
+    "name": "Mehtab Mahir",
+    "email": "mehtabmahir@users.noreply.github.com"
+  },
   "version": "2.1.0",
   "description": "Electron frontend shell for EasyWhisperUI",
+  "homepage": "https://github.com/mehtabmahir/easy-whisper-ui",
   "private": true,
   "main": "dist/main/index.js",
   "scripts": {
@@ -17,7 +21,7 @@
     "build:renderer": "vite build",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dist": "cross-env FFMPEG_FORCE_DOWNLOAD=1 npm run postinstall && npm run build && electron-builder",
+    "dist": "cross-env FFMPEG_FORCE_DOWNLOAD=1 npm run postinstall && npm run build && node buildResources/scripts/run-dist.js",
     "postinstall": "node buildResources/scripts/postinstall.js"
   },
   "dependencies": {
@@ -61,21 +65,79 @@
     },
     "fileAssociations": [
       {
-        "ext": [
-          "wav",
-          "mp3",
-          "m4a",
-          "flac",
-          "ogg",
-          "opus",
-          "aac",
-          "wma",
-          "mp4",
-          "m4v",
-          "mov",
-          "mkv",
-          "avi"
-        ],
+        "ext": "wav",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "mp3",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "m4a",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "flac",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "ogg",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "opus",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "aac",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "wma",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "mp4",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "m4v",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "mov",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "mkv",
+        "name": "Audio/Video for EasyWhisperUI",
+        "description": "Send audio/video files to EasyWhisperUI for transcription",
+        "role": "Editor"
+      },
+      {
+        "ext": "avi",
         "name": "Audio/Video for EasyWhisperUI",
         "description": "Send audio/video files to EasyWhisperUI for transcription",
         "role": "Editor"
@@ -118,7 +180,20 @@
       "deleteAppDataOnUninstall": true
     },
     "linux": {
-      "target": "AppImage"
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
+      "category": "AudioVideo",
+      "maintainer": "Mehtab Mahir <mehtabmahir@users.noreply.github.com>",
+      "icon": "../resources/icon.png"
+    },
+    "deb": {
+      "priority": "optional"
+    },
+    "rpm": {
+      "synopsis": "EasyWhisperUI"
     }
   }
 }

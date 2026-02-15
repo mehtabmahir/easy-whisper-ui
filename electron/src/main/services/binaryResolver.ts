@@ -31,6 +31,7 @@ export function resolveBinary(baseName: string, options: ResolveOptions = {}): B
     if (process.resourcesPath) {
       preferredSources.push(
         path.join(process.resourcesPath, "mac-bin", exeName),
+        path.join(process.resourcesPath, "linux-bin", exeName),
         path.join(process.resourcesPath, exeName)
       );
     }
@@ -38,9 +39,11 @@ export function resolveBinary(baseName: string, options: ResolveOptions = {}): B
     const appPath = app.getAppPath();
     preferredSources.push(
       path.join(appPath, "buildResources", "mac-bin", exeName),
+      path.join(appPath, "buildResources", "linux-bin", exeName),
       path.join(appPath, "buildResources", exeName),
       path.join(appPath, exeName),
       path.join(__dirname, "../../../buildResources", "mac-bin", exeName),
+      path.join(__dirname, "../../../buildResources", "linux-bin", exeName),
       path.join(__dirname, "../../../buildResources", exeName)
     );
 
@@ -97,15 +100,18 @@ export function resolveBinary(baseName: string, options: ResolveOptions = {}): B
   if (process.resourcesPath) {
     preferredSources.push(
       path.join(process.resourcesPath, "mac-bin", exeName),
+      path.join(process.resourcesPath, "linux-bin", exeName),
       path.join(process.resourcesPath, exeName)
     );
   }
 
   preferredSources.push(
     path.join(app.getAppPath(), "buildResources", "mac-bin", exeName),
+    path.join(app.getAppPath(), "buildResources", "linux-bin", exeName),
     path.join(app.getAppPath(), "buildResources", exeName),
     path.join(app.getAppPath(), exeName),
     path.join(__dirname, "../../../buildResources", "mac-bin", exeName),
+    path.join(__dirname, "../../../buildResources", "linux-bin", exeName),
     path.join(__dirname, "../../../buildResources", exeName),
     workspaceCandidate
   );
