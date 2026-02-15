@@ -250,8 +250,9 @@ export class CompileManager extends EventEmitter {
           this.emitProgress({ step: "vulkan-env", message: "Vulkan SDK not detected; skipping environment setup.", progress: 100, state: "success" });
         }
       } else {
-        await this.runStep("git", "Ensuring Git is installed", async () => {
-          await this.ensureLinuxPackages(["git"], "Git");
+        const bootstrapPending = !this.linuxBootstrapDone;
+        await this.runStep("git", bootstrapPending ? "Bootstrapping Linux dependencies (one-time)" : "Ensuring Git is installed", async () => {
+          await this.ensureLinuxPackages(["git"], bootstrapPending ? "LinuxDeps" : "Git");
         });
 
         await this.runStep("vulkan", "Ensuring Vulkan development/runtime packages", async () => {
@@ -1225,6 +1226,13 @@ export class CompileManager extends EventEmitter {
 
     for (const group of missingGroups) {
       commands.push(this.linuxInstallCommand(manager, group));
+    }
+
+    const groupList = missingGroups.join(", ");
+    if (!this.linuxBootstrapDone) {
+      this.emitConsole(`[${label}] One-time Linux dependency bootstrap: ${groupList}`);
+    } else {
+      this.emitConsole(`[${label}] Installing missing Linux dependency groups: ${groupList}`);
     }
 
     await this.runLinuxInstall(commands.join(" && "), label, quiet);
