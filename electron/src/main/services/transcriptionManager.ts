@@ -1,5 +1,5 @@
-import { app, shell } from "electron";
-import { spawn, ChildProcessWithoutNullStreams } from "node:child_process";
+import { app, BrowserWindow, shell } from "electron";
+import { spawn, spawnSync, ChildProcessWithoutNullStreams } from "node:child_process";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
@@ -95,12 +95,7 @@ export class TranscriptionManager extends EventEmitter {
       const modelPath = await this.ensureModel(nextItem.settings);
       await this.runWhisper(audio.path, modelPath, nextItem.settings);
       if (nextItem.settings.openAfterComplete) {
-        const outputTxt = `${audio.path}.txt`;
-        if (fs.existsSync(outputTxt)) {
-          await shell.showItemInFolder(outputTxt);
-        } else {
-          await shell.showItemInFolder(audio.path);
-        }
+        await this.openOutputAfterComplete(audio.path);
       }
       this.emitConsole({ source: "transcription", message: `Completed: ${path.basename(nextItem.file)}` });
     } catch (error) {
@@ -402,5 +397,122 @@ export class TranscriptionManager extends EventEmitter {
       isProcessing: this.processing
     };
     this.emit("queue", state);
+  }
+
+  private async openOutputAfterComplete(audioPath: string): Promise<void> {
+    const outputTxt = `${audioPath}.txt`;
+    const outputSrt = `${audioPath}.srt`;
+    const preferredOutput = fs.existsSync(outputTxt)
+      ? outputTxt
+      : fs.existsSync(outputSrt)
+        ? outputSrt
+        : audioPath;
+
+    const isTranscriptText = preferredOutput.endsWith(".txt") || preferredOutput.endsWith(".srt");
+
+    if (process.platform === "linux" && isTranscriptText) {
+      const openedInApp = await this.openTranscriptInWindow(preferredOutput);
+      if (openedInApp) {
+        return;
+      }
+
+      const openedWithEditor = this.openWithLinuxTextEditor(preferredOutput);
+      if (openedWithEditor) {
+        return;
+      }
+    }
+
+    const openResult = await shell.openPath(preferredOutput);
+    if (openResult) {
+      await shell.showItemInFolder(preferredOutput);
+      this.emitConsole({
+        source: "transcription",
+        message: `Opened output folder instead because direct file open failed: ${openResult}`
+      });
+    }
+  }
+
+  private openWithLinuxTextEditor(filePath: string): boolean {
+    const editorCandidates = ["sensible-editor", "gedit", "xed", "kate", "mousepad", "pluma"];
+
+    for (const editor of editorCandidates) {
+      if (!this.hasCommand(editor)) {
+        continue;
+      }
+
+      try {
+        const child = spawn(editor, [filePath], {
+          detached: true,
+          stdio: "ignore"
+        });
+        child.unref();
+        this.emitConsole({ source: "transcription", message: `Opened transcript using ${editor}.` });
+        return true;
+      } catch {
+        // Try next editor candidate.
+      }
+    }
+
+    return false;
+  }
+
+  private hasCommand(command: string): boolean {
+    try {
+      const result = spawnSync("sh", ["-lc", `command -v ${command}`], { stdio: "ignore" });
+      return result.status === 0;
+    } catch {
+      return false;
+    }
+  }
+
+  private async openTranscriptInWindow(filePath: string): Promise<boolean> {
+    try {
+      const content = await fsp.readFile(filePath, "utf8");
+      const escapedTitle = this.escapeHtml(path.basename(filePath));
+      const escapedPath = this.escapeHtml(filePath);
+      const escapedContent = this.escapeHtml(content);
+
+      const html = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${escapedTitle}</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+      header { padding: 10px 14px; border-bottom: 1px solid #8884; font-size: 13px; }
+      pre { margin: 0; padding: 14px; white-space: pre-wrap; word-break: break-word; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+  </head>
+  <body>
+    <header>${escapedTitle}<br><small>${escapedPath}</small></header>
+    <pre>${escapedContent}</pre>
+  </body>
+</html>`;
+
+      const win = new BrowserWindow({
+        width: 920,
+        height: 700,
+        autoHideMenuBar: true,
+        title: path.basename(filePath)
+      });
+
+      await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+      this.emitConsole({ source: "transcription", message: "Opened transcript in EasyWhisperUI viewer." });
+      return true;
+    } catch (error) {
+      const err = error as Error;
+      this.emitConsole({ source: "transcription", message: `Could not open transcript in viewer: ${err.message}` });
+      return false;
+    }
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 }
