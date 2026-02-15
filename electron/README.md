@@ -145,12 +145,13 @@ In dev, the main process loads the renderer via `VITE_DEV_SERVER_URL`.
 
 * runs the production build
 * packages via `electron-builder` to `../build/electron-dist`
+* Linux outputs include `AppImage`, `deb`, and `rpm` (rpm build requires `rpmbuild` to be available)
 
 ## Runtime flows
 
 ### 1) First-launch setup / install
 
-**Windows**
+**Windows / Linux**
 
 1. Renderer shows the loader overlay
 2. Runs `ensureDependencies({ force: false })`
@@ -158,17 +159,15 @@ In dev, the main process loads the renderer via `VITE_DEV_SERVER_URL`.
 4. Subscribes to compile progress events and updates UI
 5. Verifies installation with `checkInstall()`
 
+On Linux, this path is implemented across dependency setup, compile, and install checks.
+
 **macOS**
 
 * Works out of the box (binaries are bundled/staged; no dependency install step)
 
-**Linux**
-
-* Dependency installation / compilation flows are currently not implemented
-
 ### 2) Batch transcription
 
-**Windows / macOS**
+**Windows / macOS / Linux**
 
 1. Renderer clicks **Open** → `openAudioFiles()`
 2. Renderer calls `enqueueTranscriptions({ files, settings })`
@@ -176,45 +175,13 @@ In dev, the main process loads the renderer via `VITE_DEV_SERVER_URL`.
 4. Main downloads the selected model if missing
 5. Main runs `whisper-cli` and streams console + queue events
 
-**Linux**
-
-* Not implemented (install/compile and binary execution are not supported yet)
-
 ### 3) Live transcription
 
-**Windows / macOS**
+**Windows / macOS / Linux**
 
 1. Renderer clicks **Live** → `startLiveTranscription({ settings, stepMs, lengthMs })`
 2. Main downloads the selected model if missing
 3. Main runs `whisper-stream`
 4. Renderer receives text via `easy-whisper:live-text` and state via `easy-whisper:live-state`
 
-**Linux**
-
-* Not implemented
-
----
-
-
-### 2) Batch transcription
-
-1. Renderer clicks **Open** → `openAudioFiles()`
-2. Renderer calls `enqueueTranscriptions({ files, settings })`
-3. Main processes sequentially:
-
-   * convert to `.wav` via `ffmpeg` (if needed)
-   * download `ggml-<model>.bin` if missing
-   * run `whisper-cli`
-4. Renderer receives:
-
-   * console logs via `easy-whisper:console`
-   * queue state via `easy-whisper:queue`
-
-### 3) Live transcription
-
-1. Renderer clicks **Live** → `startLiveTranscription({ settings, stepMs, lengthMs })`
-2. Main ensures the model exists and spawns `whisper-stream`
-3. Renderer receives:
-
-   * text lines via `easy-whisper:live-text`
-   * start/stop state via `easy-whisper:live-state`
+If a distro-specific dependency, packaging, or runtime issue appears on Linux, please open an issue with logs.

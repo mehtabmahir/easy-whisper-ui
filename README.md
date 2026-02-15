@@ -10,7 +10,7 @@ A fast, local desktop app for transcribing **audio/video** with **Whisper (whisp
 
 ## Electron migration (React + Electron + IPC, TypeScript)
 
-EasyWhisperUI has been migrated to an **Electron architecture (React + Electron + IPC)** built with **TypeScript** to provide a **consistent cross-platform UI** (Windows + macOS, Linux planned) and a **faster, more reliable development workflow** going forward.
+EasyWhisperUI has been migrated to an **Electron architecture (React + Electron + IPC)** built with **TypeScript** to provide a **consistent cross-platform UI** (Windows + macOS + Linux) and a **faster, more reliable development workflow** going forward.
 
 ### What changed / why it matters
 
@@ -81,7 +81,8 @@ EasyWhisperUI supports **custom Whisper models** now!
 - Apple Silicon (M1 / M2 / M3 / M4 / M5)
 
 ### Linux
-- Not supported yet (install/compile flow not implemented)
+- Linux support is available
+- Please share feedback/issues if something breaks on your distro or hardware
 
 ---
 
@@ -95,6 +96,12 @@ EasyWhisperUI supports **custom Whisper models** now!
 ### macOS
 1. Download the `.dmg` from **Releases**
 2. Open it and drag **EasyWhisperUI** into **Applications**
+
+### Linux
+1. Download one of the Linux artifacts from **Releases** (`.AppImage`, `.deb`, or `.rpm`)
+2. Install/run it using your distro’s normal workflow
+3. On first launch, EasyWhisperUI installs required dependencies and compiles Whisper binaries
+4. If anything fails, please open an issue with logs
 
 ---
 
