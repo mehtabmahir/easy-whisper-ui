@@ -2,12 +2,15 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { EasyWhisperApi } from "../types/easy-whisper";
 
 const api: EasyWhisperApi = {
+  listDownloadedModels: () => ipcRenderer.invoke("easy-whisper:list-models"),
+  deleteDownloadedModel: (file) => ipcRenderer.invoke("easy-whisper:delete-model", file),
   setTheme: (theme) => ipcRenderer.invoke("easy-whisper:set-theme", theme),
   platform: () => process.platform,
   arch: () => process.arch,
   openAudioFiles: () => ipcRenderer.invoke("easy-whisper:open-dialog"),
   rendererReady: () => ipcRenderer.invoke("easy-whisper:renderer-ready"),
   compileWhisper: (options) => ipcRenderer.invoke("easy-whisper:compile", options),
+  clearAudioCache: () => ipcRenderer.invoke("easy-whisper:clear-audio-cache"),
   cleanReinstall: () => ipcRenderer.invoke("easy-whisper:clean-reinstall"),
   getUninstallInfo: () => ipcRenderer.invoke("easy-whisper:uninstall-info"),
   uninstallFully: () => ipcRenderer.invoke("easy-whisper:uninstall-fully"),

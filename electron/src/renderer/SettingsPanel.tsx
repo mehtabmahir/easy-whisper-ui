@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { CompileProgressEvent, UninstallInfo } from "../types/easy-whisper";
+import type { CompileProgressEvent, DownloadedModel, UninstallInfo } from "../types/easy-whisper";
 import styles from "./styles/SettingsPanel.module.css";
 
 export default function SettingsPanel({ busy, progress, onClose }: {
@@ -12,7 +12,52 @@ export default function SettingsPanel({ busy, progress, onClose }: {
   const [uninstalling, setUninstalling] = useState(false);
   const [uninstallInfo, setUninstallInfo] = useState<UninstallInfo>();
   const [uninstallError, setUninstallError] = useState<string>();
-  const working = reinstalling || uninstalling;
+  const [clearingCache, setClearingCache] = useState(false);
+  const [cacheResult, setCacheResult] = useState<string>();
+  const [models, setModels] = useState<DownloadedModel[]>();
+  const [modelsOpen, setModelsOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("");
+  const [modelBusy, setModelBusy] = useState(false);
+  const [modelMessage, setModelMessage] = useState<string>();
+  const working = reinstalling || uninstalling || clearingCache || modelBusy;
+
+  async function showModels() {
+    if (!window.easyWhisper || working) return;
+    setModelsOpen(true);
+    setModels(undefined);
+    setSelectedModel("");
+    setModelMessage(undefined);
+    setModelBusy(true);
+    try { setModels(await window.easyWhisper.listDownloadedModels()); }
+    catch { setModelMessage("Could not load models. Close this list and retry."); }
+    finally { setModelBusy(false); }
+  }
+
+  async function deleteModel() {
+    if (!window.easyWhisper || !selectedModel || busy || working) return;
+    setModelBusy(true);
+    setModelMessage(undefined);
+    try {
+      const result = await window.easyWhisper.deleteDownloadedModel(selectedModel);
+      if (!result.success) { setModelMessage(result.error ?? "Could not delete model."); return; }
+      setModels((items) => items?.filter((item) => item.file !== selectedModel));
+      setSelectedModel("");
+      setModelMessage("Model deleted.");
+    } catch { setModelMessage("Could not delete model. Try again."); }
+    finally { setModelBusy(false); }
+  }
+
+  async function clearCache() {
+    if (busy || working || !window.easyWhisper) return;
+    setClearingCache(true);
+    setCacheResult(undefined);
+    try {
+      const result = await window.easyWhisper.clearAudioCache();
+      setCacheResult(result.success ? "Audio cache cleared." : result.error ?? "Could not clear the audio cache.");
+    } catch (error) {
+      setCacheResult((error as Error).message);
+    } finally { setClearingCache(false); }
+  }
   const [result, setResult] = useState<{ success: boolean; message: string }>();
 
   useEffect(() => {
@@ -70,12 +115,43 @@ export default function SettingsPanel({ busy, progress, onClose }: {
       <button type="button" onClick={onClose} disabled={working} aria-label="Close settings">Close</button>
     </header>
     <section>
+      <h3>Audio cache</h3>
+      <p className={styles.note}>Reuses converted audio. Cleared on normal exit; kept after a crash.</p>
+      <button type="button" onClick={() => void clearCache()} disabled={busy || working || !window.easyWhisper}>
+        {clearingCache ? "Clearing…" : "Clear audio cache"}
+      </button>
+      {busy && <p role="status">Available when setup and transcription finish.</p>}
+      {cacheResult && <p role="status">{cacheResult}</p>}
+    </section>
+    <section className={styles.uninstallSection}>
+      <h3>Models</h3>
+      <button type="button" onClick={() => modelsOpen ? setModelsOpen(false) : void showModels()}
+        disabled={working || !window.easyWhisper} aria-expanded={modelsOpen}>
+        {modelsOpen ? "Close model list" : "Delete models"}
+      </button>
+      {modelsOpen && <div>
+        <p className={styles.note}>Choose a downloaded model. It can be downloaded again when needed.</p>
+        {models?.length === 0 && <p>No downloaded models.</p>}
+        {modelBusy && !models && <p role="status">Loading models…</p>}
+        {!!models?.length && <>
+          <div className={styles.modelList} role="group" aria-label="Downloaded models">
+            {models.map((model) => <label key={model.file} className={styles.modelRow}>
+              <input type="radio" name="downloaded-model" value={model.file} checked={selectedModel === model.file}
+                disabled={busy || working} onChange={() => setSelectedModel(model.file)} />
+              <span>{model.name}</span>
+              <small>{model.bytes >= 1024 ** 3 ? `${(model.bytes / 1024 ** 3).toFixed(1)} GB` : `${Math.ceil(model.bytes / 1024 ** 2)} MB`}</small>
+            </label>)}
+          </div>
+          <button type="button" className={styles.uninstall} disabled={!selectedModel || busy || working}
+            onClick={() => void deleteModel()}>{modelBusy ? "Deleting…" : "Delete selected"}</button>
+        </>}
+        {busy && <p role="status">Finish setup or stop transcription first.</p>}
+        {modelMessage && <p role="status">{modelMessage}</p>}
+      </div>}
+    </section>
+    <section className={styles.uninstallSection}>
       <h3>Whisper installation</h3>
-      <p>If setup failed or Whisper won’t start, reinstall its components from scratch.</p>
-      <p>Replaces the app’s binaries, build files, local toolchain and download cache.
-        Your models, preferences, original media and transcripts are kept.</p>
-      <p className={styles.note}>Windows and Linux may need downloads and several minutes to build.
-        On macOS, the bundled binaries are restored. Shared system dependencies are not removed.</p>
+      <p className={styles.note}>Fix setup issues by reinstalling Whisper. Keeps your models and settings.</p>
       <button type="button" className={styles.reinstall} onClick={() => void reinstall()}
         disabled={busy || working || !window.easyWhisper}>
         {reinstalling ? "Reinstalling…" : "Clean reinstall"}
@@ -87,20 +163,18 @@ export default function SettingsPanel({ busy, progress, onClose }: {
         <p className={styles.note}>Keep the app open until setup finishes.</p>
       </div>}
       {result && <p role={result.success ? "status" : "alert"} className={styles.result}>
-        {result.message}{!result.success && " Check the main output log for details, then retry."}
+        {result.message}{!result.success && " See the output log for details."}
       </p>}
     </section>
     <section className={styles.uninstallSection}>
-      <h3>Uninstall EasyWhisperUI</h3>
-      <p>Remove the app and all its data, including downloaded models and saved settings.
-        Original media and exported transcripts outside the app’s data folders are kept.</p>
-      <p className={styles.note}>Shared dependencies such as Git and Vulkan SDK remain installed.</p>
+      <h3>Uninstall</h3>
+      <p className={styles.note}>Removes the app, downloaded models and settings. Keeps original media and exported transcripts outside the app’s data folder.</p>
       <button type="button" className={styles.uninstall} onClick={() => void uninstall()}
         disabled={busy || working || !uninstallInfo?.available} aria-describedby="uninstall-availability">
         {uninstalling ? "Opening uninstaller…" : "Uninstall fully"}
       </button>
       <p id="uninstall-availability" className={styles.note}>
-        {!uninstallInfo ? "Checking availability…" : uninstallInfo.reason ?? (busy ? "Finish setup or stop transcription before uninstalling." : "The app will close and the Windows uninstaller will open.")}
+        {!uninstallInfo ? "Checking availability…" : uninstallInfo.reason ?? (busy ? "Finish setup or stop transcription first." : "")}
       </p>
       {uninstallError && <p role="alert" className={styles.result}>{uninstallError}</p>}
     </section>

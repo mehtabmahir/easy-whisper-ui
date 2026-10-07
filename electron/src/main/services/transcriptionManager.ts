@@ -6,6 +6,7 @@ import fsp from "node:fs/promises";
 import https from "node:https";
 import path from "node:path";
 import os from "node:os";
+import { createHash, randomUUID } from "node:crypto";
 import { pipeline } from "node:stream/promises";
 import {
   ConsoleEvent,
@@ -38,6 +39,43 @@ export class TranscriptionManager extends EventEmitter {
   private activeProcess?: ChildProcessWithoutNullStreams;
   private processing = false;
   private currentAbort?: AbortController;
+  private clearingCache = false;
+  private shuttingDown = false;
+
+  async clearAudioCache(): Promise<void> {
+    if (this.processing || this.queue.length || this.clearingCache) {
+      throw new Error("Stop transcription and wait for the queue to finish before clearing the audio cache.");
+    }
+    this.clearingCache = true;
+    try {
+      const cacheDir = path.join(app.getPath("userData"), WORK_ROOT_NAME, "audio-cache");
+      await fsp.rm(cacheDir, { recursive: true, force: true });
+      this.emitConsole({ source: "transcription", message: "Converted audio cache cleared." });
+    } finally {
+      this.clearingCache = false;
+    }
+  }
+
+  async shutdown(): Promise<void> {
+    this.shuttingDown = true;
+    // Wait for preparation and child-process callbacks before deleting their files.
+    if (this.processing) {
+      let timer: ReturnType<typeof setTimeout>;
+      let finished: () => void;
+      const idle = new Promise<void>((resolve, reject) => {
+        finished = resolve;
+        this.once("finished", finished);
+        timer = setTimeout(() => reject(new Error("Transcription did not stop in time; keeping audio cache.")), 5000);
+      });
+      try {
+        await Promise.all([idle, this.cancelAll()]);
+      } finally {
+        clearTimeout(timer!);
+        this.off("finished", finished!);
+      }
+    }
+    await this.clearAudioCache();
+  }
 
   on<T extends EventName>(event: T, listener: Listener<T>): this {
     return super.on(event, listener as any);
@@ -52,6 +90,7 @@ export class TranscriptionManager extends EventEmitter {
   }
 
   enqueue(request: TranscriptionRequest): void {
+    if (this.clearingCache || this.shuttingDown) return;
     const entries = request.files
       .filter((file) => !!file)
       .map((file) => ({ file, settings: { ...request.settings } }));
@@ -105,10 +144,13 @@ export class TranscriptionManager extends EventEmitter {
       controller.signal.throwIfAborted();
       const modelPath = await this.ensureModel(nextItem.settings, controller.signal);
       controller.signal.throwIfAborted();
-      await this.runWhisper(audio.path, modelPath, nextItem.settings);
+      // Keep exports beside the original media, even when the input WAV is cached.
+      const parsed = path.parse(nextItem.file);
+      const outputBase = audio.deleteAfter ? path.join(parsed.dir, `${parsed.name}.wav`) : nextItem.file;
+      await this.runWhisper(audio.path, modelPath, nextItem.settings, outputBase);
       controller.signal.throwIfAborted();
       if (nextItem.settings.openAfterComplete) {
-        await this.openOutputAfterComplete(audio.path);
+        await this.openOutputAfterComplete(outputBase);
       }
       this.emitConsole({ source: "transcription", message: `Completed: ${path.basename(nextItem.file)}` });
     } catch (error) {
@@ -117,18 +159,7 @@ export class TranscriptionManager extends EventEmitter {
         ? `Stopped: ${path.basename(nextItem.file)}` : `Error processing ${nextItem.file}: ${err.message}` });
     } finally {
       if (audio?.deleteAfter) {
-        try {
-          await fsp.unlink(audio.path);
-          this.emitConsole({ source: "transcription", message: `Deleted temporary audio ${path.basename(audio.path)}` });
-        } catch (cleanupError) {
-          const err = cleanupError as NodeJS.ErrnoException;
-          if (err.code !== "ENOENT") {
-            this.emitConsole({
-              source: "transcription",
-              message: `Warning: could not delete temporary audio ${path.basename(audio.path)}: ${err.message}`
-            });
-          }
-        }
+        this.emitConsole({ source: "transcription", message: `Cached converted audio for reuse: ${audio.path}` });
       }
       this.current = undefined;
       this.currentAbort = undefined;
@@ -150,8 +181,26 @@ export class TranscriptionManager extends EventEmitter {
       return { path: filePath, deleteAfter: false };
     }
 
-    const parsed = path.parse(filePath);
-    const target = path.join(parsed.dir, `${parsed.name}${targetExt}`);
+    const source = await fsp.realpath(filePath);
+    const sourceStat = await fsp.stat(source, { bigint: true });
+    const cacheDir = path.join(app.getPath("userData"), WORK_ROOT_NAME, "audio-cache");
+    await fsp.mkdir(cacheDir, { recursive: true });
+    // Version the conversion parameters; model changes do not invalidate the audio.
+    const key = createHash("sha256").update(JSON.stringify([
+      "pcm-s16le-44100-mono-v1", source, String(sourceStat.size), String(sourceStat.mtimeNs), String(sourceStat.ctimeNs)
+    ])).digest("hex");
+    const target = path.join(cacheDir, `${key}.wav`);
+    try {
+      const cached = await fsp.stat(target);
+      if (cached.isFile() && cached.size > 44) {
+        this.emitConsole({ source: "transcription", message: `Reusing converted audio: ${target}` });
+        return { path: target, deleteAfter: true };
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    // Only a successful conversion is published under the reusable cache name.
+    const partial = path.join(cacheDir, `${key}.${randomUUID()}.partial.wav`);
     const conversionLabel = path.basename(target);
     this.emitConsole({
       source: "transcription",
@@ -189,17 +238,24 @@ export class TranscriptionManager extends EventEmitter {
         "44100",
         "-c:a",
         targetCodec,
-        target
+        partial
       ];
 
       const started = Date.now();
       await this.spawnWithLogs(ffmpeg.command, args);
+      this.currentAbort?.signal.throwIfAborted();
+      const after = await fsp.stat(source, { bigint: true });
+      if (after.size !== sourceStat.size || after.mtimeNs !== sourceStat.mtimeNs || after.ctimeNs !== sourceStat.ctimeNs) {
+        throw new Error("Source media changed during conversion. Please retry.");
+      }
+      await fsp.rename(partial, target);
       const elapsed = ((Date.now() - started) / 1000).toFixed(1);
       this.emitConsole({
         source: "transcription",
         message: `FFmpeg finished (${elapsed}s): ${conversionLabel}`
       });
     } catch (error) {
+      await fsp.rm(partial, { force: true }).catch(() => undefined);
       const err = error as NodeJS.ErrnoException;
       if (err.code === "ENOENT" && !ffmpeg.found) {
         const searched = ffmpeg.searched.length > 0 ? ffmpeg.searched.join(", ") : "<none>";
@@ -250,7 +306,7 @@ export class TranscriptionManager extends EventEmitter {
     return modelPath;
   }
 
-  private async runWhisper(audioFile: string, modelPath: string, settings: ModelSettings): Promise<void> {
+  private async runWhisper(audioFile: string, modelPath: string, settings: ModelSettings, outputBase = audioFile): Promise<void> {
     const binDir = path.join(app.getPath("userData"), WORK_ROOT_NAME, "bin");
     const whisper = resolveBinary("whisper-cli", { allowSystemFallback: false });
     if (!whisper.found || whisper.command.length === 0) {
@@ -263,7 +319,9 @@ export class TranscriptionManager extends EventEmitter {
       "-m",
       modelPath,
       "-f",
-      audioFile
+      audioFile,
+      "-of",
+      outputBase
     ];
 
     if (settings.outputTxt) {

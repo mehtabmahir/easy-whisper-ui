@@ -46,6 +46,12 @@ This rewrite required reworking core UI flows, IPC, and install/dependency handl
 - Console output view during processing
 - **Custom model support**: select a local whisper.cpp-compatible model file directly via a file picker
 
+### Converted audio and retries
+
+Converted WAVs are cached throughout the session and reused when retrying unchanged media, including after successful runs and when switching models. **Settings → Converted audio → Clear audio cache** removes them while the app is idle. Original media, models, settings and exported transcripts are untouched.
+
+Closing the app normally stops transcription and clears the audio cache. After a crash or forced exit, completed conversions remain available on restart; incomplete conversions must be regenerated. Converted WAVs live in `whisper-workspace/audio-cache` inside the app's user-data folder; their paths appear in the console. Exported transcripts remain beside the original media.
+
 ---
 
 ## Acceleration

@@ -9,6 +9,7 @@ import { LiveManager } from "./services/liveManager";
 import { TranscriptionManager } from "./services/transcriptionManager";
 import { getUninstallInfo, launchUninstaller } from "./services/uninstallManager";
 import { showWhisperHelp } from "./services/whisperHelp";
+import { listDownloadedModels, deleteDownloadedModel } from "./services/modelStorage";
 
 const isDev = process.env.NODE_ENV === "development";
 // Electron's native Acrylic backdrop requires Windows 11 22H2 (build 22621).
@@ -30,9 +31,12 @@ let reinstalling = false;
 let transcriptionBusy = false;
 let liveBusy = false;
 let helpBusy = false;
+let quitting = false;
+let quitCleanupDone = false;
+
 
 async function runSetup(action: () => Promise<CompileResult>): Promise<CompileResult> {
-  if (setupBusy || transcriptionBusy || liveBusy || helpBusy) {
+  if (quitting || setupBusy || transcriptionBusy || liveBusy || helpBusy) {
     return { success: false, error: "Wait for setup or transcription to finish before changing the installation." };
   }
   setupBusy = true;
@@ -70,6 +74,19 @@ if (!gotInstanceLock) {
   app.quit();
   process.exit(0);
 }
+
+app.on("before-quit", (event) => {
+  if (quitCleanupDone) return;
+  event.preventDefault();
+  if (quitting) return;
+  quitting = true;
+  void transcriptionManager.shutdown().catch((error) => {
+    console.error("Audio cache cleanup on quit failed:", error);
+  }).finally(() => {
+    quitCleanupDone = true;
+    app.quit();
+  });
+});
 
 app.on("open-file", (event, filePath) => {
   event.preventDefault();
@@ -229,6 +246,15 @@ function broadcast(channel: string, payload: unknown): void {
 }
 
 function registerIpcChannels(): void {
+  ipcMain.handle("easy-whisper:list-models", () => listDownloadedModels());
+  ipcMain.handle("easy-whisper:delete-model", (_event, file: unknown) => runSetup(async () => {
+    await deleteDownloadedModel(file);
+    return { success: true };
+  }));
+  ipcMain.handle("easy-whisper:clear-audio-cache", () => runSetup(async () => {
+    await transcriptionManager.clearAudioCache();
+    return { success: true };
+  }));
   nativeTheme.on("updated", () => {
     mainWindow?.setBackgroundColor(windowBackgroundColor());
   });
@@ -348,7 +374,7 @@ function registerIpcChannels(): void {
   });
 
   ipcMain.handle("easy-whisper:enqueue", async (_event, request: TranscriptionRequest) => {
-    if (setupBusy) {
+    if (setupBusy || quitting) {
       broadcast("easy-whisper:console", { source: "system", message: "Wait for setup to finish before starting transcription." });
       return;
     }
@@ -464,9 +490,7 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  app.quit();
 });
 
 app.on("activate", () => {

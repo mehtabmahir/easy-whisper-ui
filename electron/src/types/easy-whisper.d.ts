@@ -24,6 +24,12 @@ export interface UninstallInfo {
   reason?: string;
 }
 
+export interface DownloadedModel {
+  file: string;
+  name: string;
+  bytes: number;
+}
+
 export interface ModelSettings {
   model: string;
   language: string;
@@ -67,6 +73,9 @@ export type EasyWhisperApi = {
   rendererReady: () => Promise<void>;
   compileWhisper: (options?: CompileOptions) => Promise<CompileResult>;
   cleanReinstall: () => Promise<CompileResult>;
+  clearAudioCache: () => Promise<CompileResult>;
+  listDownloadedModels: () => Promise<DownloadedModel[]>;
+  deleteDownloadedModel: (file: string) => Promise<CompileResult>;
   getUninstallInfo: () => Promise<UninstallInfo>;
   uninstallFully: () => Promise<CompileResult>;
   ensureDependencies: (options?: CompileOptions) => Promise<CompileResult>;
