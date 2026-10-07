@@ -8,6 +8,7 @@ import { CompileManager } from "./services/compileManager";
 import { LiveManager } from "./services/liveManager";
 import { TranscriptionManager } from "./services/transcriptionManager";
 import { getUninstallInfo, launchUninstaller } from "./services/uninstallManager";
+import { showWhisperHelp } from "./services/whisperHelp";
 
 const isDev = process.env.NODE_ENV === "development";
 // Electron's native Acrylic backdrop requires Windows 11 22H2 (build 22621).
@@ -28,9 +29,10 @@ let setupBusy = false;
 let reinstalling = false;
 let transcriptionBusy = false;
 let liveBusy = false;
+let helpBusy = false;
 
 async function runSetup(action: () => Promise<CompileResult>): Promise<CompileResult> {
-  if (setupBusy || transcriptionBusy || liveBusy) {
+  if (setupBusy || transcriptionBusy || liveBusy || helpBusy) {
     return { success: false, error: "Wait for setup or transcription to finish before changing the installation." };
   }
   setupBusy = true;
@@ -355,6 +357,19 @@ function registerIpcChannels(): void {
 
   ipcMain.handle("easy-whisper:cancel-all", async () => {
     await transcriptionManager.cancelAll();
+  });
+
+  ipcMain.handle("easy-whisper:skip-current", () => transcriptionManager.skipCurrent());
+  ipcMain.handle("easy-whisper:help", async () => {
+    if (setupBusy || helpBusy) return { success: false, error: "Wait for setup or the current help request to finish." };
+    helpBusy = true;
+    try {
+      const chunks: string[] = [];
+      await showWhisperHelp((message) => chunks.push(message));
+      return { success: true, output: chunks.join("") };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    } finally { helpBusy = false; }
   });
 
   ipcMain.handle("window:close", (event) => {

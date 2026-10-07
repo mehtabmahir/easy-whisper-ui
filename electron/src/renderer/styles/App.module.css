@@ -435,6 +435,12 @@
   height: 90px;
 }
 
+.consoleArea[wrap="off"] {
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
 .optionsRow {
   display: grid;
   grid-template-columns: repeat(2,minmax(0,1fr));

@@ -74,6 +74,8 @@ export type EasyWhisperApi = {
   onCompileProgress: (callback: (event: CompileProgressEvent) => void) => () => void;
   enqueueTranscriptions: (request: TranscriptionRequest) => void;
   cancelAll: () => Promise<void>;
+  skipCurrent: () => Promise<void>;
+  showHelp: () => Promise<CompileResult & { output?: string }>;
   onQueueState: (callback: (state: QueueState) => void) => () => void;
   onConsoleEvent: (callback: (event: ConsoleEvent) => void) => () => void;
   startLiveTranscription: (request: LiveRequest) => Promise<void>;

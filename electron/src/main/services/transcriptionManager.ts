@@ -37,6 +37,7 @@ export class TranscriptionManager extends EventEmitter {
   private current?: QueueItem;
   private activeProcess?: ChildProcessWithoutNullStreams;
   private processing = false;
+  private currentAbort?: AbortController;
 
   on<T extends EventName>(event: T, listener: Listener<T>): this {
     return super.on(event, listener as any);
@@ -70,8 +71,15 @@ export class TranscriptionManager extends EventEmitter {
   async cancelAll(): Promise<void> {
     this.queue = [];
     this.emitQueue();
+    this.currentAbort?.abort();
     await this.stopActiveProcess();
-    this.processing = false;
+  }
+
+  async skipCurrent(): Promise<void> {
+    if (!this.current || this.currentAbort?.signal.aborted) return;
+    this.emitConsole({ source: "transcription", message: `Skipping: ${path.basename(this.current.file)}` });
+    this.currentAbort?.abort();
+    await this.stopActiveProcess();
   }
 
   private async processNext(): Promise<void> {
@@ -86,21 +94,27 @@ export class TranscriptionManager extends EventEmitter {
 
     this.processing = true;
     this.current = nextItem;
+    const controller = new AbortController();
+    this.currentAbort = controller;
     this.emitQueue();
 
     let audio: { path: string; deleteAfter: boolean } | undefined;
 
     try {
       audio = await this.ensureMp3(nextItem.file);
-      const modelPath = await this.ensureModel(nextItem.settings);
+      controller.signal.throwIfAborted();
+      const modelPath = await this.ensureModel(nextItem.settings, controller.signal);
+      controller.signal.throwIfAborted();
       await this.runWhisper(audio.path, modelPath, nextItem.settings);
+      controller.signal.throwIfAborted();
       if (nextItem.settings.openAfterComplete) {
         await this.openOutputAfterComplete(audio.path);
       }
       this.emitConsole({ source: "transcription", message: `Completed: ${path.basename(nextItem.file)}` });
     } catch (error) {
       const err = error as Error;
-      this.emitConsole({ source: "transcription", message: `Error processing ${nextItem.file}: ${err.message}` });
+      this.emitConsole({ source: "transcription", message: controller.signal.aborted
+        ? `Stopped: ${path.basename(nextItem.file)}` : `Error processing ${nextItem.file}: ${err.message}` });
     } finally {
       if (audio?.deleteAfter) {
         try {
@@ -117,6 +131,7 @@ export class TranscriptionManager extends EventEmitter {
         }
       }
       this.current = undefined;
+      this.currentAbort = undefined;
       this.processing = false;
       this.activeProcess = undefined;
       this.emitQueue();
@@ -197,7 +212,7 @@ export class TranscriptionManager extends EventEmitter {
     return { path: target, deleteAfter: true };
   }
 
-  private async ensureModel(settings: ModelSettings): Promise<string> {
+  private async ensureModel(settings: ModelSettings, signal: AbortSignal): Promise<string> {
     if (settings.model === "custom") {
       const customPath = settings.customModelPath?.trim();
       if (!customPath) {
@@ -224,7 +239,13 @@ export class TranscriptionManager extends EventEmitter {
 
     this.emitConsole({ source: "transcription", message: `Downloading model ${modelFile}` });
     const url = `${MODEL_BASE_URL}/${modelFile}`;
-    await this.downloadFile(url, modelPath);
+    try {
+      await this.downloadFile(url, modelPath, signal);
+    } catch (error) {
+      // A skipped download must not leave a partial file that the next queue item treats as cached.
+      await fsp.rm(modelPath, { force: true });
+      throw error;
+    }
     this.emitConsole({ source: "transcription", message: `Model downloaded: ${modelFile}` });
     return modelPath;
   }
@@ -294,7 +315,7 @@ export class TranscriptionManager extends EventEmitter {
     return result;
   }
 
-  private async downloadFile(url: string, destination: string, redirectDepth = 0): Promise<void> {
+  private async downloadFile(url: string, destination: string, signal: AbortSignal, redirectDepth = 0): Promise<void> {
     if (redirectDepth > 5) {
       throw new Error("Too many redirects while downloading model.");
     }
@@ -303,11 +324,11 @@ export class TranscriptionManager extends EventEmitter {
 
     await new Promise<void>((resolve, reject) => {
       https
-        .get(url, (response) => {
+        .get(url, { signal }, (response) => {
           const status = response.statusCode ?? 0;
           if (status >= 300 && status < 400 && response.headers.location) {
             response.resume();
-            this.downloadFile(response.headers.location, destination, redirectDepth + 1)
+            this.downloadFile(response.headers.location, destination, signal, redirectDepth + 1)
               .then(resolve)
               .catch(reject);
             return;
@@ -320,7 +341,7 @@ export class TranscriptionManager extends EventEmitter {
           }
 
           const fileStream = fs.createWriteStream(destination);
-          pipeline(response, fileStream)
+          pipeline(response, fileStream, { signal })
             .then(() => resolve())
             .catch((error) => reject(error));
         })
@@ -329,6 +350,7 @@ export class TranscriptionManager extends EventEmitter {
   }
 
   private async spawnWithLogs(command: string, args: string[]): Promise<void> {
+    this.currentAbort?.signal.throwIfAborted();
     await new Promise<void>((resolve, reject) => {
       const child = spawn(command, args);
       this.activeProcess = child;
@@ -382,7 +404,6 @@ export class TranscriptionManager extends EventEmitter {
       proc.once("close", () => resolve());
       setTimeout(() => resolve(), 1500);
     });
-    this.activeProcess = undefined;
   }
 
   private emitConsole(event: ConsoleEvent): void {

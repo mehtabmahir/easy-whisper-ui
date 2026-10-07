@@ -281,6 +281,7 @@ function App(): JSX.Element {
   const [platform, setPlatform] = useState<string>("...");
   const [arch, setArch] = useState<string>("...");
   const [consoleLines, setConsoleLines] = useState<string[]>([]);
+  const [helpText, setHelpText] = useState<string | null>(null);
   const [queueState, setQueueState] = useState<QueueState>({ awaiting: [], isProcessing: false });
   const [compileInfo, setCompileInfo] = useState<CompileProgressEvent>(() => ({
     step: "idle",
@@ -290,6 +291,8 @@ function App(): JSX.Element {
   }));
   const [liveActive, setLiveActive] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [helpRunning, setHelpRunning] = useState(false);
+  const [skipRunning, setSkipRunning] = useState(false);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const loaderStartedRef = useRef<boolean>(false);
   const depsEnsuredRef = useRef<boolean>(false);
@@ -491,6 +494,7 @@ function App(): JSX.Element {
     }
 
     const removeConsole = api.onConsoleEvent((event) => {
+      setHelpText(null);
       appendConsole(`[${event.source}] ${event.message}`);
     });
 
@@ -608,9 +612,10 @@ function App(): JSX.Element {
   useEffect(() => {
     const node = consoleRef.current;
     if (node) {
-      node.scrollTop = node.scrollHeight;
+      node.scrollTop = helpText !== null ? 0 : node.scrollHeight;
+      node.scrollLeft = 0;
     }
-  }, [consoleText]);
+  }, [consoleText, helpText]);
 
   const ensureCustomModelReady = useCallback(() => {
     if (model !== "custom") {
@@ -806,7 +811,28 @@ function App(): JSX.Element {
 
   const handleClear = useCallback(() => {
     setConsoleLines([]);
+    setHelpText(null);
   }, []);
+
+  const handleHelp = async () => {
+    if (!api || helpRunning) return;
+    setHelpText(null);
+    setHelpRunning(true);
+    try {
+      const result = await api.showHelp();
+      if (result.success) setHelpText(result.output ?? "No help output returned.");
+      else { setHelpText(null); appendConsole(`[system] ${result.error}`); }
+    } catch (error) { appendConsole(`[system] ${(error as Error).message}`); }
+    finally { setHelpRunning(false); }
+  };
+
+  const handleSkip = async () => {
+    if (!api || skipRunning) return;
+    setSkipRunning(true);
+    try { await api.skipCurrent(); }
+    catch (error) { appendConsole(`[system] ${(error as Error).message}`); }
+    finally { setSkipRunning(false); }
+  };
 
   const handleCloseWindow = useCallback(() => {
     const bridge = window.easyWhisper;
@@ -983,10 +1009,10 @@ function App(): JSX.Element {
               <button
                 type="button"
                 className={styles.secondaryButton}
-                onClick={handleStop}
-                disabled={!apiAvailable || (!isProcessing && queuedCount === 0)}
+                onClick={handleHelp}
+                disabled={!apiAvailable || isCompiling || helpRunning}
               >
-                Stop
+                {helpRunning ? "Loading…" : "Help"}
               </button>
               <button
                 type="button"
@@ -995,6 +1021,12 @@ function App(): JSX.Element {
               >
                 Clear
               </button>
+              <button type="button" className={styles.secondaryButton} onClick={handleStop}
+                title="Stop processing and clear the queue"
+                disabled={!apiAvailable || (!isProcessing && queuedCount === 0)}>Stop</button>
+              <button type="button" className={styles.secondaryButton} onClick={handleSkip}
+                title="Skip the current file and continue the queue"
+                disabled={!apiAvailable || !isProcessing || skipRunning}>Skip</button>
             </div>
             <div className={styles.compileStatus}>
               <span>{compileStateLabel}</span>
@@ -1150,8 +1182,9 @@ function App(): JSX.Element {
                 className={styles.consoleArea}
                 placeholder="Output will appear here."
                 rows={14}
+                wrap={helpText !== null ? "off" : "soft"}
                 readOnly
-                value={consoleText}
+                value={helpText ?? consoleText}
               />
             </div>
           </main>

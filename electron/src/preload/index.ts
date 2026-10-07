@@ -21,6 +21,8 @@ const api: EasyWhisperApi = {
     void ipcRenderer.invoke("easy-whisper:enqueue", request);
   },
   cancelAll: () => ipcRenderer.invoke("easy-whisper:cancel-all"),
+  skipCurrent: () => ipcRenderer.invoke("easy-whisper:skip-current"),
+  showHelp: () => ipcRenderer.invoke("easy-whisper:help"),
   onQueueState: (callback) => {
     const channel = "easy-whisper:queue";
     const handler = (_event: Electron.IpcRendererEvent, data: Parameters<typeof callback>[0]) => callback(data);
