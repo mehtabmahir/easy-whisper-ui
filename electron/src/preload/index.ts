@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { EasyWhisperApi } from "../types/easy-whisper";
 
 const api: EasyWhisperApi = {
+  setTheme: (theme) => ipcRenderer.invoke("easy-whisper:set-theme", theme),
   platform: () => process.platform,
   arch: () => process.arch,
   openAudioFiles: () => ipcRenderer.invoke("easy-whisper:open-dialog"),

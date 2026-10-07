@@ -54,6 +54,7 @@ export interface LiveRequest {
 export type LiveState = "started" | "stopped";
 
 export type EasyWhisperApi = {
+  setTheme: (theme: "auto" | "light" | "dark") => Promise<void>;
   platform: () => NodeJS.Platform;
   arch: () => string;
   openAudioFiles: () => Promise<string[]>;

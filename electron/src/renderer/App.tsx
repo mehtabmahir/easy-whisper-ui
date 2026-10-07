@@ -237,7 +237,31 @@ function computeCompileProgressPercent(info: CompileProgressEvent): number {
 }
 
 
+const THEME_KEY = "easy-whisper-ui.theme";
+type Theme = "auto" | "light" | "dark";
+function loadTheme(): Theme {
+  try {
+    const saved = window.localStorage.getItem(THEME_KEY);
+    return saved === "light" || saved === "dark" ? saved : "auto";
+  } catch {
+    return "auto";
+  }
+}
+document.documentElement.dataset.theme = loadTheme();
+
 function App(): JSX.Element {
+  const [theme, setTheme] = useState<Theme>(loadTheme);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      window.localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      // The current session can still switch themes without storage.
+    }
+    void window.easyWhisper?.setTheme(theme).catch((error) => {
+      console.error("Could not update native window appearance", error);
+    });
+  }, [theme]);
   // All state hooks must be declared first
   const [showLoader, setShowLoader] = useState<boolean>(true);
   const [loaderProgress, setLoaderProgress] = useState<number>(0);
@@ -874,12 +898,26 @@ function App(): JSX.Element {
         />
       )}
       <div className={styles.windowContainer} style={showLoader ? { filter: 'blur(2.5px)', pointerEvents: 'none', userSelect: 'none' } : {}}>
-        <div className={styles.titlebar}>
+        <div className={`${styles.titlebar} ${isMac ? styles.macTitlebar : ""}`}>
         <div className={styles.titleDragRegion}>
           <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.titleLogo} />
           <span className={styles.titleText}>EasyWhisperUI</span>
         </div>
         <div className={styles.titleControls}>
+          <button
+            type="button"
+            className={styles.themeToggle}
+            aria-label={`Theme: ${theme === "auto" ? "Auto" : theme === "light" ? "Light" : "Dark"}`}
+            title={theme === "auto" ? "Following system appearance. Switch to light mode" : theme === "light" ? "Switch to dark mode" : "Switch to automatic appearance"}
+            onClick={() => setTheme((current) => current === "auto" ? "light" : current === "light" ? "dark" : "auto")}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+              {theme === "auto" ? <><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none" /></> : theme === "light" ? <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></> : <path d="M20 14.2A8.5 8.5 0 0 1 9.8 4a8.5 8.5 0 1 0 10.2 10.2Z" />}
+            </svg>
+            <span>{theme === "auto" ? "Auto" : theme === "light" ? "Light" : "Dark"}</span>
+          </button>
+          {!isMac && (
+            <>
           <button
             type="button"
             className={`${styles.titleControlButton} ${styles.titleControlMinimize}`}
@@ -899,6 +937,8 @@ function App(): JSX.Element {
             onClick={handleCloseWindow}
             aria-label="Close window"
           />
+            </>
+          )}
         </div>
       </div>
 

@@ -127,28 +127,34 @@ function flushPendingExternalFiles(): void {
 }
 
 async function createMainWindow(): Promise<void> {
-  // Ensure high contrast themes match OS defaults for readability.
+  // Keep the native frosted material consistent with the dark interface.
   nativeTheme.themeSource = "system";
 
   const { workAreaSize } = screen.getPrimaryDisplay();
-  const targetWidth = 1000;
-  const targetHeight = 700;
+  const targetWidth = Math.min(1120, workAreaSize.width);
+  const targetHeight = Math.min(800, workAreaSize.height);
 
   mainWindow = new BrowserWindow({
     width: targetWidth,
     height: targetHeight,
-    minWidth: targetWidth,
-    minHeight: targetHeight,
+    minWidth: Math.min(1000, targetWidth),
+    minHeight: Math.min(700, targetHeight),
     title: "EasyWhisperUI",
-    frame: false,
+    frame: process.platform === "darwin",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
-    backgroundColor: "#0f172a",
+    backgroundColor: process.platform === "darwin" ? "#00000000" : "#101113",
+    ...(process.platform === "darwin" ? {
+      trafficLightPosition: { x: 16, y: 15 },
+      transparent: true,
+      vibrancy: "under-window" as const,
+      visualEffectState: "active" as const
+    } : {}),
     icon: resolveAppIcon(),
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
-      zoomFactor: 0.80
+      zoomFactor: 1
     }
   });
 
@@ -163,7 +169,7 @@ async function createMainWindow(): Promise<void> {
   mainWindow.on("leave-full-screen", emitWindowState);
 
   if (process.platform === "darwin") {
-    mainWindow.setWindowButtonVisibility(false);
+    mainWindow.setWindowButtonVisibility(true);
   }
 
   // Hide native menu so the custom chrome looks consistent across platforms.
@@ -175,6 +181,9 @@ async function createMainWindow(): Promise<void> {
   } else {
     await mainWindow.loadFile(rendererHtmlPath);
   }
+
+  // Reset any zoom retained from earlier versions of the app.
+  mainWindow.webContents.setZoomFactor(1);
 
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -190,6 +199,21 @@ function broadcast(channel: string, payload: unknown): void {
 }
 
 function registerIpcChannels(): void {
+  nativeTheme.on("updated", () => {
+    if (process.platform !== "darwin") {
+      mainWindow?.setBackgroundColor(nativeTheme.shouldUseDarkColors ? "#101113" : "#efeeec");
+    }
+  });
+  ipcMain.handle("easy-whisper:set-theme", (_event, theme: unknown) => {
+    if (theme !== "auto" && theme !== "light" && theme !== "dark") {
+      throw new Error("Invalid theme.");
+    }
+    nativeTheme.themeSource = theme === "auto" ? "system" : theme;
+    if (process.platform !== "darwin") {
+      mainWindow?.setBackgroundColor(nativeTheme.shouldUseDarkColors ? "#101113" : "#efeeec");
+    }
+  });
+
   ipcMain.handle("easy-whisper:compile", async (_event, options: CompileOptions | undefined) => {
     return compileManager.compile(options ?? {});
   });
