@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./styles/App.module.css";
 import FirstLaunchLoader from "./FirstLaunchLoader";
+import SettingsPanel from "./SettingsPanel";
 const FIRST_LAUNCH_KEY = "easy-whisper-ui.first-launch";
 
 function isFirstLaunch(): boolean {
@@ -288,6 +289,7 @@ function App(): JSX.Element {
     state: "pending"
   }));
   const [liveActive, setLiveActive] = useState<boolean>(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const loaderStartedRef = useRef<boolean>(false);
   const depsEnsuredRef = useRef<boolean>(false);
@@ -897,6 +899,8 @@ function App(): JSX.Element {
           onContinue={handleLoaderContinue}
         />
       )}
+      {settingsOpen && <SettingsPanel busy={isCompiling || isProcessing || liveActive || queuedCount > 0}
+        progress={compileInfo} onClose={() => setSettingsOpen(false)} />}
       <div className={styles.windowContainer} style={showLoader ? { filter: 'blur(2.5px)', pointerEvents: 'none', userSelect: 'none' } : {}}>
         <div className={`${styles.titlebar} ${isMac ? styles.macTitlebar : ""}`}>
         <div className={styles.titleDragRegion}>
@@ -904,6 +908,8 @@ function App(): JSX.Element {
           <span className={styles.titleText}>EasyWhisperUI</span>
         </div>
         <div className={styles.titleControls}>
+          <button type="button" className={styles.themeToggle} onClick={() => setSettingsOpen(true)}
+            aria-haspopup="dialog">Settings</button>
           <button
             type="button"
             className={styles.themeToggle}

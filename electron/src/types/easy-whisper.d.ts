@@ -10,6 +10,7 @@ export interface CompileProgressEvent {
 
 export interface CompileResult {
   success: boolean;
+  canceled?: boolean;
   outputDir?: string;
   error?: string;
 }
@@ -60,6 +61,7 @@ export type EasyWhisperApi = {
   openAudioFiles: () => Promise<string[]>;
   rendererReady: () => Promise<void>;
   compileWhisper: (options?: CompileOptions) => Promise<CompileResult>;
+  cleanReinstall: () => Promise<CompileResult>;
   ensureDependencies: (options?: CompileOptions) => Promise<CompileResult>;
   openModelFile: () => Promise<string | undefined>;
   onCompileProgress: (callback: (event: CompileProgressEvent) => void) => () => void;

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { CompileOptions, LiveRequest, TranscriptionRequest } from "../types/easy-whisper";
+import { CompileOptions, CompileResult, LiveRequest, TranscriptionRequest } from "../types/easy-whisper";
 import { CompileManager } from "./services/compileManager";
 import { LiveManager } from "./services/liveManager";
 import { TranscriptionManager } from "./services/transcriptionManager";
@@ -23,6 +23,24 @@ const rendererHtmlPath = path.join(__dirname, "../renderer/index.html");
 const compileManager = new CompileManager();
 const transcriptionManager = new TranscriptionManager();
 const liveManager = new LiveManager();
+let setupBusy = false;
+let reinstalling = false;
+let transcriptionBusy = false;
+let liveBusy = false;
+
+async function runSetup(action: () => Promise<CompileResult>): Promise<CompileResult> {
+  if (setupBusy || transcriptionBusy || liveBusy) {
+    return { success: false, error: "Wait for setup or transcription to finish before changing the installation." };
+  }
+  setupBusy = true;
+  try {
+    return await action();
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  } finally {
+    setupBusy = false;
+  }
+}
 
 const SUPPORTED_OPEN_EXTENSIONS = new Set([
   "mp3",
@@ -220,15 +238,40 @@ function registerIpcChannels(): void {
   });
 
   ipcMain.handle("easy-whisper:compile", async (_event, options: CompileOptions | undefined) => {
-    return compileManager.compile(options ?? {});
+    return runSetup(() => compileManager.compile(options ?? {}));
   });
+
+  ipcMain.handle("easy-whisper:clean-reinstall", async () => runSetup(async () => {
+    const confirmation = await dialog.showMessageBox(mainWindow!, {
+      type: "warning",
+      title: "Clean reinstall",
+      message: "Reinstall Whisper components?",
+      detail: "This removes the app’s Whisper binaries, source/build files, local toolchain and download cache, then installs them again. Models, preferences, original media and transcripts are kept. Shared system dependencies are checked, not uninstalled. Internet access is required on Windows/Linux and setup may take several minutes.",
+      buttons: ["Cancel", "Reinstall"], defaultId: 0, cancelId: 0, noLink: true
+    });
+    if (confirmation.response !== 1) return { success: false, canceled: true };
+    reinstalling = true;
+    try {
+      const result = await compileManager.cleanReinstall();
+      const installed = result.success && (await compileManager.hasExistingBinaries()).installed;
+      const finalResult = installed ? result : { success: false, error: result.error ?? "Whisper binaries are still missing. Try reinstalling again." };
+      broadcast("easy-whisper:compile-progress", {
+        step: installed ? "completed" : "failed", progress: installed ? 100 : 0,
+        state: installed ? "success" : "error",
+        message: installed ? "Whisper reinstalled and ready." : "Reinstall failed.", error: finalResult.error
+      });
+      return finalResult;
+    } finally {
+      reinstalling = false;
+    }
+  }));
 
   ipcMain.handle("easy-whisper:check-install", async () => {
     return compileManager.hasExistingBinaries();
   });
 
   ipcMain.handle("easy-whisper:ensure-deps", async (_event, options) => {
-    return compileManager.ensureDependencies(options ?? {});
+    return runSetup(() => compileManager.ensureDependencies(options ?? {}));
   });
 
   ipcMain.handle("easy-whisper:renderer-ready", async () => {
@@ -286,6 +329,10 @@ function registerIpcChannels(): void {
   });
 
   ipcMain.handle("easy-whisper:enqueue", async (_event, request: TranscriptionRequest) => {
+    if (setupBusy) {
+      broadcast("easy-whisper:console", { source: "system", message: "Wait for setup to finish before starting transcription." });
+      return;
+    }
     transcriptionManager.enqueue(request);
   });
 
@@ -324,7 +371,9 @@ function registerIpcChannels(): void {
   });
 
   ipcMain.handle("easy-whisper:start-live", async (_event, request: LiveRequest) => {
-    await liveManager.start(request);
+    if (setupBusy || liveBusy) throw new Error("Setup or live transcription is already running.");
+    liveBusy = true;
+    try { await liveManager.start(request); } catch (error) { liveBusy = false; throw error; }
   });
 
   ipcMain.handle("easy-whisper:stop-live", async () => {
@@ -332,7 +381,7 @@ function registerIpcChannels(): void {
   });
 
   compileManager.on("progress", (event) => {
-    broadcast("easy-whisper:compile-progress", event);
+    broadcast("easy-whisper:compile-progress", reinstalling && event.state === "success" ? { ...event, state: "running" } : event);
   });
 
   compileManager.on("console", (event) => {
@@ -344,6 +393,7 @@ function registerIpcChannels(): void {
   });
 
   transcriptionManager.on("queue", (event) => {
+    transcriptionBusy = event.isProcessing || event.awaiting.length > 0;
     broadcast("easy-whisper:queue", event);
   });
 
@@ -356,6 +406,7 @@ function registerIpcChannels(): void {
   });
 
   liveManager.on("state", (state) => {
+    liveBusy = state === "started";
     broadcast("easy-whisper:live-state", state);
   });
 }

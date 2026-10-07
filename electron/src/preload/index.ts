@@ -8,6 +8,7 @@ const api: EasyWhisperApi = {
   openAudioFiles: () => ipcRenderer.invoke("easy-whisper:open-dialog"),
   rendererReady: () => ipcRenderer.invoke("easy-whisper:renderer-ready"),
   compileWhisper: (options) => ipcRenderer.invoke("easy-whisper:compile", options),
+  cleanReinstall: () => ipcRenderer.invoke("easy-whisper:clean-reinstall"),
   onCompileProgress: (callback) => {
     const channel = "easy-whisper:compile-progress";
     const handler = (_event: Electron.IpcRendererEvent, data: Parameters<typeof callback>[0]) => callback(data);

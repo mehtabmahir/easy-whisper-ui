@@ -63,6 +63,35 @@ export class CompileManager extends EventEmitter {
   private linuxAptUpdated = false;
   private linuxBootstrapDone = false;
 
+  async cleanReinstall(): Promise<CompileResult> {
+    if (this.running) return { success: false, error: "Setup is already running." };
+    this.running = true;
+    try {
+      const root = path.resolve(app.getPath("userData"), WORK_ROOT_NAME);
+      await fsp.mkdir(root, { recursive: true });
+      if ((await fsp.lstat(root)).isSymbolicLink()) {
+        throw new Error("Cannot clean a workspace that is a symbolic link.");
+      }
+      this.emitProgress({ step: "reset", message: "Removing old installation files…", progress: 0, state: "running" });
+      // Keep models, user settings, input media and transcripts. Never delete the workspace itself.
+      for (const name of ["bin", "whisper.cpp", TOOLCHAIN_DIR_NAME, DOWNLOADS_DIR_NAME]) {
+        const target = path.resolve(root, name);
+        if (path.dirname(target) !== root) throw new Error("Invalid reinstall path.");
+        await fsp.rm(target, { recursive: true, force: true });
+      }
+      this.linuxAptUpdated = false;
+      this.linuxBootstrapDone = false;
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    } finally {
+      this.running = false;
+    }
+    // Fresh directories already bypass caches; force here would delete the newly installed toolchain.
+    const dependencies = await this.ensureDependencies();
+    if (!dependencies.success) return dependencies;
+    return this.compile();
+  }
+
   on<T extends CompileEventNames>(event: T, listener: CompileListener<T>): this {
     return super.on(event, listener as any);
   }
@@ -95,12 +124,12 @@ export class CompileManager extends EventEmitter {
 
     this.running = true;
 
-    const workRoot = await this.ensureWorkDirs();
-    await this.startLog(workRoot);
-    const binDir = path.join(workRoot, "bin");
     let toolchain!: ToolchainContext;
 
     try {
+      const workRoot = await this.ensureWorkDirs();
+      await this.startLog(workRoot);
+      const binDir = path.join(workRoot, "bin");
       const existingBinaries = this.hasBinariesInDir(binDir);
 
       if (existingBinaries && !options.force) {
@@ -165,6 +194,7 @@ export class CompileManager extends EventEmitter {
       this.running = false;
       return { success: false, error: err.message };
     } finally {
+      this.running = false;
       this.stopLog();
     }
   }
