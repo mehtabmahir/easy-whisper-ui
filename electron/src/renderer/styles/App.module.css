@@ -136,10 +136,10 @@
   overflow-y: auto;
   flex: 1;
   min-height: 0;
-  padding: 24px;
+  padding: 18px 24px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 16px;
 }
 
 .header {
@@ -147,7 +147,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 24px;
-  padding: 4px 2px 8px;
+  padding: 0 2px;
 }
 
 .branding {
@@ -158,22 +158,22 @@
 }
 
 .headerLogo {
-  width: 54px;
-  height: 54px;
+  width: 46px;
+  height: 46px;
   border-radius: 16px;
   box-shadow: var(--glass-shadow);
 }
 
 .header h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 600;
   letter-spacing: -.045em;
   line-height: 1.2;
 }
 
 .subtitle {
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   font-size: 14px;
   line-height: 1.5;
   color: var(--muted);
@@ -432,7 +432,20 @@
 }
 
 .argumentsBlock textarea {
-  height: 90px;
+  height: 48px;
+  min-width: 0;
+  flex: 1;
+  padding: 10px 12px;
+}
+
+.argumentsBlock {
+  flex-direction: row;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.argumentsBlock label {
+  flex-shrink: 0;
 }
 
 .consoleArea[wrap="off"] {
@@ -444,8 +457,8 @@
 .optionsRow {
   display: grid;
   grid-template-columns: repeat(2,minmax(0,1fr));
-  gap: 10px 18px;
-  margin-top: 18px;
+  gap: 6px 18px;
+  margin-top: 10px;
 }
 
 .checkbox {
@@ -471,8 +484,8 @@
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  margin: 18px 0;
-  padding: 12px 0;
+  margin: 10px 0;
+  padding: 8px 0;
   border-block: 1px solid var(--glass-border);
   color: var(--muted);
   font-size: 14px;
@@ -501,7 +514,7 @@
 
 @media(min-width: 1500px) {
   .appShell {
-  padding: 40px 56px;
+  padding: 18px 32px;
 }
  .workspace {
   grid-template-columns: 300px minmax(0,1fr);
@@ -512,7 +525,7 @@
 
 @media(max-width: 950px) {
   .appShell {
-  padding: 24px;
+  padding: 18px 24px;
 }
  .header {
   align-items: flex-start;
@@ -574,17 +587,17 @@
 }
 
   .argumentsBlock textarea {
-  height: 68px;
+  height: 48px;
 }
 
   .optionsRow {
-  margin-top: 12px;
+  margin-top: 10px;
   gap: 6px 16px;
 }
 
   .queueStatus {
-  margin: 12px 0;
-  padding: 10px 0;
+  margin: 10px 0;
+  padding: 8px 0;
 }
 
   .consoleBlock, .consoleArea {

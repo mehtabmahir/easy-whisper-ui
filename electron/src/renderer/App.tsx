@@ -1132,7 +1132,7 @@ function App(): JSX.Element {
               <textarea
                 id="arguments"
                 placeholder="Example: --temperature 0.6 --max-context 1"
-                rows={4}
+                rows={1}
                 value={extraArgs}
                 onChange={(event) => setExtraArgs(event.target.value)}
               />
