@@ -475,7 +475,7 @@ app.whenReady().then(() => {
     if (iconPath) {
       const dockImage = nativeImage.createFromPath(iconPath);
       if (!dockImage.isEmpty()) {
-        app.dock.setIcon(dockImage);
+        app.dock?.setIcon(dockImage);
       }
     }
   }

@@ -6,9 +6,10 @@ a { color: inherit; }
 button:focus-visible, a:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 textarea::placeholder { color: var(--placeholder); }
 ::selection { background: var(--accent); color: var(--on-accent); }
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 99px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border: 2px solid transparent; background-clip: padding-box; border-radius: 99px; }
+::-webkit-scrollbar-track { background: transparent; margin: var(--scrollbar-inset, 0px); }
+::-webkit-scrollbar-corner { background: transparent; }
 
 :root {
   --window-tint: rgba(8,10,14,.42);

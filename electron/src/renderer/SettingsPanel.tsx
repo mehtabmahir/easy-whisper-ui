@@ -171,7 +171,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
       <p className={styles.note}>Removes the app, downloaded models and settings. Keeps original media and exported transcripts outside the app’s data folder.</p>
       <button type="button" className={styles.uninstall} onClick={() => void uninstall()}
         disabled={busy || working || !uninstallInfo?.available} aria-describedby="uninstall-availability">
-        {uninstalling ? "Opening uninstaller…" : "Uninstall fully"}
+        {uninstalling ? "Opening uninstaller…" : "Uninstall"}
       </button>
       <p id="uninstall-availability" className={styles.note}>
         {!uninstallInfo ? "Checking availability…" : uninstallInfo.reason ?? (busy ? "Finish setup or stop transcription first." : "")}

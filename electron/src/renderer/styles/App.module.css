@@ -205,6 +205,7 @@
 }
 
 .leftPanel {
+  --scrollbar-inset: 22px;
   min-height: 0;
   overflow-y: auto;
   display: flex;
@@ -420,6 +421,7 @@
 }
 
 .argumentsBlock textarea, .consoleArea {
+  --scrollbar-inset: 12px;
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   background: var(--field);

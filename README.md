@@ -173,6 +173,8 @@ The FFmpeg binary is provided as a separate file and may be replaced with a comp
 
 ### Electron app (TypeScript)
 
+Use Node.js 22.12 or newer (Node.js 24 recommended).
+
 From the `electron/` folder:
 
 ```bash
