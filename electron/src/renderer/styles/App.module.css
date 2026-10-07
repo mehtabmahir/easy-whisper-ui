@@ -180,13 +180,8 @@
 }
 
 .status {
-  max-width: 260px;
   flex-shrink: 0;
-  padding: 10px 14px;
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  background: var(--glass);
-  backdrop-filter: blur(24px);
+  white-space: nowrap;
   font-size: 13px;
   line-height: 1.5;
   color: var(--muted);
@@ -515,9 +510,7 @@
 }
  .header {
   align-items: flex-start;
-}
- .status {
-  max-width: 205px;
+  flex-wrap: wrap;
 }
  .workspace {
   grid-template-columns: 240px minmax(0,1fr);
@@ -532,9 +525,6 @@
 @media(max-width: 700px) {
   .header {
   flex-wrap: wrap;
-}
- .status {
-  max-width: none;
 }
  .workspace {
   grid-template-columns: 1fr;

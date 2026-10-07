@@ -2,12 +2,20 @@ import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme, screen, 
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { CompileOptions, LiveRequest, TranscriptionRequest } from "../types/easy-whisper";
 import { CompileManager } from "./services/compileManager";
 import { LiveManager } from "./services/liveManager";
 import { TranscriptionManager } from "./services/transcriptionManager";
 
 const isDev = process.env.NODE_ENV === "development";
+// Electron's native Acrylic backdrop requires Windows 11 22H2 (build 22621).
+const supportsWindowsBackdrop = process.platform === "win32" && Number(os.release().split(".")[2]) >= 22621;
+const usesNativeBackdrop = process.platform === "darwin" || supportsWindowsBackdrop;
+
+function windowBackgroundColor(): string {
+  return usesNativeBackdrop ? "#00000000" : nativeTheme.shouldUseDarkColors ? "#101113" : "#efeeec";
+}
 
 const preloadPath = path.join(__dirname, "../preload/index.js");
 const rendererHtmlPath = path.join(__dirname, "../renderer/index.html");
@@ -127,7 +135,7 @@ function flushPendingExternalFiles(): void {
 }
 
 async function createMainWindow(): Promise<void> {
-  // Keep the native frosted material consistent with the dark interface.
+  // The renderer restores the saved appearance after loading.
   nativeTheme.themeSource = "system";
 
   const { workAreaSize } = screen.getPrimaryDisplay();
@@ -142,7 +150,8 @@ async function createMainWindow(): Promise<void> {
     title: "EasyWhisperUI",
     frame: process.platform === "darwin",
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
-    backgroundColor: process.platform === "darwin" ? "#00000000" : "#101113",
+    backgroundColor: windowBackgroundColor(),
+    ...(supportsWindowsBackdrop ? { backgroundMaterial: "acrylic" as const } : {}),
     ...(process.platform === "darwin" ? {
       trafficLightPosition: { x: 16, y: 15 },
       transparent: true,
@@ -200,18 +209,14 @@ function broadcast(channel: string, payload: unknown): void {
 
 function registerIpcChannels(): void {
   nativeTheme.on("updated", () => {
-    if (process.platform !== "darwin") {
-      mainWindow?.setBackgroundColor(nativeTheme.shouldUseDarkColors ? "#101113" : "#efeeec");
-    }
+    mainWindow?.setBackgroundColor(windowBackgroundColor());
   });
   ipcMain.handle("easy-whisper:set-theme", (_event, theme: unknown) => {
     if (theme !== "auto" && theme !== "light" && theme !== "dark") {
       throw new Error("Invalid theme.");
     }
     nativeTheme.themeSource = theme === "auto" ? "system" : theme;
-    if (process.platform !== "darwin") {
-      mainWindow?.setBackgroundColor(nativeTheme.shouldUseDarkColors ? "#101113" : "#efeeec");
-    }
+    mainWindow?.setBackgroundColor(windowBackgroundColor());
   });
 
   ipcMain.handle("easy-whisper:compile", async (_event, options: CompileOptions | undefined) => {
