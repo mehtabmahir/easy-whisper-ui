@@ -7,6 +7,7 @@ import { CompileOptions, CompileResult, LiveRequest, TranscriptionRequest } from
 import { CompileManager } from "./services/compileManager";
 import { LiveManager } from "./services/liveManager";
 import { TranscriptionManager } from "./services/transcriptionManager";
+import { getUninstallInfo, launchUninstaller } from "./services/uninstallManager";
 
 const isDev = process.env.NODE_ENV === "development";
 // Electron's native Acrylic backdrop requires Windows 11 22H2 (build 22621).
@@ -269,6 +270,22 @@ function registerIpcChannels(): void {
   ipcMain.handle("easy-whisper:check-install", async () => {
     return compileManager.hasExistingBinaries();
   });
+
+  ipcMain.handle("easy-whisper:uninstall-info", () => getUninstallInfo());
+  ipcMain.handle("easy-whisper:uninstall-fully", () => runSetup(async () => {
+    const availability = await getUninstallInfo();
+    if (!availability.available) return { success: false, error: availability.reason };
+    const confirmation = await dialog.showMessageBox(mainWindow!, {
+      type: "warning", title: "Uninstall EasyWhisperUI",
+      message: "Remove EasyWhisperUI and all its app data?",
+      detail: "This closes the app and opens its Windows uninstaller. Downloaded models, Whisper components, saved settings and app caches will be permanently deleted along with the app. Original media and exported transcripts outside the app’s data folders are kept. Shared dependencies such as Git and Vulkan SDK are not removed.",
+      buttons: ["Cancel", "Uninstall fully"], defaultId: 0, cancelId: 0, noLink: true
+    });
+    if (confirmation.response !== 1) return { success: false, canceled: true };
+    await launchUninstaller();
+    app.quit();
+    return { success: true };
+  }));
 
   ipcMain.handle("easy-whisper:ensure-deps", async (_event, options) => {
     return runSetup(() => compileManager.ensureDependencies(options ?? {}));

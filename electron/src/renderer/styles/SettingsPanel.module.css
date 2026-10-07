@@ -22,3 +22,5 @@
 .panel .reinstall:hover:not(:disabled) { background: var(--accent-hover); }
 .panel progress { width: 100%; margin-top: 16px; accent-color: var(--accent); }
 .result { padding: 12px; border: 1px solid var(--glass-border); border-radius: 9px; overflow-wrap: anywhere; }
+.uninstallSection { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--glass-border); }
+.panel .uninstall { color: var(--close-text); background: var(--live-bg); border-color: var(--live-border); }

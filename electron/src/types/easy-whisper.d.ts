@@ -19,6 +19,11 @@ export interface CompileOptions {
   force?: boolean;
 }
 
+export interface UninstallInfo {
+  available: boolean;
+  reason?: string;
+}
+
 export interface ModelSettings {
   model: string;
   language: string;
@@ -62,6 +67,8 @@ export type EasyWhisperApi = {
   rendererReady: () => Promise<void>;
   compileWhisper: (options?: CompileOptions) => Promise<CompileResult>;
   cleanReinstall: () => Promise<CompileResult>;
+  getUninstallInfo: () => Promise<UninstallInfo>;
+  uninstallFully: () => Promise<CompileResult>;
   ensureDependencies: (options?: CompileOptions) => Promise<CompileResult>;
   openModelFile: () => Promise<string | undefined>;
   onCompileProgress: (callback: (event: CompileProgressEvent) => void) => () => void;
