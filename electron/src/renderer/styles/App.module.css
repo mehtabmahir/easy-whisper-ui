@@ -688,3 +688,21 @@
 }
 .faqButton svg { display: block; width: 18px; height: 18px; }
 .faqButton:hover { color: var(--text); background: var(--hover); border-color: var(--glass-border); }
+
+.selectorHeading { display: flex; align-items: center; gap: 7px; position: relative; }
+.languageInfo summary {
+  display: flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border: 1px solid var(--glass-border); border-radius: 50%;
+  font-size: 12px; font-weight: 600; cursor: pointer; list-style: none;
+}
+.languageInfo summary::-webkit-details-marker { display: none; }
+.languageInfo summary:hover { background: var(--hover); color: var(--text); }
+.languageInfo summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.languageInfo p {
+  position: absolute; z-index: 2; top: 24px; left: 0; width: 100%; margin: 0;
+  padding: 12px; border: 1px solid var(--glass-border); border-radius: 10px;
+  background: var(--option); color: var(--text); box-shadow: var(--glass-shadow);
+  font-size: 12px; line-height: 1.5;
+}
+.languageWarning { margin: 8px 0 0; color: var(--live-text); font-size: 12px; line-height: 1.5; }
+.languageWarning:empty { display: none; }

@@ -3,6 +3,7 @@ import styles from "./styles/App.module.css";
 import FirstLaunchLoader from "./FirstLaunchLoader";
 import SettingsPanel from "./SettingsPanel";
 import FaqPanel from "./FaqPanel";
+import { LANGUAGE_CODES } from "./languages";
 import ActionIcon from "./ActionIcon";
 import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
@@ -30,108 +31,7 @@ import type { CompileProgressEvent, LiveState, QueueState } from "../types/easy-
 
 const MODEL_OPTIONS = [...DOWNLOADABLE_MODELS, "custom"];
 
-const LANGUAGE_OPTIONS = [
-  "en",
-  "af",
-  "am",
-  "ar",
-  "as",
-  "az",
-  "ba",
-  "be",
-  "bg",
-  "bn",
-  "bo",
-  "br",
-  "bs",
-  "ca",
-  "cs",
-  "cy",
-  "da",
-  "de",
-  "el",
-  "es",
-  "et",
-  "eu",
-  "fa",
-  "fi",
-  "fo",
-  "fr",
-  "gl",
-  "gu",
-  "ha",
-  "haw",
-  "he",
-  "hi",
-  "hr",
-  "ht",
-  "hu",
-  "hy",
-  "id",
-  "is",
-  "it",
-  "ja",
-  "jw",
-  "ka",
-  "kk",
-  "km",
-  "kn",
-  "ko",
-  "la",
-  "lb",
-  "ln",
-  "lo",
-  "lt",
-  "lv",
-  "mg",
-  "mi",
-  "mk",
-  "ml",
-  "mn",
-  "mr",
-  "ms",
-  "mt",
-  "my",
-  "ne",
-  "nl",
-  "nn",
-  "no",
-  "oc",
-  "pa",
-  "pl",
-  "ps",
-  "pt",
-  "ro",
-  "ru",
-  "sa",
-  "sd",
-  "si",
-  "sk",
-  "sl",
-  "sn",
-  "so",
-  "sq",
-  "sr",
-  "su",
-  "sv",
-  "sw",
-  "ta",
-  "te",
-  "tg",
-  "th",
-  "tk",
-  "tl",
-  "tr",
-  "tt",
-  "uk",
-  "ur",
-  "uz",
-  "vi",
-  "yi",
-  "yo",
-  "yue",
-  "zh"
-];
+
 
 const SUPPORTED_FILE_EXTENSIONS = new Set([
   "mp3",
@@ -1023,16 +923,31 @@ function App(): JSX.Element {
                 </select>
               </label>
 
-              <label className={styles.selectorLabel}>
-                <span>Language</span>
-                <select value={language} onChange={(event) => setLanguage(event.target.value)}>
-                  {LANGUAGE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
+              <div>
+              <div className={styles.selectorLabel}>
+                <div className={styles.selectorHeading}>
+                  <label htmlFor="input-language">Input language</label>
+                  <details className={styles.languageInfo}>
+                    <summary aria-label="About input language" title="About input language">i</summary>
+                    <p id="input-language-help">
+                      Language spoken in your audio or video. Non-English audio needs a multilingual model; .en models are English-only.
+                    </p>
+                  </details>
+                </div>
+                <select id="input-language" value={language} aria-describedby="input-language-help input-language-warning"
+                  onChange={(event) => setLanguage(event.target.value)}>
+                  {Object.entries(LANGUAGE_CODES).map(([name, code]) => (
+                    <option key={code} value={code}>
+                      {name}
                     </option>
                   ))}
                 </select>
-              </label>
+              </div>
+              <p id="input-language-warning" className={styles.languageWarning} role="status">
+                {language !== "en" && model.endsWith(".en")
+                  ? `Choose a multilingual model such as ${model.slice(0, -3)} for this language.` : ""}
+              </p>
+              </div>
               {model === "custom" && (
                 <div className={styles.customModelSection}>
                   <label className={styles.selectorLabel}>
