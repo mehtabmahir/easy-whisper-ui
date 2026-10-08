@@ -35,7 +35,7 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 - Choose whether to clear converted audio on exit (enabled by default).
 - Open the app workspace or setup log directly from Settings.
 
-The macOS download includes 3.0.1. Windows 3.0.1 is pending; its current installer is 3.0.0.
+Latest 3.0.1 source updates add an in-app FAQ, gentler animations, and a centered Donate icon; an updated Mac DMG with these refinements is pending. Windows 3.0.1 is pending; its current installer is 3.0.0.
 
 ## Features
 
@@ -62,6 +62,14 @@ The macOS download includes 3.0.1. Windows 3.0.1 is pending; its current install
 To translate into English, choose a multilingual model such as `medium`, select the source language, and add `--translate` in **Arguments**.
 
 Clearing the audio cache leaves original files and exported transcripts untouched.
+
+## FAQ
+
+- **How can I use my transcript?** Give the TXT file to your favorite LLM for summaries, study notes, or a cleaned-up transcript. Export SRT to add subtitles in a video editor or player.
+- **Where are exports saved?** Beside the original audio or video.
+- **Why isn't it working?** On Windows/Linux, try **Settings → Clean reinstall**. On Mac, restart the app. If it still fails, use **Settings → Show log file** and [submit an issue](https://github.com/mehtabmahir/easy-whisper-ui/issues/new) with the error, log, OS, CPU, GPU, RAM, app version, and model. If no setup log exists, copy the console error.
+
+The in-app **FAQ** button sits above Update, Donate, and Website. **Help** displays Whisper CLI options.
 
 ## Troubleshooting
 

@@ -406,15 +406,6 @@
   flex-shrink: 0;
 }
 
-.heartIcon {
-  width: 17px;
-  height: 17px;
-}
-
-.donateButton {
-  gap: 3px;
-}
-
 .argumentsBlock, .consoleBlock {
   display: flex;
   flex-direction: column;
@@ -643,7 +634,7 @@
   margin-right: 0;
 }
 
-/* Expressive, finite motion for navigation and action feedback. */
+/* Brief motion for navigation and action feedback. */
 .controlButton svg, .secondaryButton svg {
   width: 18px;
   height: 18px;
@@ -652,41 +643,48 @@
 }
 .settingsButton { grid-column: 1 / -1; min-height: 42px; }
 .controlButton:not(:disabled):hover, .secondaryButton:not(:disabled):hover {
-  box-shadow: inset 0 1px 0 #ffffff12, 0 10px 22px #00000028;
-  transform: translateY(-4px) scale(1.025);
+  box-shadow: inset 0 1px 0 #ffffff12, 0 5px 12px #00000018;
+  transform: translateY(-2px);
 }
 .controlButton:not(:disabled):active, .secondaryButton:not(:disabled):active {
-  transform: translateY(1px) scale(.94);
+  transform: translateY(0) scale(.98);
   box-shadow: inset 0 1px 3px #00000018;
 }
-.settingsButton:hover svg { transform: rotate(-18deg) scale(1.12); }
+.settingsButton:hover svg { transform: rotate(-6deg); }
 .themeToggle svg { transition: transform .22s ease; }
-.themeToggle:hover svg { transform: rotate(35deg) scale(1.1); }
+.themeToggle:hover svg { transform: rotate(12deg); }
 .checkbox:hover { color: var(--text); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .windowContainer { transition: filter .35s ease; }
-  .header { animation: surfaceIn .5s cubic-bezier(.16,1,.3,1) both; }
-  .leftPanel { animation: surfaceIn .6s .06s cubic-bezier(.16,1,.3,1) both; }
-  .rightPanel { animation: surfaceIn .65s .14s cubic-bezier(.16,1,.3,1) both; }
-  .customModelSection { animation: surfaceIn .4s cubic-bezier(.16,1,.3,1) both; }
-  .socialButton:hover { transform: translateY(-3px) scale(1.04); }
+  .windowContainer { transition: filter .2s ease; }
+  .header { animation: surfaceIn .3s cubic-bezier(.16,1,.3,1) both; }
+  .leftPanel { animation: surfaceIn .35s .03s cubic-bezier(.16,1,.3,1) both; }
+  .rightPanel { animation: surfaceIn .4s .06s cubic-bezier(.16,1,.3,1) both; }
+  .customModelSection { animation: surfaceIn .25s cubic-bezier(.16,1,.3,1) both; }
+  .socialButton:hover { transform: translateY(-1px); }
   @keyframes surfaceIn {
-    from { opacity: 0; transform: translateY(24px) scale(.97); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .buttonStack > button { animation: actionReveal .4s ease backwards; }
-  .buttonStack > button:nth-child(1) { animation-delay: .1s; }
-  .buttonStack > button:nth-child(2) { animation-delay: .15s; }
-  .buttonStack > button:nth-child(3) { animation-delay: .2s; }
-  .buttonStack > button:nth-child(4) { animation-delay: .25s; }
-  .buttonStack > button:nth-child(5) { animation-delay: .3s; }
-  .buttonStack > button:nth-child(6) { animation-delay: .35s; }
-  .buttonStack > button:nth-child(7) { animation-delay: .4s; }
-  @keyframes actionReveal {
-    from { opacity: 0; transform: translateY(12px) scale(.92); }
-  }
+.faqButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  flex-shrink: 0;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 9px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: -12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
 }
+.faqButton svg { display: block; width: 18px; height: 18px; }
+.faqButton:hover { color: var(--text); background: var(--hover); border-color: var(--glass-border); }

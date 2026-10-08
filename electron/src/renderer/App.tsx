@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./styles/App.module.css";
 import FirstLaunchLoader from "./FirstLaunchLoader";
 import SettingsPanel from "./SettingsPanel";
+import FaqPanel from "./FaqPanel";
 import ActionIcon from "./ActionIcon";
 import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
@@ -249,6 +250,7 @@ function App(): JSX.Element {
     setModelDownloadProgress(event.state === "downloading" ? event : undefined);
   }), []);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
   const [helpRunning, setHelpRunning] = useState(false);
   const [skipRunning, setSkipRunning] = useState(false);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
@@ -892,7 +894,8 @@ function App(): JSX.Element {
       )}
       {settingsOpen && <SettingsPanel busy={isCompiling || isProcessing || liveActive || queuedCount > 0}
         progress={compileInfo} onClose={() => setSettingsOpen(false)} />}
-      <div className={`${styles.windowContainer} ${settingsOpen ? styles.settingsBackground : ""}`} style={showLoader ? { filter: 'blur(2.5px)', pointerEvents: 'none', userSelect: 'none' } : {}}>
+      {faqOpen && <FaqPanel onClose={() => setFaqOpen(false)} />}
+      <div className={`${styles.windowContainer} ${settingsOpen || faqOpen ? styles.settingsBackground : ""}`} style={showLoader ? { filter: 'blur(2.5px)', pointerEvents: 'none', userSelect: 'none' } : {}}>
         <div className={`${styles.titlebar} ${isMac ? styles.macTitlebar : ""}`}>
         <div className={styles.titleDragRegion}>
           <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.titleLogo} />
@@ -1051,6 +1054,11 @@ function App(): JSX.Element {
                 </div>
               )}
             </div>
+            <button type="button" className={styles.faqButton} onClick={() => setFaqOpen(true)}
+              aria-label="Frequently asked questions" aria-haspopup="dialog" aria-expanded={faqOpen}
+              title="How to use your transcript">
+              <ActionIcon name="help" /><span>FAQ</span>
+            </button>
             <div className={styles.linkCluster}>
               <a
                 href={GITHUB_URL}
@@ -1071,13 +1079,13 @@ function App(): JSX.Element {
                 href={DONATE_URL}
                 target="_blank"
                 rel="noreferrer"
-                className={`${styles.socialButton} ${styles.donateButton}`}
+                className={styles.socialButton}
                 title="Support development via PayPal"
               >
-                <svg className={`${styles.socialIcon} ${styles.heartIcon}`} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <svg className={styles.socialIcon} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path
                     fill="currentColor"
-                    d="M12.1 4.44c1.35-1.58 3.86-1.66 5.3-.17 1.4 1.44 1.25 3.73-.32 5.08l-4.98 4.35a.3.3 0 0 1-.4 0l-4.98-4.35c-1.57-1.35-1.72-3.64-.32-5.08 1.44-1.49 3.95-1.41 5.3.17l.21.24.19-.24Z"
+                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"
                   />
                 </svg>
                 <span>Donate</span>

@@ -15,9 +15,20 @@ The app is split into three layers:
 At runtime the app manages a per-user workspace under Electron’s `userData` directory:
 
 * `.../EasyWhisperUI/whisper-workspace/bin` — staged executables
+* `.../EasyWhisperUI/whisper-workspace/audio-cache` — reusable converted audio
 * `.../EasyWhisperUI/whisper-workspace/models` — downloaded `ggml-*.bin` model files
 * `.../EasyWhisperUI/whisper-workspace/toolchain` — **Windows only**: MSYS2 + FFmpeg toolchain
 * `.../EasyWhisperUI/whisper-workspace/downloads` — **Windows only**: cached archives
+
+## Settings and FAQ
+
+Settings lives in the main action group. It manages model downloads/deletion, manual audio-cache cleanup, and the saved **Clear audio cache on exit** preference (enabled by default). Turning it off keeps completed conversions across sessions; shutdown still cancels active work.
+
+**Open workspace folder** opens `whisper-workspace`. **Show log file** opens `whisper-workspace/log.txt`, or explains when no setup log exists. The exit preference is stored in `app-settings.json` directly under Electron's `userData`, outside the cache and installation directories.
+
+The **FAQ** button above the footer opens `FaqPanel.tsx`: transcript uses, SRT subtitles, export locations, and platform-specific troubleshooting. Reinstall guidance appears only on Windows/Linux. The separate **Help** action displays raw Whisper CLI help.
+
+Animations respect `prefers-reduced-motion`. Simple visual checks are performed manually.
 
 ## Project layout
 
@@ -59,6 +70,10 @@ At runtime the app manages a per-user workspace under Electron’s `userData` di
   * converts inputs to WAV via `ffmpeg` when needed
   * downloads models from Hugging Face (`ggerganov/whisper.cpp`)
   * runs `whisper-cli` and streams logs + queue state
+* `src/main/services/appSettings.ts`
+
+  * persists the cache-exit preference and opens fixed workspace/log paths
+
 * `src/main/services/liveManager.ts`
 
   * starts/stops live transcription using `whisper-stream`
