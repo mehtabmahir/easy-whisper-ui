@@ -145,6 +145,7 @@
       }
     ],
     "asar": true,
+    "afterPack": "buildResources/scripts/after-pack.js",
     "extraResources": [
       {
         "from": "../resources/icon.png",
@@ -160,6 +161,8 @@
       }
     ],
     "mac": {
+      "bundleVersion": "30001",
+      "artifactName": "EasyWhisperUI-${version}-macOS-${arch}.${ext}",
       "icon": "buildResources/icon.icns",
       "target": "dmg",
       "extraResources": [
