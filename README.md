@@ -37,10 +37,11 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 - **Batch processing** — open multiple files, drag and drop, or use Open With; FFmpeg handles format conversion.
 - **Live transcription** — transcribe microphone audio (beta).
 - **Languages and exports** — multilingual transcription, translation into English, and TXT/SRT output.
+- **Clear input-language selection** — full language names, an info button, and guidance when non-English audio needs a multilingual model.
 - **GPU acceleration** — Vulkan on Windows, Metal on Apple Silicon, or CPU-only processing.
 - **Model management** — download models in Settings or automatically when needed, track downloaded bytes and transfer speed, and delete individual models.
 - **Custom models** — select a local whisper.cpp-compatible model file.
-- **Saved themes and background blur** — Light, Dark, and Auto, with translucent panels on macOS (vibrancy) and Windows 11 22H2+ (Acrylic), plus native macOS window controls.
+- **Saved themes and background blur** — Light, Dark, and Auto, with more transparent macOS panels and vibrancy, Windows 11 22H2+ Acrylic, and native macOS window controls.
 - **Queue controls** — Skip cancels the current file and continues; Stop cancels the whole queue, including its model downloads and audio preparation.
 - **Audio caching** — reuse converted audio across retries and model changes, with manual cleanup and optional cleanup on exit (enabled by default).
 - **Console and Help** — a large output console, full Whisper CLI help, extra CLI arguments, and Settings shortcuts to the app workspace and saved setup logs.
@@ -50,7 +51,7 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 
 1. Run the Windows installer, or open the Mac DMG and drag **EasyWhisperUI** into **Applications**.
 2. Launch the app and let initial setup finish. macOS includes Whisper and FFmpeg.
-3. Choose your model, language, and output formats. Missing models download automatically. For a local model, choose **custom → Select Model File**.
+3. Choose your model, input language, and output formats. Use a multilingual model for non-English audio; `.en` models are English-only. Missing models download automatically. For a local model, choose **custom → Select Model File**.
 4. Click **Open** or drop files into the window. Transcription starts automatically; exports are saved beside the original files.
 
 To translate into English, choose a multilingual model such as `medium`, select the source language, and add `--translate` in **Arguments**.
