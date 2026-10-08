@@ -23,6 +23,8 @@
 .modelRow span { overflow-wrap: anywhere; min-width: 0; }
 .modelRow small { margin-left: auto; color: var(--muted); white-space: nowrap; }
 .modelRow input { accent-color: var(--accent); }
+.modelActions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.modelActions select { min-width: 160px; padding: 9px 12px; border: 1px solid var(--glass-border); border-radius: 9px; color: var(--text); background: var(--button); font: inherit; }
 .panel button { border: 1px solid var(--glass-border); border-radius: 9px; padding: 9px 16px; color: var(--text); background: var(--button); cursor: pointer; }
 .panel button:hover:not(:disabled) { background: var(--hover); }
 .panel button:disabled { opacity: .5; cursor: not-allowed; }

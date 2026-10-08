@@ -247,6 +247,10 @@ function broadcast(channel: string, payload: unknown): void {
 
 function registerIpcChannels(): void {
   ipcMain.handle("easy-whisper:list-models", () => listDownloadedModels());
+  ipcMain.handle("easy-whisper:download-model", (_event, model: unknown) => runSetup(async () => {
+    await transcriptionManager.downloadModel(model);
+    return { success: true };
+  }));
   ipcMain.handle("easy-whisper:delete-model", (_event, file: unknown) => runSetup(async () => {
     await deleteDownloadedModel(file);
     return { success: true };
@@ -448,6 +452,9 @@ function registerIpcChannels(): void {
 
   transcriptionManager.on("console", (event) => {
     broadcast("easy-whisper:console", event);
+  });
+  transcriptionManager.on("download", (event) => {
+    broadcast("easy-whisper:model-download-progress", event);
   });
 
   transcriptionManager.on("queue", (event) => {

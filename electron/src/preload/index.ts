@@ -3,6 +3,13 @@ import type { EasyWhisperApi } from "../types/easy-whisper";
 
 const api: EasyWhisperApi = {
   listDownloadedModels: () => ipcRenderer.invoke("easy-whisper:list-models"),
+  downloadModel: (model) => ipcRenderer.invoke("easy-whisper:download-model", model),
+  onModelDownloadProgress: (callback) => {
+    const channel = "easy-whisper:model-download-progress";
+    const handler = (_event: Electron.IpcRendererEvent, data: Parameters<typeof callback>[0]) => callback(data);
+    ipcRenderer.on(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
+  },
   deleteDownloadedModel: (file) => ipcRenderer.invoke("easy-whisper:delete-model", file),
   setTheme: (theme) => ipcRenderer.invoke("easy-whisper:set-theme", theme),
   platform: () => process.platform,

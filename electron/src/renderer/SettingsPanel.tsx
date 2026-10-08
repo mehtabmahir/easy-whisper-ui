@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { CompileProgressEvent, DownloadedModel, UninstallInfo } from "../types/easy-whisper";
+import type { CompileProgressEvent, DownloadedModel, ModelDownloadProgress, UninstallInfo } from "../types/easy-whisper";
 import styles from "./styles/SettingsPanel.module.css";
+import { DOWNLOADABLE_MODELS } from "../main/services/modelCatalog";
+import LoadingBar from "./LoadingBar";
+import ModelDownloadBar from "./ModelDownloadBar";
 
 export default function SettingsPanel({ busy, progress, onClose }: {
   busy: boolean;
@@ -20,7 +23,35 @@ export default function SettingsPanel({ busy, progress, onClose }: {
   const [selectedModel, setSelectedModel] = useState("");
   const [modelBusy, setModelBusy] = useState(false);
   const [modelMessage, setModelMessage] = useState<string>();
-  const working = reinstalling || uninstalling || clearingCache || modelBusy;
+  const [downloadsOpen, setDownloadsOpen] = useState(false);
+  const [downloadSelection, setDownloadSelection] = useState("base");
+  const [downloading, setDownloading] = useState(false);
+  const [downloadMessage, setDownloadMessage] = useState<string>();
+  const [downloadProgress, setDownloadProgress] = useState<ModelDownloadProgress>();
+  useEffect(() => window.easyWhisper?.onModelDownloadProgress((event) => {
+    if (event.model === downloadSelection) setDownloadProgress(event);
+  }), [downloadSelection]);
+  const working = reinstalling || uninstalling || clearingCache || modelBusy || downloading;
+
+  async function downloadModel() {
+    if (!window.easyWhisper || busy || working) return;
+    setDownloading(true);
+    setDownloadProgress(undefined);
+    setDownloadMessage(undefined);
+    try {
+      const response = await window.easyWhisper.downloadModel(downloadSelection);
+      if (!response.success) {
+        setDownloadMessage(response.error ?? "Download failed. Try again.");
+        return;
+      }
+      setDownloadMessage(`${downloadSelection} is ready to use.`);
+      if (modelsOpen) {
+        try { setModels(await window.easyWhisper.listDownloadedModels()); }
+        catch { setModelMessage("Could not refresh models. Close this list and retry."); }
+      }
+    } catch { setDownloadMessage("Download failed. Check your connection and retry."); }
+    finally { setDownloading(false); }
+  }
 
   async function showModels() {
     if (!window.easyWhisper || working) return;
@@ -124,17 +155,40 @@ export default function SettingsPanel({ busy, progress, onClose }: {
       </button>
       {busy && <p role="status">Available when setup and transcription finish.</p>}
       {cacheResult && <p role="status">{cacheResult}</p>}
+      {clearingCache && <LoadingBar label="Clearing audio cache" paceSeconds={5} />}
     </section>
     <section className={styles.uninstallSection}>
       <h3>Models</h3>
+      <div className={styles.modelActions}>
+      <button type="button" onClick={() => setDownloadsOpen(!downloadsOpen)}
+        disabled={working || !window.easyWhisper} aria-expanded={downloadsOpen}>
+        {downloadsOpen ? "Close downloads" : "Download models"}
+      </button>
       <button type="button" onClick={() => modelsOpen ? setModelsOpen(false) : void showModels()}
         disabled={working || !window.easyWhisper} aria-expanded={modelsOpen}>
         {modelsOpen ? "Close model list" : "Delete models"}
       </button>
+      </div>
+      {downloadsOpen && <div>
+        <p className={styles.note}>Download a model for offline use. Existing downloads are reused.</p>
+        <div className={styles.modelActions}>
+          <select aria-label="Model to download" value={downloadSelection} disabled={working}
+            onChange={(event) => { setDownloadSelection(event.target.value); setDownloadMessage(undefined); setDownloadProgress(undefined); }}>
+            {DOWNLOADABLE_MODELS.map((model) => <option key={model} value={model}>{model}</option>)}
+          </select>
+          <button type="button" onClick={() => void downloadModel()} disabled={busy || working || !window.easyWhisper}>
+            {downloading ? "Downloading…" : "Download selected"}
+          </button>
+        </div>
+        {(downloading || downloadProgress?.state === "complete") && <ModelDownloadBar progress={downloadProgress} />}
+        {busy && <p role="status">Finish setup or stop transcription first.</p>}
+        {downloadMessage && <p role="status">{downloadMessage}</p>}
+      </div>}
       {modelsOpen && <div>
         <p className={styles.note}>Choose a downloaded model. It can be downloaded again when needed.</p>
         {models?.length === 0 && <p>No downloaded models.</p>}
         {modelBusy && !models && <p role="status">Loading models…</p>}
+        {modelBusy && <LoadingBar label={models ? "Deleting model" : "Loading models"} paceSeconds={5} />}
         {!!models?.length && <>
           <div className={styles.modelList} role="group" aria-label="Downloaded models">
             {models.map((model) => <label key={model.file} className={styles.modelRow}>
@@ -161,7 +215,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
       </button>
       {busy && !reinstalling && <p role="status">Finish setup or stop transcription before reinstalling.</p>}
       {reinstalling && <div role="status" aria-live="polite">
-        <progress aria-label="Reinstall in progress" />
+        <LoadingBar label="Whisper reinstall" />
         <p>{progress.state === "running" ? progress.message : "Preparing reinstall…"}</p>
         <p className={styles.note}>Keep the app open until setup finishes.</p>
       </div>}
@@ -180,6 +234,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
         {!uninstallInfo ? "Checking availability…" : uninstallInfo.reason ?? (busy ? "Finish setup or stop transcription first." : "")}
       </p>
       {uninstallError && <p role="alert" className={styles.result}>{uninstallError}</p>}
+      {uninstalling && <LoadingBar label="Opening uninstaller" paceSeconds={5} />}
     </section>
     </>}
   </dialog>;

@@ -65,6 +65,14 @@ export interface LiveRequest {
 
 export type LiveState = "started" | "stopped";
 
+export interface ModelDownloadProgress {
+  model: string;
+  receivedBytes: number;
+  totalBytes?: number;
+  bytesPerSecond: number;
+  state: "downloading" | "complete" | "error";
+}
+
 export type EasyWhisperApi = {
   setTheme: (theme: "auto" | "light" | "dark") => Promise<void>;
   platform: () => NodeJS.Platform;
@@ -75,6 +83,8 @@ export type EasyWhisperApi = {
   cleanReinstall: () => Promise<CompileResult>;
   clearAudioCache: () => Promise<CompileResult>;
   listDownloadedModels: () => Promise<DownloadedModel[]>;
+  downloadModel: (model: string) => Promise<CompileResult>;
+  onModelDownloadProgress: (callback: (event: ModelDownloadProgress) => void) => () => void;
   deleteDownloadedModel: (file: string) => Promise<CompileResult>;
   getUninstallInfo: () => Promise<UninstallInfo>;
   uninstallFully: () => Promise<CompileResult>;

@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./styles/App.module.css";
 import FirstLaunchLoader from "./FirstLaunchLoader";
 import SettingsPanel from "./SettingsPanel";
+import LoadingBar from "./LoadingBar";
+import ModelDownloadBar from "./ModelDownloadBar";
+import type { ModelDownloadProgress } from "../types/easy-whisper";
+import { DOWNLOADABLE_MODELS } from "../main/services/modelCatalog";
 const FIRST_LAUNCH_KEY = "easy-whisper-ui.first-launch";
 
 function isFirstLaunch(): boolean {
@@ -21,19 +25,7 @@ function setFirstLaunchDone(): void {
 }
 import type { CompileProgressEvent, LiveState, QueueState } from "../types/easy-whisper";
 
-const MODEL_OPTIONS = [
-  "large-v3",
-  "large-v3-turbo",
-  "medium",
-  "medium.en",
-  "small",
-  "small.en",
-  "tiny",
-  "tiny.en",
-  "base",
-  "base.en",
-  "custom"
-];
+const MODEL_OPTIONS = [...DOWNLOADABLE_MODELS, "custom"];
 
 const LANGUAGE_OPTIONS = [
   "en",
@@ -290,6 +282,11 @@ function App(): JSX.Element {
     state: "pending"
   }));
   const [liveActive, setLiveActive] = useState<boolean>(false);
+  const [liveChanging, setLiveChanging] = useState(false);
+  const [modelDownloadProgress, setModelDownloadProgress] = useState<ModelDownloadProgress>();
+  useEffect(() => window.easyWhisper?.onModelDownloadProgress((event) => {
+    setModelDownloadProgress(event.state === "downloading" ? event : undefined);
+  }), []);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpRunning, setHelpRunning] = useState(false);
   const [skipRunning, setSkipRunning] = useState(false);
@@ -866,6 +863,7 @@ function App(): JSX.Element {
   }, [appendConsole]);
 
   const handleLiveToggle = useCallback(async () => {
+    if (liveChanging) return;
     const bridge = window.easyWhisper;
     if (!bridge) {
       appendConsole("[system] Preload bridge unavailable.");
@@ -874,6 +872,7 @@ function App(): JSX.Element {
     if (!ensureCustomModelReady()) {
       return;
     }
+    setLiveChanging(true);
     try {
       if (liveActive) {
         await bridge.stopLiveTranscription();
@@ -887,8 +886,10 @@ function App(): JSX.Element {
     } catch (error) {
       const err = error as Error;
       appendConsole(`[live] ${err.message}`);
+    } finally {
+      setLiveChanging(false);
     }
-  }, [appendConsole, buildSettings, ensureCustomModelReady, liveActive]);
+  }, [appendConsole, buildSettings, ensureCustomModelReady, liveActive, liveChanging]);
 
   const compileStateLabel = useMemo(() => {
     if (compileInfo.state === "error" && compileInfo.error) {
@@ -920,6 +921,7 @@ function App(): JSX.Element {
       {showLoader && (
         <FirstLaunchLoader
           progress={loaderProgress}
+          failed={compileInfo.state === "error"}
           message={loaderMessage}
           canContinue={canContinue}
           onContinue={handleLoaderContinue}
@@ -1002,7 +1004,7 @@ function App(): JSX.Element {
                 className={`${styles.controlButton} ${styles.liveButton}`}
                 onClick={handleLiveToggle}
                 aria-pressed={liveActive}
-                disabled={!apiAvailable}
+                disabled={!apiAvailable || liveChanging}
               >
                 {liveActive ? "Stop Live" : "Live"}
               </button>
@@ -1030,7 +1032,12 @@ function App(): JSX.Element {
             </div>
             <div className={styles.compileStatus}>
               <span>{compileStateLabel}</span>
-              {isCompiling && <progress value={compileProgressPercent} max={100} />}
+              {isCompiling && <LoadingBar label="Whisper setup" progress={compileProgressPercent} />}
+              {modelDownloadProgress && !settingsOpen && <ModelDownloadBar progress={modelDownloadProgress} />}
+              {isProcessing && !modelDownloadProgress && <LoadingBar key={queueState.processing} label="Transcription" paceSeconds={180} />}
+              {helpRunning && <LoadingBar label="Loading help" paceSeconds={4} />}
+              {liveChanging && <LoadingBar label="Preparing live transcription" paceSeconds={60} />}
+              {skipRunning && <LoadingBar label="Skipping file" paceSeconds={4} />}
             </div>
 
             <div className={styles.selectorGroup}>

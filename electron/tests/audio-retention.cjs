@@ -221,3 +221,105 @@ test('idle shutdown clears retained and partial audio but preserves models', asy
   assert.equal(await fs.readFile(path.join(models, 'model.bin'), 'utf8'), 'model');
   await manager.clearAudioCache();
 });
+
+test('Settings download publishes only a complete model and reuses it', async t => {
+  const { root, manager } = await fixture(t);
+  delete manager.ensureModel;
+  let downloads = 0;
+  const target = path.join(root, 'whisper-workspace', 'models', 'ggml-base.bin');
+  manager.downloadFile = async (url, destination) => {
+    downloads++;
+    assert.ok(url.endsWith('/ggml-base.bin'));
+    assert.notEqual(destination, target);
+    await fs.writeFile(destination, 'complete model');
+    await assert.rejects(fs.stat(target), { code: 'ENOENT' });
+  };
+  await manager.downloadModel('base');
+  assert.equal(await fs.readFile(target, 'utf8'), 'complete model');
+  await manager.downloadModel('base');
+  assert.equal(downloads, 1);
+});
+
+test('Settings download removes failed partial files and permits retry', async t => {
+  const { root, manager } = await fixture(t);
+  delete manager.ensureModel;
+  manager.downloadFile = async (_, destination) => {
+    await fs.writeFile(destination, 'partial');
+    throw new Error('connection lost');
+  };
+  await assert.rejects(manager.downloadModel('tiny'), /connection lost/);
+  const modelsDir = path.join(root, 'whisper-workspace', 'models');
+  assert.deepEqual(await fs.readdir(modelsDir), []);
+  manager.downloadFile = async (_, destination) => fs.writeFile(destination, 'complete');
+  await manager.downloadModel('tiny');
+  assert.deepEqual(await fs.readdir(modelsDir), ['ggml-tiny.bin']);
+});
+
+test('Settings downloads validate model names and prevent overlapping operations', async t => {
+  const { manager } = await fixture(t);
+  for (const model of ['../../outside', 'custom', '', null]) {
+    await assert.rejects(manager.downloadModel(model), /supported model/);
+  }
+  manager.processing = true;
+  await assert.rejects(manager.downloadModel('base'), /current operation/);
+  manager.processing = false;
+  let release;
+  manager.ensureModel = () => new Promise(resolve => { release = resolve; });
+  const pending = manager.downloadModel('base');
+  await assert.rejects(manager.downloadModel('tiny'), /current operation/);
+  release('model');
+  await pending;
+});
+
+for (const knownSize of [true, false]) {
+  test(`download reports actual bytes and speed with ${knownSize ? 'known' : 'unknown'} size, including redirects`, async t => {
+    const { root, manager } = await fixture(t);
+    const { PassThrough } = require('node:stream');
+    const { EventEmitter } = require('node:events');
+    const https = require('node:https');
+    let requests = 0;
+    t.mock.method(https, 'get', (_url, _options, callback) => {
+      const response = new PassThrough();
+      const redirect = requests++ === 0;
+      response.statusCode = redirect ? 302 : 200;
+      response.headers = redirect ? { location: '/actual-model' }
+        : knownSize ? { 'content-length': '12' } : {};
+      setImmediate(() => {
+        callback(response);
+        if (redirect) response.end();
+        else { response.write(Buffer.alloc(4)); response.end(Buffer.alloc(8)); }
+      });
+      return new EventEmitter();
+    });
+    const updates = [];
+    const target = path.join(root, 'download.bin');
+    await manager.downloadFile('https://example.test/model', target, new AbortController().signal, 0,
+      (received, total, speed) => updates.push({ received, total, speed }));
+    assert.equal(requests, 2);
+    assert.equal(updates[0].received, 0);
+    assert.equal(updates.at(-1).received, 12);
+    assert.equal(updates.at(-1).total, knownSize ? 12 : undefined);
+    assert.ok(Number.isFinite(updates.at(-1).speed) && updates.at(-1).speed > 0);
+    assert.equal((await fs.stat(target)).size, 12);
+  });
+}
+
+test('a truncated model download emits an error and never publishes a cached model', async t => {
+  const { root, manager } = await fixture(t);
+  delete manager.ensureModel;
+  const { PassThrough } = require('node:stream');
+  const { EventEmitter } = require('node:events');
+  t.mock.method(require('node:https'), 'get', (_url, _options, callback) => {
+    const response = new PassThrough();
+    response.statusCode = 200;
+    response.headers = { 'content-length': '100' };
+    setImmediate(() => { callback(response); response.end(Buffer.alloc(10)); });
+    return new EventEmitter();
+  });
+  const updates = [];
+  manager.on('download', event => updates.push(event));
+  await assert.rejects(manager.downloadModel('tiny'), /incomplete/);
+  assert.equal(updates.at(-1).state, 'error');
+  assert.ok(!updates.some(event => event.state === 'complete'));
+  assert.deepEqual(await fs.readdir(path.join(root, 'whisper-workspace', 'models')), []);
+});

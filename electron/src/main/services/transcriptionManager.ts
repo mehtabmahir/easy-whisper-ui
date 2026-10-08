@@ -10,12 +10,14 @@ import { createHash, randomUUID } from "node:crypto";
 import { pipeline } from "node:stream/promises";
 import {
   ConsoleEvent,
+  ModelDownloadProgress,
   ModelSettings,
   QueueState,
   TranscriptionRequest
 } from "../../types/easy-whisper";
 import { WORK_ROOT_NAME } from "./compileManager";
 import { resolveBinary } from "./binaryResolver";
+import { DOWNLOADABLE_MODELS } from "./modelCatalog";
 
 interface QueueItem {
   file: string;
@@ -23,6 +25,7 @@ interface QueueItem {
 }
 
 interface TranscriptionEvents {
+  download: ModelDownloadProgress;
   console: ConsoleEvent;
   queue: QueueState;
   finished: void;
@@ -41,6 +44,23 @@ export class TranscriptionManager extends EventEmitter {
   private currentAbort?: AbortController;
   private clearingCache = false;
   private shuttingDown = false;
+  private modelDownload?: AbortController;
+
+  async downloadModel(model: unknown): Promise<void> {
+    if (typeof model !== "string" || !DOWNLOADABLE_MODELS.includes(model)) {
+      throw new Error("Select a supported model.");
+    }
+    if (this.shuttingDown || this.processing || this.queue.length || this.modelDownload) {
+      throw new Error("Wait for the current operation to finish.");
+    }
+    const controller = new AbortController();
+    this.modelDownload = controller;
+    try {
+      await this.ensureModel({ model }, controller.signal);
+    } finally {
+      this.modelDownload = undefined;
+    }
+  }
 
   async clearAudioCache(): Promise<void> {
     if (this.processing || this.queue.length || this.clearingCache) {
@@ -58,6 +78,7 @@ export class TranscriptionManager extends EventEmitter {
 
   async shutdown(): Promise<void> {
     this.shuttingDown = true;
+    this.modelDownload?.abort();
     // Wait for preparation and child-process callbacks before deleting their files.
     if (this.processing) {
       let timer: ReturnType<typeof setTimeout>;
@@ -272,7 +293,7 @@ export class TranscriptionManager extends EventEmitter {
     return { path: target, deleteAfter: true };
   }
 
-  private async ensureModel(settings: ModelSettings, signal: AbortSignal): Promise<string> {
+  private async ensureModel(settings: Pick<ModelSettings, "model" | "customModelPath">, signal: AbortSignal): Promise<string> {
     if (settings.model === "custom") {
       const customPath = settings.customModelPath?.trim();
       if (!customPath) {
@@ -299,11 +320,21 @@ export class TranscriptionManager extends EventEmitter {
 
     this.emitConsole({ source: "transcription", message: `Downloading model ${modelFile}` });
     const url = `${MODEL_BASE_URL}/${modelFile}`;
+    const partial = `${modelPath}.${randomUUID()}.partial`;
+    let progress: ModelDownloadProgress = { model: settings.model, receivedBytes: 0, bytesPerSecond: 0, state: "downloading" };
+    this.emit("download", progress);
     try {
-      await this.downloadFile(url, modelPath, signal);
+      await this.downloadFile(url, partial, signal, 0, (receivedBytes, totalBytes, bytesPerSecond) => {
+        progress = { ...progress, receivedBytes, totalBytes, bytesPerSecond };
+        this.emit("download", progress);
+      });
+      signal.throwIfAborted();
+      await fsp.rename(partial, modelPath);
+      this.emit("download", { ...progress, state: "complete" });
     } catch (error) {
       // A skipped download must not leave a partial file that the next queue item treats as cached.
-      await fsp.rm(modelPath, { force: true });
+      await fsp.rm(partial, { force: true });
+      this.emit("download", { ...progress, state: "error" });
       throw error;
     }
     this.emitConsole({ source: "transcription", message: `Model downloaded: ${modelFile}` });
@@ -377,7 +408,8 @@ export class TranscriptionManager extends EventEmitter {
     return result;
   }
 
-  private async downloadFile(url: string, destination: string, signal: AbortSignal, redirectDepth = 0): Promise<void> {
+  private async downloadFile(url: string, destination: string, signal: AbortSignal, redirectDepth = 0,
+    onProgress?: (received: number, total: number | undefined, speed: number) => void): Promise<void> {
     if (redirectDepth > 5) {
       throw new Error("Too many redirects while downloading model.");
     }
@@ -390,7 +422,7 @@ export class TranscriptionManager extends EventEmitter {
           const status = response.statusCode ?? 0;
           if (status >= 300 && status < 400 && response.headers.location) {
             response.resume();
-            this.downloadFile(response.headers.location, destination, signal, redirectDepth + 1)
+            this.downloadFile(new URL(response.headers.location, url).href, destination, signal, redirectDepth + 1, onProgress)
               .then(resolve)
               .catch(reject);
             return;
@@ -403,9 +435,22 @@ export class TranscriptionManager extends EventEmitter {
           }
 
           const fileStream = fs.createWriteStream(destination);
+          const length = Number(response.headers["content-length"]);
+          const total = Number.isFinite(length) && length > 0 ? length : undefined;
+          let received = 0;
+          const started = performance.now();
+          const report = () => onProgress?.(received, total, received / Math.max(0.001, (performance.now() - started) / 1000));
+          response.on("data", (chunk: Buffer) => { received += chunk.length; });
+          const timer = setInterval(report, 250);
+          report();
           pipeline(response, fileStream, { signal })
-            .then(() => resolve())
-            .catch((error) => reject(error));
+            .then(() => {
+              if (total !== undefined && received !== total) throw new Error("Model download was incomplete. Please retry.");
+              report();
+              resolve();
+            })
+            .catch((error) => reject(error))
+            .finally(() => clearInterval(timer));
         })
         .on("error", (error) => reject(error));
     });
