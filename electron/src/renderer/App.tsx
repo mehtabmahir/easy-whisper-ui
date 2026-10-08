@@ -203,6 +203,7 @@ function loadTheme(): Theme {
   }
 }
 document.documentElement.dataset.theme = loadTheme();
+document.documentElement.dataset.platform = window.easyWhisper?.platform() ?? "unknown";
 
 function App(): JSX.Element {
   const [theme, setTheme] = useState<Theme>(loadTheme);

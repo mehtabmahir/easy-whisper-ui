@@ -96,6 +96,28 @@ textarea::placeholder { color: var(--placeholder); }
 }
 }
 
+/* macOS vibrancy already supplies a tinted backdrop; avoid stacking heavy fills over it. */
+:root[data-platform="darwin"] {
+  --window-tint: rgba(8,10,14,.16);
+  --glass: rgba(24,27,32,.22);
+  --field: rgba(16,20,29,.46);
+  --titlebar: rgba(16,20,29,.30);
+}
+:root[data-platform="darwin"][data-theme="light"] {
+  --window-tint: transparent;
+  --glass: rgba(255,255,255,.24);
+  --field: rgba(255,255,255,.48);
+  --titlebar: rgba(244,246,249,.30);
+}
+@media (prefers-color-scheme: light) {
+  :root[data-platform="darwin"][data-theme="auto"] {
+    --window-tint: transparent;
+    --glass: rgba(255,255,255,.24);
+    --field: rgba(255,255,255,.48);
+    --titlebar: rgba(244,246,249,.30);
+  }
+}
+
 /* Shared feedback for controls and theme changes. Avoid animating layout or text output. */
 body, button, a, select, textarea, input, label {
   transition: background-color .18s ease, color .18s ease, border-color .18s ease,
