@@ -3,6 +3,7 @@ import styles from "./styles/App.module.css";
 import FirstLaunchLoader from "./FirstLaunchLoader";
 import SettingsPanel from "./SettingsPanel";
 import LoadingBar from "./LoadingBar";
+import { setupProgress } from "./setupProgress";
 import ModelDownloadBar from "./ModelDownloadBar";
 import type { ModelDownloadProgress } from "../types/easy-whisper";
 import { DOWNLOADABLE_MODELS } from "../main/services/modelCatalog";
@@ -189,47 +190,6 @@ function getFileName(filePath: string | undefined): string {
   return parts[parts.length - 1] ?? filePath;
 }
 
-function computeCompileProgressPercent(info: CompileProgressEvent): number {
-  if (info.state === "success") {
-    return 100;
-  }
-  if (info.state !== "running") {
-    return 0;
-  }
-
-  const percent = (() => {
-    switch (info.step) {
-      case "prepare":
-        return 45;
-      case "git":
-        return 50;
-      case "vulkan":
-        return 55;
-      case "vulkan-env":
-        return 58;
-      case "ffmpeg":
-        return 60;
-      case "msys":
-        return 65;
-      case "packages":
-        return 70;
-      case "source":
-        return 78;
-      case "configure":
-        return 85;
-      case "build":
-        return 92;
-      case "copy":
-        return 96;
-      default:
-        return 80 + Math.round((info.progress || 0) * 0.2);
-    }
-  })();
-
-  return Math.max(0, Math.min(99, percent));
-}
-
-
 const THEME_KEY = "easy-whisper-ui.theme";
 type Theme = "auto" | "light" | "dark";
 function loadTheme(): Theme {
@@ -339,19 +299,19 @@ function App(): JSX.Element {
     // Simulate async checks for each step, only if needed
     (async () => {
       // 1. Check system requirements (simulate always OK)
-      setLoaderProgress(20);
+      setLoaderProgress(1);
       setLoaderMessage("Checking system requirements...");
       await new Promise(r => setTimeout(r, 600));
 
       // 2. Check for updates (simulate always up-to-date)
-      setLoaderProgress(40);
+      setLoaderProgress(2);
       setLoaderMessage("Checking for updates...");
       await new Promise(r => setTimeout(r, 600));
 
       // 3. Setup desktop shortcut (simulate only if not present)
       let shortcutNeeded = false; // TODO: real check
       if (shortcutNeeded) {
-        setLoaderProgress(60);
+        setLoaderProgress(3);
         setLoaderMessage("Setting up desktop shortcut...");
         await new Promise(r => setTimeout(r, 600));
       }
@@ -359,7 +319,7 @@ function App(): JSX.Element {
       // 4. Register uninstall entry (simulate only if not present)
       let uninstallNeeded = false; // TODO: real check
       if (uninstallNeeded) {
-        setLoaderProgress(80);
+        setLoaderProgress(50);
         setLoaderMessage("Registering uninstall entry...");
         await new Promise(r => setTimeout(r, 600));
       }
@@ -375,7 +335,7 @@ function App(): JSX.Element {
       }
       if (whisperNeedsInstall) {
         if (!depsEnsuredRef.current && !compileRanRef.current && !depsInProgressRef.current) {
-          setLoaderProgress(60);
+          setLoaderProgress(3);
           setLoaderMessage("Installing prerequisite dependencies...");
           setCanContinue(false);
           depsInProgressRef.current = true;
@@ -404,7 +364,7 @@ function App(): JSX.Element {
           depsInProgressRef.current = false;
         }
 
-        setLoaderProgress(80);
+        setLoaderProgress(50);
         setLoaderMessage("Installing Whisper binaries...");
         if (compileInfo.state !== "running" && !depsInProgressRef.current) {
           // start compile via preload bridge (if available)
@@ -525,7 +485,7 @@ function App(): JSX.Element {
     if (!showLoader) return;
     if (compileInfo.state === "running") {
       compileRanRef.current = true;
-      const stepProgress = computeCompileProgressPercent(compileInfo);
+      const stepProgress = setupProgress(compileInfo).progress;
       setLoaderProgress(stepProgress);
       setLoaderMessage(compileInfo.message || "Installing Whisper components...");
       setCanContinue(true); // allow user to continue while compile runs
@@ -898,7 +858,7 @@ function App(): JSX.Element {
     return compileInfo.message;
   }, [compileInfo]);
 
-  const compileProgressPercent = useMemo(() => computeCompileProgressPercent(compileInfo), [compileInfo]);
+  const compileProgressPercent = useMemo(() => setupProgress(compileInfo).progress, [compileInfo]);
 
   const statusText = useMemo(() => {
     if (!apiAvailable) {
@@ -921,6 +881,8 @@ function App(): JSX.Element {
       {showLoader && (
         <FirstLaunchLoader
           progress={loaderProgress}
+          estimateLimit={setupProgress(compileInfo).estimateLimit}
+          paceSeconds={setupProgress(compileInfo).paceSeconds}
           failed={compileInfo.state === "error"}
           message={loaderMessage}
           canContinue={canContinue}
@@ -1032,7 +994,7 @@ function App(): JSX.Element {
             </div>
             <div className={styles.compileStatus}>
               <span>{compileStateLabel}</span>
-              {isCompiling && <LoadingBar label="Whisper setup" progress={compileProgressPercent} />}
+              {isCompiling && <LoadingBar label="Whisper setup" {...setupProgress(compileInfo)} />}
               {modelDownloadProgress && !settingsOpen && <ModelDownloadBar progress={modelDownloadProgress} />}
               {isProcessing && !modelDownloadProgress && <LoadingBar key={queueState.processing} label="Transcription" paceSeconds={180} />}
               {helpRunning && <LoadingBar label="Loading help" paceSeconds={4} />}

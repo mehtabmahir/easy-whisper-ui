@@ -148,11 +148,11 @@ export class CompileManager extends EventEmitter {
         toolchain = await this.prepareToolchain(workRoot, options.force === true);
       });
 
-      await this.runStep("msys", process.platform === "linux" ? "Ensuring Linux build toolchain" : "Ensuring MSYS2 toolchain", async () => {
+      await this.runStep("build-toolchain", process.platform === "linux" ? "Ensuring Linux build toolchain" : "Ensuring MSYS2 toolchain", async () => {
         await this.ensureMsys(toolchain);
       });
 
-      await this.runStep("packages", process.platform === "linux" ? "Installing Linux build packages" : "Updating MSYS2 packages", async () => {
+      await this.runStep("build-packages", process.platform === "linux" ? "Installing Linux build packages" : "Updating MSYS2 packages", async () => {
         await this.installPackages(toolchain, true);
       });
 
@@ -379,7 +379,9 @@ export class CompileManager extends EventEmitter {
   }
 
   private emitProgress(event: CompileProgressEvent): void {
-    this.emit("progress", event);
+    // A successful substep is still an active installation, not overall completion.
+    const terminal = ["completed", "check-cache", "prebuilt"].includes(event.step);
+    this.emit("progress", event.state === "success" && !terminal ? { ...event, state: "running" } : event);
   }
 
   private emitConsole(message: string): void {

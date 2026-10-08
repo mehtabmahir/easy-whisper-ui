@@ -3,6 +3,7 @@ import type { CompileProgressEvent, DownloadedModel, ModelDownloadProgress, Unin
 import styles from "./styles/SettingsPanel.module.css";
 import { DOWNLOADABLE_MODELS } from "../main/services/modelCatalog";
 import LoadingBar from "./LoadingBar";
+import { setupProgress } from "./setupProgress";
 import ModelDownloadBar from "./ModelDownloadBar";
 
 export default function SettingsPanel({ busy, progress, onClose }: {
@@ -215,7 +216,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
       </button>
       {busy && !reinstalling && <p role="status">Finish setup or stop transcription before reinstalling.</p>}
       {reinstalling && <div role="status" aria-live="polite">
-        <LoadingBar label="Whisper reinstall" />
+        <LoadingBar label="Whisper reinstall" {...setupProgress(progress)} paused={progress.state === "error"} />
         <p>{progress.state === "running" ? progress.message : "Preparing reinstall…"}</p>
         <p className={styles.note}>Keep the app open until setup finishes.</p>
       </div>}

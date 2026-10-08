@@ -4,13 +4,15 @@ import LoadingBar from "./LoadingBar";
 
 interface FirstLaunchLoaderProps {
   progress: number;
+  estimateLimit: number;
+  paceSeconds: number;
   message: string;
   canContinue: boolean;
   failed: boolean;
   onContinue: () => void;
 }
 
-const FirstLaunchLoader: React.FC<FirstLaunchLoaderProps> = ({ progress, message, canContinue, failed, onContinue }) => {
+const FirstLaunchLoader: React.FC<FirstLaunchLoaderProps> = ({ progress, estimateLimit, paceSeconds, message, canContinue, failed, onContinue }) => {
   return (
     <div className={styles.loaderOverlay}>
       <div className={styles.loaderCard}>
@@ -20,7 +22,7 @@ const FirstLaunchLoader: React.FC<FirstLaunchLoaderProps> = ({ progress, message
         </div>
         <div className={styles.progressBlock}>
           <span className={styles.progressMessage}>{message}</span>
-          <LoadingBar label="Initial setup" progress={progress} complete={progress === 100 && !failed} paused={failed} />
+          <LoadingBar label="Initial setup" progress={progress} estimateLimit={estimateLimit} paceSeconds={paceSeconds} complete={progress === 100 && !failed} paused={failed} />
         </div>
         <button
           className={styles.continueButton}
