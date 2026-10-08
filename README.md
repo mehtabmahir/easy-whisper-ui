@@ -29,16 +29,10 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
   </tr>
 </table>
 
-## New in 3.0.1
-
-- Settings joins the main action buttons, with matching icons and smoother animations that respect reduced-motion preferences.
-- Choose whether to clear converted audio on exit (enabled by default).
-- Open the app workspace or setup log directly from Settings.
-
-Latest 3.0.1 source updates add an in-app FAQ, gentler animations, and a centered Donate icon; an updated Mac DMG with these refinements is pending. Windows 3.0.1 is pending; its current installer is 3.0.0.
-
 ## Features
 
+- **Polished controls** — Settings in the main action group, matching icons, and gentle animations with reduced-motion support.
+- **In-app FAQ** — transcript uses, subtitles, export locations, and troubleshooting above the footer links.
 - **Local transcription** — process audio and video on your computer with Whisper.
 - **Batch processing** — open multiple files, drag and drop, or use Open With; FFmpeg handles format conversion.
 - **Live transcription** — transcribe microphone audio (beta).
