@@ -4,7 +4,7 @@
     "name": "Mehtab Mahir",
     "email": "mehtabmahir@users.noreply.github.com"
   },
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Electron frontend shell for EasyWhisperUI",
   "homepage": "https://github.com/mehtabmahir/easy-whisper-ui",
   "private": true,
