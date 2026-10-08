@@ -929,7 +929,7 @@ function App(): JSX.Element {
       )}
       {settingsOpen && <SettingsPanel busy={isCompiling || isProcessing || liveActive || queuedCount > 0}
         progress={compileInfo} onClose={() => setSettingsOpen(false)} />}
-      <div className={styles.windowContainer} style={showLoader ? { filter: 'blur(2.5px)', pointerEvents: 'none', userSelect: 'none' } : {}}>
+      <div className={`${styles.windowContainer} ${settingsOpen ? styles.settingsBackground : ""}`} style={showLoader ? { filter: 'blur(2.5px)', pointerEvents: 'none', userSelect: 'none' } : {}}>
         <div className={`${styles.titlebar} ${isMac ? styles.macTitlebar : ""}`}>
         <div className={styles.titleDragRegion}>
           <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.titleLogo} />

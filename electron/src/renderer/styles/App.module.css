@@ -6,6 +6,9 @@
   color: var(--text);
 }
 
+/* Blur the composed app once so nested glass panels cannot remain sharp behind Settings. */
+.settingsBackground { filter: blur(12px); }
+
 .titlebar {
   height: 44px;
   flex-shrink: 0;
