@@ -8,10 +8,10 @@ Transcribe audio and video locally with Whisper, with GPU acceleration on suppor
 
 ## Download
 
-| Platform | Requirements | Download 3.0.0 |
+| Platform | Requirements | Download |
 | --- | --- | --- |
-| Windows | Windows 10/11, x64 | [Installer](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.0/EasyWhisperUI-Setup-3.0.0-win-x64.exe) |
-| macOS | macOS 13+, Apple Silicon | [DMG](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.0/EasyWhisperUI-3.0.0-macOS-arm64.dmg) |
+| Windows | Windows 10/11, x64 | [3.0.0 installer](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.0/EasyWhisperUI-Setup-3.0.0-win-x64.exe) |
+| macOS | macOS 13+, Apple Silicon | [3.0.1 DMG](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.0/EasyWhisperUI-3.0.1-macOS-arm64.dmg) |
 | Linux | Beta; tested on Ubuntu | 3.0 pending; [previous releases](https://github.com/mehtabmahir/easy-whisper-ui/releases) |
 
 Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is also available.
@@ -28,6 +28,14 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
     <td><a href="resources/preview-windows.png"><img src="resources/preview-windows.png" alt="EasyWhisperUI on Windows" width="100%" /></a></td>
   </tr>
 </table>
+
+## New in 3.0.1
+
+- Settings joins the main action buttons, with matching icons and smoother animations that respect reduced-motion preferences.
+- Choose whether to clear converted audio on exit (enabled by default).
+- Open the app workspace or setup log directly from Settings.
+
+The macOS download includes 3.0.1. Windows 3.0.1 is pending; its current installer is 3.0.0.
 
 ## Features
 
@@ -51,7 +59,9 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 3. Choose your model, language, and output formats. Missing models download automatically. For a local model, choose **custom → Select Model File**.
 4. Click **Open** or drop files into the window. Transcription starts automatically; exports are saved beside the original files.
 
-To translate into English, choose a multilingual model and add `--translate` in **Arguments**. Clearing the audio cache leaves original files and exported transcripts untouched.
+To translate into English, choose a multilingual model such as `medium`, select the source language, and add `--translate` in **Arguments**.
+
+Clearing the audio cache leaves original files and exported transcripts untouched.
 
 ## Troubleshooting
 
