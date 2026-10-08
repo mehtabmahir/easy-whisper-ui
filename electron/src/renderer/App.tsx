@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./styles/App.module.css";
 import FirstLaunchLoader from "./FirstLaunchLoader";
 import SettingsPanel from "./SettingsPanel";
+import ActionIcon from "./ActionIcon";
 import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
 import ModelDownloadBar from "./ModelDownloadBar";
@@ -898,8 +899,6 @@ function App(): JSX.Element {
           <span className={styles.titleText}>EasyWhisperUI</span>
         </div>
         <div className={styles.titleControls}>
-          <button type="button" className={styles.themeToggle} onClick={() => setSettingsOpen(true)}
-            aria-haspopup="dialog">Settings</button>
           <button
             type="button"
             className={styles.themeToggle}
@@ -959,7 +958,7 @@ function App(): JSX.Element {
                 onClick={handleOpen}
                 disabled={!apiAvailable}
               >
-                Open
+                <ActionIcon name="open" /> Open
               </button>
               <button
                 type="button"
@@ -968,6 +967,7 @@ function App(): JSX.Element {
                 aria-pressed={liveActive}
                 disabled={!apiAvailable || liveChanging}
               >
+                <ActionIcon name={liveActive ? "stop" : "live"} />
                 {liveActive ? "Stop Live" : "Live"}
               </button>
               <button
@@ -976,6 +976,7 @@ function App(): JSX.Element {
                 onClick={handleHelp}
                 disabled={!apiAvailable || isCompiling || helpRunning}
               >
+                <ActionIcon name="help" />
                 {helpRunning ? "Loading…" : "Help"}
               </button>
               <button
@@ -983,14 +984,18 @@ function App(): JSX.Element {
                 className={styles.secondaryButton}
                 onClick={handleClear}
               >
-                Clear
+                <ActionIcon name="clear" /> Clear
               </button>
               <button type="button" className={styles.secondaryButton} onClick={handleStop}
                 title="Stop processing and clear the queue"
-                disabled={!apiAvailable || (!isProcessing && queuedCount === 0)}>Stop</button>
+                disabled={!apiAvailable || (!isProcessing && queuedCount === 0)}><ActionIcon name="stop" /> Stop</button>
               <button type="button" className={styles.secondaryButton} onClick={handleSkip}
                 title="Skip the current file and continue the queue"
-                disabled={!apiAvailable || !isProcessing || skipRunning}>Skip</button>
+                disabled={!apiAvailable || !isProcessing || skipRunning}><ActionIcon name="skip" /> Skip</button>
+              <button type="button" className={`${styles.secondaryButton} ${styles.settingsButton}`}
+                onClick={() => setSettingsOpen(true)} aria-haspopup="dialog" aria-expanded={settingsOpen}>
+                <ActionIcon name="settings" /> Settings
+              </button>
             </div>
             <div className={styles.compileStatus}>
               <span>{compileStateLabel}</span>

@@ -232,8 +232,14 @@
 }
 
 .controlButton, .secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  box-shadow: inset 0 1px 0 #ffffff0c, 0 2px 4px #00000008;
   min-height: 48px;
-  padding: 10px 14px;
+  padding: 10px;
   border-radius: 12px;
   border: 1px solid var(--glass-border);
   background: var(--button);
@@ -241,7 +247,7 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background .2s, border-color .2s, transform .2s;
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease, opacity .18s ease;
   -webkit-app-region: no-drag;
 }
 
@@ -635,4 +641,37 @@
 }
 .macTitlebar .themeToggle {
   margin-right: 0;
+}
+
+/* Small, finite movements keep feedback responsive without distracting from output. */
+.controlButton svg, .secondaryButton svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  transition: transform .2s ease;
+}
+.settingsButton { grid-column: 1 / -1; min-height: 42px; }
+.controlButton:not(:disabled):hover, .secondaryButton:not(:disabled):hover {
+  box-shadow: inset 0 1px 0 #ffffff12, 0 5px 12px #00000012;
+}
+.controlButton:not(:disabled):active, .secondaryButton:not(:disabled):active {
+  transform: translateY(0) scale(.97);
+  box-shadow: inset 0 1px 3px #00000018;
+}
+.settingsButton:hover svg { transform: rotate(-8deg); }
+.themeToggle svg { transition: transform .22s ease; }
+.themeToggle:hover svg { transform: rotate(15deg); }
+.checkbox:hover { color: var(--text); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .windowContainer { transition: filter .2s ease; }
+  .header { animation: surfaceIn .3s ease both; }
+  .leftPanel { animation: surfaceIn .35s .04s ease both; }
+  .rightPanel { animation: surfaceIn .35s .08s ease both; }
+  .customModelSection { animation: surfaceIn .2s ease both; }
+  .socialButton:hover { transform: translateY(-1px); }
+  @keyframes surfaceIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }

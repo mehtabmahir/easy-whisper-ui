@@ -95,3 +95,20 @@ textarea::placeholder { color: var(--placeholder); }
   --close-text: #902537;
 }
 }
+
+/* Shared feedback for controls and theme changes. Avoid animating layout or text output. */
+body, button, a, select, textarea, input, label {
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease,
+    box-shadow .18s ease, opacity .18s ease, transform .18s ease;
+}
+select:hover:not(:disabled), textarea:hover:not(:disabled) { border-color: var(--hover-border); }
+button:not(:disabled):active { transform: scale(.98); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  button, a, button svg { transform: none !important; }
+}

@@ -32,3 +32,18 @@
 .result { padding: 12px; border: 1px solid var(--glass-border); border-radius: 9px; overflow-wrap: anywhere; }
 .uninstallSection { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--glass-border); }
 .panel .uninstall { color: var(--close-text); background: var(--live-bg); border-color: var(--live-border); }
+
+.panel button { font-weight: 500; box-shadow: inset 0 1px 0 #ffffff0c; }
+.panel button:hover:not(:disabled) { border-color: var(--hover-border); transform: translateY(-1px); }
+.panel button:active:not(:disabled) { transform: scale(.98); }
+@media (prefers-reduced-motion: no-preference) {
+  .panel[open] { animation: dialogIn .24s cubic-bezier(.2,.8,.2,1) both; }
+  .panel[open]::backdrop { animation: backdropIn .2s ease both; }
+  .panel section > div, .panel [role="status"], .panel [role="alert"] { animation: contentIn .18s ease both; }
+  @keyframes dialogIn {
+    from { opacity: 0; transform: translateY(10px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes contentIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+}
