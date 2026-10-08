@@ -4,6 +4,8 @@
 
 Transcribe audio and video locally with Whisper, with GPU acceleration on supported hardware.
 
+[![Donate via PayPal](https://img.shields.io/badge/Donate_via_PayPal-0070BA?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD)
+
 ## Download
 
 | Platform | Requirements | Download 3.0.0 |
@@ -29,12 +31,18 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 
 ## Features
 
-- Batch audio/video transcription with automatic format conversion.
-- Live microphone transcription (beta).
-- Multilingual transcription and translation into English.
-- Plain text (`.txt`) and timestamped subtitles (`.srt`).
-- Downloadable Whisper models and local whisper.cpp-compatible custom models.
-- GPU acceleration, processing logs, and extra Whisper CLI arguments.
+- **Local transcription** — process audio and video on your computer with Whisper.
+- **Batch processing** — open multiple files, drag and drop, or use Open With; FFmpeg handles format conversion.
+- **Live transcription** — transcribe microphone audio (beta).
+- **Languages and exports** — multilingual transcription, translation into English, and TXT/SRT output.
+- **GPU acceleration** — Vulkan on Windows, Metal on Apple Silicon, or CPU-only processing.
+- **Model management** — download models in Settings or automatically when needed, track downloaded bytes and transfer speed, and delete individual models.
+- **Custom models** — select a local whisper.cpp-compatible model file.
+- **Saved themes and background blur** — Light, Dark, and Auto, with translucent panels on macOS (vibrancy) and Windows 11 22H2+ (Acrylic), plus native macOS window controls.
+- **Queue controls** — Skip cancels the current file and continues; Stop cancels the whole queue, including active downloads and audio preparation.
+- **Audio caching** — reuse converted audio across retries and model changes, with manual cleanup in Settings and automatic cleanup on normal exit.
+- **Console and Help** — a large output console, full Whisper CLI help, extra CLI arguments, and saved setup logs for troubleshooting.
+- **Setup and repair** — installation progress estimates and clean reinstall on Windows/Linux, preserving models and settings. Installed Windows builds also offer uninstall from Settings.
 
 ## Quick start
 
@@ -43,13 +51,7 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 3. Choose your model, language, and output formats. Missing models download automatically. For a local model, choose **custom → Select Model File**.
 4. Click **Open** or drop files into the window. Transcription starts automatically; exports are saved beside the original files.
 
-**Skip** moves to the next file. **Stop** cancels the whole queue.
-
-## Settings
-
-Choose Light, Dark, or Auto themes. Download models with byte-based progress, delete individual models, or clear the converted-audio cache.
-
-Converted audio is reused across retries and model changes, then cleared on normal exit. Clearing the cache leaves original files and exported transcripts untouched.
+Clearing the audio cache leaves original files and exported transcripts untouched.
 
 ## Troubleshooting
 
@@ -71,9 +73,11 @@ Use `npm run dist` to package the app into `build/electron-dist` at the reposito
 
 ## Support
 
-[Donate via PayPal](https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD) to support development.
+I'm a solo developer, and countless hours went into refining EasyWhisperUI. **Donations are the project's only source of funding.** If you find it useful, please consider supporting continued development.
 
-Thank you to our supporters:
+[![Donate via PayPal](https://img.shields.io/badge/Donate_via_PayPal-0070BA?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD)
+
+Thank you to my supporters:
 
 - Craig H — $50
 - Eric De Vet — $10
