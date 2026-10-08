@@ -19,6 +19,12 @@ function hasCommand(command) {
   return result.status === 0;
 }
 
+if (process.platform === "win32") {
+  // npx is a .cmd shim on Windows and cannot be spawned with shell: false.
+  run(process.execPath, [require.resolve("electron-builder/cli.js"),
+    "--win", "nsis", "--x64", "--publish", "never"]);
+}
+
 if (process.platform === "linux") {
   const hasRpmBuild = hasCommand("rpmbuild");
   if (!hasRpmBuild) {

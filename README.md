@@ -10,7 +10,7 @@ Transcribe audio and video locally with Whisper, with GPU acceleration on suppor
 
 | Platform | Requirements | Download |
 | --- | --- | --- |
-| Windows | Windows 10/11, x64 | [3.0.0 installer](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.0/EasyWhisperUI-Setup-3.0.0-win-x64.exe) |
+| Windows | Windows 10/11, x64 | [3.0.1 installer](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.0/EasyWhisperUI-Setup-3.0.1-win-x64.exe) |
 | macOS | macOS 13+, Apple Silicon | [3.0.1 DMG](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.0/EasyWhisperUI-3.0.1-macOS-arm64.dmg) |
 | Linux | Beta; tested on Ubuntu | 3.0 pending; [previous releases](https://github.com/mehtabmahir/easy-whisper-ui/releases) |
 

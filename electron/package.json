@@ -177,6 +177,7 @@
       "icon": "buildResources/icon.icns"
     },
     "win": {
+      "artifactName": "EasyWhisperUI-Setup-${version}-win-${arch}.${ext}",
       "target": "nsis",
       "icon": "../resources/icon.ico"
     },
