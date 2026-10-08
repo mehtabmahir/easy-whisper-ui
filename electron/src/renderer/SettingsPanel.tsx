@@ -8,6 +8,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const isMac = window.easyWhisper?.platform() === "darwin";
   const [reinstalling, setReinstalling] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
   const [uninstallInfo, setUninstallInfo] = useState<UninstallInfo>();
@@ -67,6 +68,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
   }, []);
 
   useEffect(() => {
+    if (isMac) return;
     let active = true;
     window.easyWhisper?.getUninstallInfo().then((info) => {
       if (active) setUninstallInfo(info);
@@ -74,7 +76,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
       if (active) setUninstallInfo({ available: false, reason: "Could not check uninstall availability. Close and reopen Settings to retry." });
     });
     return () => { active = false; };
-  }, []);
+  }, [isMac]);
 
   async function uninstall() {
     if (busy || working || !uninstallInfo?.available || !window.easyWhisper) return;
@@ -149,6 +151,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
         {modelMessage && <p role="status">{modelMessage}</p>}
       </div>}
     </section>
+    {!isMac && <>
     <section className={styles.uninstallSection}>
       <h3>Whisper installation</h3>
       <p className={styles.note}>Fix setup issues by reinstalling Whisper. Keeps your models and settings.</p>
@@ -178,5 +181,6 @@ export default function SettingsPanel({ busy, progress, onClose }: {
       </p>
       {uninstallError && <p role="alert" className={styles.result}>{uninstallError}</p>}
     </section>
+    </>}
   </dialog>;
 }

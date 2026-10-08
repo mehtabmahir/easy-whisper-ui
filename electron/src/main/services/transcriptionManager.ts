@@ -185,9 +185,12 @@ export class TranscriptionManager extends EventEmitter {
     const sourceStat = await fsp.stat(source, { bigint: true });
     const cacheDir = path.join(app.getPath("userData"), WORK_ROOT_NAME, "audio-cache");
     await fsp.mkdir(cacheDir, { recursive: true });
+    // ctime includes metadata-only changes (such as cloud-provider updates).
+    // Track file identity, size and content modification time instead.
     // Version the conversion parameters; model changes do not invalidate the audio.
     const key = createHash("sha256").update(JSON.stringify([
-      "pcm-s16le-44100-mono-v1", source, String(sourceStat.size), String(sourceStat.mtimeNs), String(sourceStat.ctimeNs)
+      "pcm-s16le-44100-mono-v2", source, String(sourceStat.dev), String(sourceStat.ino),
+      String(sourceStat.size), String(sourceStat.mtimeNs)
     ])).digest("hex");
     const target = path.join(cacheDir, `${key}.wav`);
     try {
@@ -222,7 +225,7 @@ export class TranscriptionManager extends EventEmitter {
         "-nostats",
         ...threadArgs,
         "-i",
-        filePath,
+        source,
         "-vn",
         "-sn",
         "-dn",
@@ -245,7 +248,8 @@ export class TranscriptionManager extends EventEmitter {
       await this.spawnWithLogs(ffmpeg.command, args);
       this.currentAbort?.signal.throwIfAborted();
       const after = await fsp.stat(source, { bigint: true });
-      if (after.size !== sourceStat.size || after.mtimeNs !== sourceStat.mtimeNs || after.ctimeNs !== sourceStat.ctimeNs) {
+      if (after.dev !== sourceStat.dev || after.ino !== sourceStat.ino ||
+          after.size !== sourceStat.size || after.mtimeNs !== sourceStat.mtimeNs) {
         throw new Error("Source media changed during conversion. Please retry.");
       }
       await fsp.rename(partial, target);

@@ -121,6 +121,51 @@ test('failed conversion removes partial output and the next attempt converts aga
   assert.ok((await fs.stat((await manager.ensureMp3(source)).path)).size > 44);
 });
 
+test('metadata-only changes during and after conversion allow cache reuse', async t => {
+  const { source, manager, conversions } = await fixture(t);
+  const before = await fs.stat(source, { bigint: true });
+  const convert = manager.spawnWithLogs;
+  manager.spawnWithLogs = async (...args) => {
+    await convert(...args);
+    await fs.chmod(source, 0o400);
+  };
+  const cached = await manager.ensureMp3(source);
+  const after = await fs.stat(source, { bigint: true });
+  assert.equal(after.size, before.size);
+  assert.equal(after.mtimeNs, before.mtimeNs);
+  assert.notEqual(after.ctimeNs, before.ctimeNs);
+  await fs.chmod(source, 0o600);
+  assert.equal((await manager.ensureMp3(source)).path, cached.path);
+  assert.equal(conversions.length, 1);
+});
+
+for (const change of ['size', 'mtime', 'replacement']) {
+  test(`${change} change during conversion rejects and removes partial audio`, async t => {
+    const { source, manager, conversions } = await fixture(t);
+    const convert = manager.spawnWithLogs;
+    manager.spawnWithLogs = async (...args) => {
+      await convert(...args);
+      const before = await fs.stat(source);
+      if (change === 'size') await fs.appendFile(source, 'changed');
+      if (change === 'mtime') {
+        await fs.writeFile(source, 'edited media'); // Same size as the original.
+        await fs.utimes(source, before.atime, new Date(before.mtimeMs + 2000));
+      }
+      if (change === 'replacement') {
+        const replacement = `${source}.replacement`;
+        await fs.writeFile(replacement, 'edited media');
+        await fs.utimes(replacement, before.atime, before.mtime);
+        await fs.rename(replacement, source);
+      }
+    };
+    await assert.rejects(manager.ensureMp3(source), /Source media changed during conversion/);
+    assert.deepEqual(await fs.readdir(path.dirname(conversions[0])), []);
+    manager.spawnWithLogs = convert;
+    await manager.ensureMp3(source);
+    assert.equal(conversions.length, 2);
+  });
+}
+
 test('cache cleanup never deletes original WAV', async t => {
   const { root, manager, conversions } = await fixture(t);
   const source = path.join(root, 'original.WAV');
