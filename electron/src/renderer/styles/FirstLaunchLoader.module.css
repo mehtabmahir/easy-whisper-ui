@@ -98,8 +98,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .loaderOverlay { animation: overlayIn .2s ease both; }
-  .loaderCard { animation: cardIn .3s cubic-bezier(.2,.8,.2,1) both; }
+  .loaderOverlay { animation: overlayIn .35s ease both; }
+  .loaderCard { animation: cardIn .55s cubic-bezier(.16,1,.3,1) both; }
   @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes cardIn { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(28px) scale(.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
 }
