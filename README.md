@@ -39,7 +39,7 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 - **Model management** — download models in Settings or automatically when needed, track downloaded bytes and transfer speed, and delete individual models.
 - **Custom models** — select a local whisper.cpp-compatible model file.
 - **Saved themes and background blur** — Light, Dark, and Auto, with translucent panels on macOS (vibrancy) and Windows 11 22H2+ (Acrylic), plus native macOS window controls.
-- **Queue controls** — Skip cancels the current file and continues; Stop cancels the whole queue, including active downloads and audio preparation.
+- **Queue controls** — Skip cancels the current file and continues; Stop cancels the whole queue, including its model downloads and audio preparation.
 - **Audio caching** — reuse converted audio across retries and model changes, with manual cleanup in Settings and automatic cleanup on normal exit.
 - **Console and Help** — a large output console, full Whisper CLI help, extra CLI arguments, and saved setup logs for troubleshooting.
 - **Setup and repair** — installation progress estimates and clean reinstall on Windows/Linux, preserving models and settings. Installed Windows builds also offer uninstall from Settings.
@@ -51,7 +51,7 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 3. Choose your model, language, and output formats. Missing models download automatically. For a local model, choose **custom → Select Model File**.
 4. Click **Open** or drop files into the window. Transcription starts automatically; exports are saved beside the original files.
 
-Clearing the audio cache leaves original files and exported transcripts untouched.
+To translate into English, choose a multilingual model and add `--translate` in **Arguments**. Clearing the audio cache leaves original files and exported transcripts untouched.
 
 ## Troubleshooting
 
@@ -61,7 +61,7 @@ For other problems, [open an issue](https://github.com/mehtabmahir/easy-whisper-
 
 ## Development
 
-Requires Node.js 22.12+; Node.js 24 is recommended. Clone with submodules, then:
+Requires Node.js 22.12+; Node.js 24 is recommended. Mac builds also require Homebrew and Xcode Command Line Tools. Clone with submodules, then:
 
 ```bash
 cd electron
@@ -87,12 +87,12 @@ Thank you to my supporters:
 
 ## Credits
 
-[whisper.cpp](https://github.com/ggerganov/whisper.cpp) by Georgi Gerganov · [FFmpeg](https://ffmpeg.org) · [Windows FFmpeg builds](https://www.gyan.dev/ffmpeg/) · [electron-builder](https://www.electron.build/)
+[whisper.cpp](https://github.com/ggerganov/whisper.cpp) by Georgi Gerganov · [FFmpeg](https://ffmpeg.org) · [Windows FFmpeg builds](https://github.com/BtbN/FFmpeg-Builds) · [macOS FFmpeg builds](https://ffmpeg.martin-riedl.de/) · [SDL2](https://www.libsdl.org/) · [electron-builder](https://www.electron.build/)
 
 ## License
 
 ```text
-Copyright (c) 2025 Mehtab Mahir
+Copyright (c) 2026 Mehtab Mahir
 All rights reserved.
 
 This software is proprietary and the following is not allowed for commercial purposes:
@@ -111,9 +111,17 @@ License: MIT
 ---
 
 FFmpeg
-License: LGPL 2.1
+License: depends on the build; the bundled macOS binary is GPL 3.0 or later.
+Windows setup downloads a GPL build from BtbN.
 [https://ffmpeg.org](https://ffmpeg.org)
-Windows builds by: [https://www.gyan.dev/ffmpeg/](https://www.gyan.dev/ffmpeg/)
+Windows builds: https://github.com/BtbN/FFmpeg-Builds
+macOS builds: https://ffmpeg.martin-riedl.de/
 
 The FFmpeg binary is provided as a separate file and may be replaced with a compatible version.
+
+---
+
+SDL2 (bundled on macOS)
+License: zlib
+https://www.libsdl.org/
 ```
