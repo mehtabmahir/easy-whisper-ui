@@ -17,6 +17,47 @@ export default function SettingsPanel({ busy, progress, onClose }: {
   const [uninstalling, setUninstalling] = useState(false);
   const [uninstallInfo, setUninstallInfo] = useState<UninstallInfo>();
   const [uninstallError, setUninstallError] = useState<string>();
+  const [clearOnExit, setClearOnExit] = useState(true);
+  const [cachePreferenceReady, setCachePreferenceReady] = useState(false);
+  const [savingCachePreference, setSavingCachePreference] = useState(false);
+  const [logResult, setLogResult] = useState<string>();
+  useEffect(() => {
+    let active = true;
+    window.easyWhisper?.getClearAudioCacheOnExit().then((value) => {
+      if (active) { setClearOnExit(value); setCachePreferenceReady(true); }
+    }).catch(() => { if (active) setCacheResult("Could not load cache preference. Reopen Settings to retry."); });
+    return () => { active = false; };
+  }, []);
+
+  async function changeCachePreference(value: boolean) {
+    if (!window.easyWhisper || savingCachePreference) return;
+    setSavingCachePreference(true);
+    setCacheResult(undefined);
+    try {
+      await window.easyWhisper.setClearAudioCacheOnExit(value);
+      setClearOnExit(value);
+    } catch { setCacheResult("Could not save cache preference. Try again."); }
+    finally { setSavingCachePreference(false); }
+  }
+
+  async function openWorkspaceFolder() {
+    setCacheResult(undefined);
+    try {
+      const response = await window.easyWhisper?.openWorkspaceFolder();
+      if (response && !response.success) setCacheResult(response.error ?? "Could not open the workspace folder.");
+    }
+    catch (error) { setCacheResult((error as Error).message); }
+  }
+
+  async function showLog() {
+    setLogResult(undefined);
+    try {
+      const response = await window.easyWhisper?.showSetupLog();
+      if (response && !response.success) setLogResult(response.error ?? "Could not open the log file.");
+    }
+    catch (error) { setLogResult((error as Error).message); }
+  }
+
   const [clearingCache, setClearingCache] = useState(false);
   const [cacheResult, setCacheResult] = useState<string>();
   const [models, setModels] = useState<DownloadedModel[]>();
@@ -32,7 +73,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
   useEffect(() => window.easyWhisper?.onModelDownloadProgress((event) => {
     if (event.model === downloadSelection) setDownloadProgress(event);
   }), [downloadSelection]);
-  const working = reinstalling || uninstalling || clearingCache || modelBusy || downloading;
+  const working = savingCachePreference || reinstalling || uninstalling || clearingCache || modelBusy || downloading;
 
   async function downloadModel() {
     if (!window.easyWhisper || busy || working) return;
@@ -150,10 +191,19 @@ export default function SettingsPanel({ busy, progress, onClose }: {
     </header>
     <section>
       <h3>Audio cache</h3>
-      <p className={styles.note}>Reuses converted audio. Cleared on normal exit; kept after a crash.</p>
+      <p className={styles.note}>Reuses converted audio across retries and model changes.</p>
+      <label className={styles.modelRow}>
+        <input type="checkbox" checked={clearOnExit} disabled={!cachePreferenceReady || working}
+          onChange={(event) => void changeCachePreference(event.target.checked)} />
+        <span>Clear audio cache on exit</span>
+      </label>
+      <p className={styles.note}>Enabled by default. Turn off to keep cached audio between sessions. Original files and transcripts are preserved.</p>
+      <div className={styles.modelActions}>
+      <button type="button" onClick={() => void openWorkspaceFolder()} disabled={working || !window.easyWhisper}>Open workspace folder</button>
       <button type="button" onClick={() => void clearCache()} disabled={busy || working || !window.easyWhisper}>
         {clearingCache ? "Clearing…" : "Clear audio cache"}
       </button>
+      </div>
       {busy && <p role="status">Available when setup and transcription finish.</p>}
       {cacheResult && <p role="status">{cacheResult}</p>}
       {clearingCache && <LoadingBar label="Clearing audio cache" paceSeconds={5} />}
@@ -205,6 +255,12 @@ export default function SettingsPanel({ busy, progress, onClose }: {
         {busy && <p role="status">Finish setup or stop transcription first.</p>}
         {modelMessage && <p role="status">{modelMessage}</p>}
       </div>}
+    </section>
+    <section className={styles.uninstallSection}>
+      <h3>Logs</h3>
+      <p className={styles.note}>View dependency setup and compilation details.</p>
+      <button type="button" onClick={() => void showLog()} disabled={!window.easyWhisper}>Show log file</button>
+      {logResult && <p role="status">{logResult}</p>}
     </section>
     {!isMac && <>
     <section className={styles.uninstallSection}>

@@ -76,7 +76,7 @@ export class TranscriptionManager extends EventEmitter {
     }
   }
 
-  async shutdown(): Promise<void> {
+  async shutdown(clearCacheOnExit = true): Promise<void> {
     this.shuttingDown = true;
     this.modelDownload?.abort();
     // Wait for preparation and child-process callbacks before deleting their files.
@@ -95,7 +95,7 @@ export class TranscriptionManager extends EventEmitter {
         this.off("finished", finished!);
       }
     }
-    await this.clearAudioCache();
+    if (clearCacheOnExit) await this.clearAudioCache();
   }
 
   on<T extends EventName>(event: T, listener: Listener<T>): this {

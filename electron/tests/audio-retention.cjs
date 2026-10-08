@@ -323,3 +323,25 @@ test('a truncated model download emits an error and never publishes a cached mod
   assert.ok(!updates.some(event => event.state === 'complete'));
   assert.deepEqual(await fs.readdir(path.join(root, 'whisper-workspace', 'models')), []);
 });
+
+test('shutdown with cleanup disabled cancels active work and retains reusable audio', async t => {
+  const { source, manager } = await fixture(t);
+  let ready;
+  const started = new Promise(resolve => { ready = resolve; });
+  let release;
+  manager.runWhisper = async () => { ready(); await new Promise(resolve => { release = resolve; }); };
+  const finished = run(manager, source);
+  await started;
+  const cached = await manager.ensureMp3(source);
+  manager.stopActiveProcess = async () => { release(); };
+  await manager.shutdown(false);
+  await finished;
+  assert.ok((await fs.stat(cached.path)).size > 44);
+  const restarted = new TranscriptionManager();
+  restarted.spawnWithLogs = async () => assert.fail('retained conversion must be reused');
+  assert.equal((await restarted.ensureMp3(source)).path, cached.path);
+  manager.enqueue({ files: [source], settings });
+  assert.equal(manager.queue.length, 0);
+  await restarted.clearAudioCache();
+  await assert.rejects(fs.stat(cached.path), { code: 'ENOENT' });
+});

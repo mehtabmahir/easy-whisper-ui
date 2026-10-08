@@ -11,6 +11,8 @@ import { getUninstallInfo, launchUninstaller } from "./services/uninstallManager
 import { showWhisperHelp } from "./services/whisperHelp";
 import { listDownloadedModels, deleteDownloadedModel } from "./services/modelStorage";
 
+import { getClearAudioCacheOnExit, setClearAudioCacheOnExit, openWorkspaceFolder, showSetupLog } from "./services/appSettings";
+
 const isDev = process.env.NODE_ENV === "development";
 // Electron's native Acrylic backdrop requires Windows 11 22H2 (build 22621).
 const supportsWindowsBackdrop = process.platform === "win32" && Number(os.release().split(".")[2]) >= 22621;
@@ -80,7 +82,7 @@ app.on("before-quit", (event) => {
   event.preventDefault();
   if (quitting) return;
   quitting = true;
-  void transcriptionManager.shutdown().catch((error) => {
+  void transcriptionManager.shutdown(getClearAudioCacheOnExit()).catch((error) => {
     console.error("Audio cache cleanup on quit failed:", error);
   }).finally(() => {
     quitCleanupDone = true;
@@ -246,6 +248,14 @@ function broadcast(channel: string, payload: unknown): void {
 }
 
 function registerIpcChannels(): void {
+  ipcMain.handle("easy-whisper:get-cache-on-exit", () => getClearAudioCacheOnExit());
+  ipcMain.handle("easy-whisper:set-cache-on-exit", (_event, value: unknown) => setClearAudioCacheOnExit(value));
+  const openSettingsPath = async (action: () => Promise<void>): Promise<CompileResult> => {
+    try { await action(); return { success: true }; }
+    catch (error) { return { success: false, error: (error as Error).message }; }
+  };
+  ipcMain.handle("easy-whisper:open-workspace-folder", () => openSettingsPath(openWorkspaceFolder));
+  ipcMain.handle("easy-whisper:show-setup-log", () => openSettingsPath(showSetupLog));
   ipcMain.handle("easy-whisper:list-models", () => listDownloadedModels());
   ipcMain.handle("easy-whisper:download-model", (_event, model: unknown) => runSetup(async () => {
     await transcriptionManager.downloadModel(model);

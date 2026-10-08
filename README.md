@@ -40,8 +40,8 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 - **Custom models** — select a local whisper.cpp-compatible model file.
 - **Saved themes and background blur** — Light, Dark, and Auto, with translucent panels on macOS (vibrancy) and Windows 11 22H2+ (Acrylic), plus native macOS window controls.
 - **Queue controls** — Skip cancels the current file and continues; Stop cancels the whole queue, including its model downloads and audio preparation.
-- **Audio caching** — reuse converted audio across retries and model changes, with manual cleanup in Settings and automatic cleanup on normal exit.
-- **Console and Help** — a large output console, full Whisper CLI help, extra CLI arguments, and saved setup logs for troubleshooting.
+- **Audio caching** — reuse converted audio across retries and model changes, with manual cleanup and optional cleanup on exit (enabled by default).
+- **Console and Help** — a large output console, full Whisper CLI help, extra CLI arguments, and Settings shortcuts to the app workspace and saved setup logs.
 - **Setup and repair** — installation progress estimates and clean reinstall on Windows/Linux, preserving models and settings. Installed Windows builds also offer uninstall from Settings.
 
 ## Quick start
