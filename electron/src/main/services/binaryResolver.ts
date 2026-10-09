@@ -121,6 +121,11 @@ export function resolveBinary(baseName: string, options: ResolveOptions = {}): B
   for (const candidate of uniqueCandidates) {
     try {
       if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        // macOS binaries use @loader_path for bundled libraries such as SDL.
+        // Keep them beside those libraries instead of copying only the executable.
+        if (process.platform === "darwin") {
+          return { command: candidate, found: true, searched: uniqueCandidates };
+        }
         try {
           fs.mkdirSync(path.dirname(workspaceCandidate), { recursive: true });
           fs.copyFileSync(candidate, workspaceCandidate);
