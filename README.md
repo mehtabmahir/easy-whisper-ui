@@ -6,6 +6,8 @@ Transcribe audio and video on your own hardware with Whisper and GPU acceleratio
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate_via_PayPal-0070BA?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD)
 
+**What should I work on next?** [Vote for the features you want most.](https://strawpoll.com/40Zm4PX02ga)
+
 ## Download
 
 | Platform | Requirements | Download |
@@ -28,6 +30,14 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
     <td><a href="resources/preview-windows.png"><img src="resources/preview-windows.png" alt="EasyWhisperUI on Windows" width="100%" /></a></td>
   </tr>
 </table>
+
+## A note from me
+
+EasyWhisperUI has come a long way—from the original C++ app to a full rewrite in Electron, and now a redesigned interface with more reliable setup and GPU checks.
+
+I've heard your feedback, issues, and the many feature requests. Countless hours have gone into rebuilding, testing, and making the app easier to use. Your bug reports and suggestions help shape what I work on next. There's more to come!
+
+Special thanks to past contributors, such as [celerycoloured](https://github.com/celerycoloured) who authored the initial macOS release back when it was C++, and to everyone who has supported the project through donations, bug reports, and feature requests. Your contributions helped make EasyWhisperUI better.
 
 ## Features
 
