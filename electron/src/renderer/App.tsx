@@ -126,7 +126,7 @@ function App(): JSX.Element {
   const [canContinue, setCanContinue] = useState<boolean>(false);
 
   const persisted = useMemo(loadPersistedSettings, []);
-  const [model, setModel] = useState<string>(persisted.model ?? "medium.en");
+  const [model, setModel] = useState<string>(persisted.model ?? "tiny.en");
   const [language, setLanguage] = useState<string>(persisted.language ?? "en");
   const [cpuOnly, setCpuOnly] = useState<boolean>(persisted.cpuOnly ?? false);
   const [outputTxt, setOutputTxt] = useState<boolean>(persisted.outputTxt ?? true);

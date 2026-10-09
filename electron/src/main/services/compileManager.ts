@@ -62,23 +62,26 @@ export class CompileManager extends EventEmitter {
   private logStream?: fs.WriteStream;
   private linuxAptUpdated = false;
   private linuxBootstrapDone = false;
+  private windowsDependenciesPrepared = false;
+
+  private async resetLocalInstallation(): Promise<void> {
+    const root = path.resolve(app.getPath("userData"), WORK_ROOT_NAME);
+    await fsp.mkdir(root, { recursive: true });
+    if ((await fsp.lstat(root)).isSymbolicLink()) throw new Error("Cannot clean a workspace that is a symbolic link.");
+    this.windowsDependenciesPrepared = false;
+    this.emitProgress({ step: "reset", message: "Removing old installation files…", progress: 0, state: "running" });
+    for (const name of ["bin", "whisper.cpp", TOOLCHAIN_DIR_NAME, DOWNLOADS_DIR_NAME]) {
+      const target = path.resolve(root, name);
+      if (path.dirname(target) !== root) throw new Error("Invalid reinstall path.");
+      await fsp.rm(target, { recursive: true, force: true });
+    }
+  }
 
   async cleanReinstall(): Promise<CompileResult> {
     if (this.running) return { success: false, error: "Setup is already running." };
     this.running = true;
     try {
-      const root = path.resolve(app.getPath("userData"), WORK_ROOT_NAME);
-      await fsp.mkdir(root, { recursive: true });
-      if ((await fsp.lstat(root)).isSymbolicLink()) {
-        throw new Error("Cannot clean a workspace that is a symbolic link.");
-      }
-      this.emitProgress({ step: "reset", message: "Removing old installation files…", progress: 0, state: "running" });
-      // Keep models, user settings, input media and transcripts. Never delete the workspace itself.
-      for (const name of ["bin", "whisper.cpp", TOOLCHAIN_DIR_NAME, DOWNLOADS_DIR_NAME]) {
-        const target = path.resolve(root, name);
-        if (path.dirname(target) !== root) throw new Error("Invalid reinstall path.");
-        await fsp.rm(target, { recursive: true, force: true });
-      }
+      await this.resetLocalInstallation();
       this.linuxAptUpdated = false;
       this.linuxBootstrapDone = false;
     } catch (error) {
@@ -121,6 +124,12 @@ export class CompileManager extends EventEmitter {
     if (this.running) {
       return { success: false, error: "Compilation already in progress." };
     }
+
+    if (process.platform === "win32" && !this.windowsDependenciesPrepared && !(await this.hasExistingBinaries()).installed) {
+      const dependencies = await this.ensureDependencies();
+      if (!dependencies.success) return dependencies;
+    }
+    this.windowsDependenciesPrepared = false;
 
     this.running = true;
 
@@ -234,6 +243,9 @@ export class CompileManager extends EventEmitter {
         }
       }
 
+      if (process.platform === "win32") {
+        await this.resetLocalInstallation();
+      }
       this.emitConsole("[deps] Starting dependency installation checks...");
       const toolchain = await this.prepareToolchain(workRoot, options.force === true);
 
@@ -341,6 +353,7 @@ export class CompileManager extends EventEmitter {
       });
 
       this.emitConsole("[deps] Dependency installation sequence completed.");
+      this.windowsDependenciesPrepared = process.platform === "win32";
       this.running = false;
       this.emitProgress({ step: "dependencies", message: "Dependencies installed.", progress: 100, state: "success" });
       return { success: true };
