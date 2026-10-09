@@ -274,9 +274,22 @@
 }
 
 .liveButton {
+  position: relative;
   background: var(--live-bg);
   border-color: var(--live-border);
   color: var(--live-text);
+}
+
+.betaLabel {
+  position: absolute;
+  top: 3px;
+  right: 6px;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .06em;
+  opacity: .75;
+  pointer-events: none;
 }
 
 .liveButton[aria-pressed="true"] {
@@ -377,7 +390,7 @@
 .linkCluster {
   display: flex;
   gap: 6px;
-  padding-top: 18px;
+  padding-top: 4px;
   border-top: 1px solid var(--glass-border);
 }
 
@@ -785,3 +798,8 @@
 }
 
 .gpuReady { color: var(--success-text); font-weight: 600; }
+.modelMemoryHint.vramWarning { color: var(--memory-red); }
+.modelMemoryHint.vramCaution { color: var(--memory-yellow); }
+.modelMemoryHint.vramFits { color: var(--success-text); }
+
+.leftPanel { padding-bottom: 8px; }

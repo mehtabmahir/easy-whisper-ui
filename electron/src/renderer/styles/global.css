@@ -15,7 +15,7 @@ textarea::placeholder { color: var(--placeholder); }
 
 :root {
   --logo-filter: none;
-  --success-text: #75dfa1;
+  --success-text: #75dfa1; --memory-red: #ff7b86; --memory-yellow: #f0cf65;
   --window-tint: rgba(8,10,14,.42);
   --on-accent: #17191c;
   --accent-hover: #eceef1;
@@ -38,7 +38,7 @@ textarea::placeholder { color: var(--placeholder); }
 }
 :root[data-theme="light"] {
   --logo-filter: brightness(.32) saturate(.6);
-  --success-text: #166534;
+  --success-text: #166534; --memory-red: #b42335; --memory-yellow: #927000;
   --window-tint: transparent;
   color-scheme: light;
   --text: #171923;
@@ -71,7 +71,7 @@ textarea::placeholder { color: var(--placeholder); }
 @media (prefers-color-scheme: light) {
 :root[data-theme="auto"] {
   --logo-filter: brightness(.32) saturate(.6);
-  --success-text: #166534;
+  --success-text: #166534; --memory-red: #b42335; --memory-yellow: #927000;
   --window-tint: transparent;
   color-scheme: light;
   --text: #171923;

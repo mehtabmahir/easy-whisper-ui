@@ -10,7 +10,7 @@ import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
 import ModelDownloadBar from "./ModelDownloadBar";
 import type { GpuReadiness, HardwareInfo, ModelDownloadProgress } from "../types/easy-whisper";
-import { DOWNLOADABLE_MODELS } from "../main/services/modelCatalog";
+import { DOWNLOADABLE_MODELS, modelMemoryStatus } from "../main/services/modelCatalog";
 const FIRST_LAUNCH_KEY = "easy-whisper-ui.first-launch";
 
 function isFirstLaunch(): boolean {
@@ -787,6 +787,7 @@ function App(): JSX.Element {
   }, [appendConsole, buildSettings, ensureCustomModelReady, liveActive, liveChanging]);
 
   const compileStateLabel = useMemo(() => {
+    if (compileInfo.state === "success") return "Ready";
     if (compileInfo.state === "error" && compileInfo.error) {
       return `${compileInfo.message} (${compileInfo.error})`;
     }
@@ -810,6 +811,12 @@ function App(): JSX.Element {
   const queuedCount = queueState.awaiting.length;
   const isCompiling = compileInfo.state === "running";
   const isProcessing = queueState.isProcessing;
+  const modelMemory = model.startsWith("tiny") ? { label: "273 MB", gib: 273 / 1024 }
+    : model.startsWith("base") ? { label: "388 MB", gib: 388 / 1024 }
+    : model.startsWith("small") ? { label: "852 MB", gib: 852 / 1024 }
+    : model.startsWith("medium") ? { label: "2.1 GB", gib: 2.1 }
+    : model === "large-v3" ? { label: "3.9 GB", gib: 3.9 } : undefined;
+  const memoryStatus = modelMemoryStatus(modelMemory?.gib, hardware);
   const showOperationStatus = isCompiling || isProcessing || helpRunning || liveChanging || skipRunning || Boolean(modelDownloadProgress && !settingsOpen);
   const operationStatus = (
     <div className={styles.compileStatus}>
@@ -935,6 +942,7 @@ function App(): JSX.Element {
               >
                 <ActionIcon name={liveActive ? "stop" : "live"} />
                 {liveActive ? "Stop Live" : "Live"}
+                <span className={styles.betaLabel}>BETA</span>
               </button>
               <button
                 type="button"
@@ -963,7 +971,7 @@ function App(): JSX.Element {
                 <ActionIcon name="settings" /> Settings
               </button>
             </div>
-            {!showOperationStatus && <div className={styles.compileStatus}><span>{compileStateLabel}</span></div>}
+            {!showOperationStatus && <div className={styles.compileStatus}><span className={compileInfo.state === "success" ? styles.gpuReady : undefined}>{compileStateLabel}</span></div>}
 
             <div className={styles.selectorGroup}>
               <label className={styles.selectorLabel}>
@@ -977,13 +985,9 @@ function App(): JSX.Element {
                 </select>
               </label>
 
-              <p className={styles.modelMemoryHint} title="Approximate whisper.cpp memory use, not a guaranteed VRAM requirement. Leave extra memory for processing and other apps. Smaller models use less memory and run faster.">
-                {model.startsWith("tiny") ? "Approx. memory: 273 MB"
-                  : model.startsWith("base") ? "Approx. memory: 388 MB"
-                  : model.startsWith("small") ? "Approx. memory: 852 MB"
-                  : model.startsWith("medium") ? "Approx. memory: 2.1 GB"
-                  : model === "large-v3" ? "Approx. memory: 3.9 GB"
-                  : "Memory use depends on the model."}
+              <p className={`${styles.modelMemoryHint} ${memoryStatus === "red" ? styles.vramWarning : memoryStatus === "yellow" ? styles.vramCaution : memoryStatus === "green" ? styles.vramFits : ""}`}
+                title="Estimated requirement; actual use varies. Red: exceeds GPU memory. Yellow: less than 1 GB spare. Green: at least 1 GB spare. Integrated GPUs use a budget of 70% of system RAM; unknown memory stays neutral.">
+                Required VRAM: {modelMemory?.label ?? "Unknown"}
               </p>
 
               <div>
