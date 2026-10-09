@@ -840,7 +840,9 @@ function App(): JSX.Element {
     : model.startsWith("base") ? { label: "388 MB", gib: 388 / 1024 }
     : model.startsWith("small") ? { label: "852 MB", gib: 852 / 1024 }
     : model.startsWith("medium") ? { label: "2.1 GB", gib: 2.1 }
-    : model === "large-v3" ? { label: "3.9 GB", gib: 3.9 } : undefined;
+    : model === "large-v3" ? { label: "3.9 GB", gib: 3.9 }
+    // Approximate runtime budget informed by reported Turbo GPU usage.
+    : model === "large-v3-turbo" ? { label: "~2.5 GB", gib: 2.5 } : undefined;
   const memoryStatus = modelMemoryStatus(modelMemory?.gib, hardware);
   const canReopenSetup = isCompiling || compileInfo.state === "error";
   const reopenSetup = () => { setRetryError(undefined); setRecoveryOpen(true); };
