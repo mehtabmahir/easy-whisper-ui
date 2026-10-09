@@ -4,7 +4,7 @@
     "name": "Mehtab Mahir",
     "email": "mehtabmahir@users.noreply.github.com"
   },
-  "version": "3.0.1",
+  "version": "3.1.0",
   "description": "Electron frontend shell for EasyWhisperUI",
   "homepage": "https://github.com/mehtabmahir/easy-whisper-ui",
   "private": true,
@@ -161,7 +161,7 @@
       }
     ],
     "mac": {
-      "bundleVersion": "30101",
+      "bundleVersion": "31000",
       "artifactName": "EasyWhisperUI-${version}-macOS-${arch}.${ext}",
       "icon": "buildResources/icon.icns",
       "target": "dmg",
