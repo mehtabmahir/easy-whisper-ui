@@ -1,4 +1,4 @@
-.loading { width: 100%; margin: 10px 0; }
+.loading { width: 100%; margin: var(--loading-margin, 10px 0); }
 .track { width: 100%; height: 6px; overflow: hidden; border-radius: 999px; background: var(--track); }
 .fill { height: 100%; border-radius: inherit; background: var(--accent); transition: width .5s linear; }
 .caption { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }

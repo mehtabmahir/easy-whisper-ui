@@ -813,7 +813,6 @@ function App(): JSX.Element {
   const showOperationStatus = isCompiling || isProcessing || helpRunning || liveChanging || skipRunning || Boolean(modelDownloadProgress && !settingsOpen);
   const operationStatus = (
     <div className={styles.compileStatus}>
-      <span>{compileStateLabel}</span>
       {isCompiling && <LoadingBar label="Whisper setup" {...setupProgress(compileInfo)} />}
       {modelDownloadProgress && !settingsOpen && <ModelDownloadBar progress={modelDownloadProgress} />}
       {isProcessing && !modelDownloadProgress && <LoadingBar key={queueState.processing} label="Transcription" paceSeconds={180} />}

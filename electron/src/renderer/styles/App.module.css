@@ -221,11 +221,12 @@
 }
 
 .rightPanel {
+  --panel-padding: 22px;
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  padding: 22px;
+  padding: var(--panel-padding);
 }
 
 .buttonStack {
@@ -508,22 +509,29 @@
 .consoleBlock {
   flex: 1;
   min-height: 180px;
+  gap: 6px;
 }
 
 .consoleArea {
   height: 0;
   flex: 1;
-  width: 100%;
+  width: calc(100% + var(--panel-padding) * 2);
+  margin: 0 calc(-1 * var(--panel-padding)) calc(-1 * var(--panel-padding));
+  border-width: 0;
+  background: linear-gradient(to bottom, transparent 0, var(--field) 80px);
+  border-radius: 0 0 21px 21px;
   min-height: 180px;
 }
 
 /* Active progress takes space from the console, not the window or sidebar. */
 .operationActive .compileStatus {
+  --loading-margin: 4px 0;
   flex: 0 0 auto;
   min-width: 0;
   overflow-wrap: anywhere;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
+.operationActive .consoleBlock { gap: 6px; }
 .operationActive .consoleBlock,
 .operationActive .consoleArea { min-height: 0; }
 .operationActive .consoleBlock > label { flex-shrink: 0; }
@@ -554,6 +562,7 @@
  .leftPanel, .rightPanel {
   padding: 20px;
 }
+ .rightPanel { --panel-padding: 20px; }
 
 }
 
@@ -597,6 +606,7 @@
   .leftPanel, .rightPanel {
   padding: 18px;
 }
+  .rightPanel { --panel-padding: 18px; }
 
   .leftPanel {
   gap: 16px;
