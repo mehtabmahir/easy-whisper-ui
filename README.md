@@ -31,16 +31,17 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 
 ## Features
 
-- **Local transcription** — process audio and video on your computer without cloud uploads.
-- **Batch processing** — open multiple files, drag and drop, or use Open With.
-- **Live transcription** — transcribe microphone audio (beta).
-- **Languages and exports** — multilingual transcription, translation into English, and TXT/SRT output, with clear input-language selection.
-- **GPU acceleration** — Vulkan on Windows, Metal on Apple Silicon, or CPU-only processing. Verified GPU status and model memory estimates help you choose a model for your hardware.
-- **Model management** — download, cancel, or delete models in Settings, track size and speed, or use a custom whisper.cpp-compatible model.
-- **Queue controls** — Skip moves to the next file; Stop cancels transcription, queued files, and model downloads, including Settings and Live downloads.
-- **Audio caching** — reuse converted audio across retries and model changes. Clear it manually or automatically on exit, without affecting original files or exported transcripts.
-- **Themes and blur** — saved Light, Dark and Auto themes, macOS vibrancy, and Acrylic blur on Windows 11 22H2+.
-- **Help and recovery** — in-app FAQ, Whisper CLI help, custom arguments, workspace and log shortcuts, and clean reinstall on Windows/Linux that preserves models and settings.
+- **Private, local transcription** — turn audio and video into text on your own computer.
+- **GPU acceleration** — Vulkan on Windows and Metal on Apple Silicon, with automatic verification and a CPU-only option.
+- **Languages and subtitles** — multilingual transcription, translation into English, and TXT/SRT exports.
+- **Batch processing** — drag in multiple files, skip individual items, or stop the queue.
+- **Live transcription** — transcribe microphone audio in real time (beta).
+- **Model choice** — download, manage, or load custom models, with color-coded memory estimates.
+- **Clear download progress** — see size, speed and time remaining, and cancel downloads when needed.
+- **Light, Dark and Auto themes** — translucent backgrounds and a spacious output console.
+- **Faster retries** — cached audio avoids repeated conversion when retrying or changing models.
+- **Simple setup and repair** — guided installation and clean reinstall on Windows/Linux, preserving models and settings.
+- **Advanced controls** — extra Whisper arguments, built-in CLI help, and accessible setup logs.
 
 ## Quick start
 
