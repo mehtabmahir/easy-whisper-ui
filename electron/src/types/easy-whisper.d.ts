@@ -73,7 +73,28 @@ export interface ModelDownloadProgress {
   state: "downloading" | "complete" | "error";
 }
 
+export interface GpuInfo {
+  name: string;
+  memoryGiB?: number;
+  memoryKind: "dedicated" | "unified" | "shared" | "unknown";
+  metal?: boolean;
+}
+
+export interface GpuReadiness {
+  state: "ready" | "unavailable" | "unverified";
+  message: string;
+}
+
+export interface HardwareInfo {
+  cpu: string;
+  ramGiB: number;
+  gpus: GpuInfo[];
+  note?: string;
+}
+
 export type EasyWhisperApi = {
+  checkGpuReadiness: () => Promise<GpuReadiness>;
+  getHardwareInfo: () => Promise<HardwareInfo>;
   setTheme: (theme: "auto" | "light" | "dark") => Promise<void>;
   platform: () => NodeJS.Platform;
   arch: () => string;

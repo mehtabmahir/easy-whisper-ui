@@ -8,7 +8,7 @@ import ActionIcon from "./ActionIcon";
 import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
 import ModelDownloadBar from "./ModelDownloadBar";
-import type { ModelDownloadProgress } from "../types/easy-whisper";
+import type { GpuReadiness, HardwareInfo, ModelDownloadProgress } from "../types/easy-whisper";
 import { DOWNLOADABLE_MODELS } from "../main/services/modelCatalog";
 const FIRST_LAUNCH_KEY = "easy-whisper-ui.first-launch";
 
@@ -132,9 +132,14 @@ function App(): JSX.Element {
   const [outputSrt, setOutputSrt] = useState<boolean>(persisted.outputSrt ?? false);
   const [openAfterComplete, setOpenAfterComplete] = useState<boolean>(persisted.openAfterComplete ?? true);
   const [extraArgs, setExtraArgs] = useState<string>(persisted.extraArgs ?? DEFAULT_ARGS);
+  const cpuRequested = cpuOnly || /(?:^|\s)(?:--no-gpu|-ng)(?=\s|$)/.test(extraArgs);
   const [customModelPath, setCustomModelPath] = useState<string | undefined>(persisted.customModelPath);
   const [platform, setPlatform] = useState<string>("...");
   const [arch, setArch] = useState<string>("...");
+  const [hardware, setHardware] = useState<HardwareInfo>();
+  const [hardwareFailed, setHardwareFailed] = useState(false);
+  const [gpuReadiness, setGpuReadiness] = useState<GpuReadiness>();
+  const [lastBackend, setLastBackend] = useState<string>();
   const [consoleLines, setConsoleLines] = useState<string[]>([]);
   const [helpText, setHelpText] = useState<string | null>(null);
   const [queueState, setQueueState] = useState<QueueState>({ awaiting: [], isProcessing: false });
@@ -335,6 +340,24 @@ function App(): JSX.Element {
     }
   }, [api]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (api) void api.getHardwareInfo().then((info) => {
+      if (!cancelled) setHardware(info);
+    }).catch(() => { if (!cancelled) setHardwareFailed(true); });
+    return () => { cancelled = true; };
+  }, [api]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (api && !cpuRequested) void api.checkGpuReadiness().then((result) => {
+      if (!cancelled) setGpuReadiness(result);
+    }).catch(() => {
+      if (!cancelled) setGpuReadiness({ state: "unverified", message: "GPU readiness could not be checked." });
+    });
+    return () => { cancelled = true; };
+  }, [api, cpuRequested]);
+
   const appendConsole = useCallback((line: string) => {
     if (!line) {
       return;
@@ -355,6 +378,12 @@ function App(): JSX.Element {
     }
 
     const removeConsole = api.onConsoleEvent((event) => {
+      if (event.source === "transcription" || event.source === "live") {
+        if (/use gpu\s*=/.test(event.message)) setLastBackend(undefined);
+        const backend = event.message.match(/whisper_backend_init_gpu:\s+using (.+?) backend/);
+        if (backend) setLastBackend(`GPU (${backend[1]})`);
+        if (/whisper_backend_init_gpu:\s+(?:no GPU found|failed to initialize)/.test(event.message)) setLastBackend("CPU");
+      }
       setHelpText(null);
       appendConsole(`[${event.source}] ${event.message}`);
     });
@@ -850,7 +879,29 @@ function App(): JSX.Element {
               <p className={styles.subtitle}>Accurate, local GPU-accelerated speech-to-text powered by Whisper</p>
             </div>
           </div>
-          <span className={styles.status}>{statusText}</span>
+          <div className={styles.hardwareStatus}>
+            <span className={styles.status}>{statusText}</span>
+            <details className={styles.hardwareDetails}>
+              <summary>
+                {hardware?.gpus.length ? hardware.gpus.map(gpu => `${gpu.name}${gpu.memoryGiB !== undefined ? ` · ${Number(gpu.memoryGiB.toFixed(1))} GB ${gpu.memoryKind === "unified" ? "unified memory" : gpu.memoryKind === "shared" ? "shared memory" : "VRAM"}` : " · VRAM unknown"}`).join(" / ")
+                  : hardware || hardwareFailed ? "GPU information unavailable" : "Detecting GPU…"}
+              </summary>
+              <div className={styles.hardwarePopover}>
+                {hardware && <p>{hardware.cpu} · {Number(hardware.ramGiB.toFixed(1))} GB system RAM</p>}
+                {hardware?.gpus.some(gpu => gpu.metal) && <p>Metal supported.</p>}
+                <p>{cpuRequested ? "CPU processing is requested in the checkbox or arguments." : "GPU mode is automatic. Whisper selects an available backend when transcription starts."}</p>
+                {lastBackend && <p>Last reported backend: {lastBackend}.</p>}
+                {hardware?.gpus.some(gpu => gpu.memoryKind === "unified" || gpu.memoryKind === "shared") && <p>Shared memory is used by the GPU, system, and other apps. This is total memory, not free VRAM.</p>}
+                <p>{hardware?.note || "Detected hardware does not guarantee GPU acceleration. Transcription output reports the backend used."}</p>
+              </div>
+            </details>
+            <span className={styles.processingMode} title={gpuReadiness?.message}>
+              GPU Acceleration: <span className={!cpuRequested && gpuReadiness?.state === "ready" ? styles.gpuReady : undefined}>
+                {cpuRequested ? "Disabled (CPU only)" : gpuReadiness?.state === "unavailable" ? "Unavailable (CPU)" : !gpuReadiness ? "Checking…" : gpuReadiness.state === "ready" ? "Ready" : "Not verified"}
+              </span>
+              {lastBackend ? ` · Last run: ${lastBackend}` : ""}
+            </span>
+          </div>
         </header>
 
         <section className={styles.workspace}>
@@ -922,6 +973,15 @@ function App(): JSX.Element {
                   ))}
                 </select>
               </label>
+
+              <p className={styles.modelMemoryHint} title="Approximate whisper.cpp memory use, not a guaranteed VRAM requirement. Leave extra memory for processing and other apps. Smaller models use less memory and run faster.">
+                {model.startsWith("tiny") ? "Approx. memory: 273 MB"
+                  : model.startsWith("base") ? "Approx. memory: 388 MB"
+                  : model.startsWith("small") ? "Approx. memory: 852 MB"
+                  : model.startsWith("medium") ? "Approx. memory: 2.1 GB"
+                  : model === "large-v3" ? "Approx. memory: 3.9 GB"
+                  : "Memory use depends on the model."}
+              </p>
 
               <div>
               <div className={styles.selectorLabel}>

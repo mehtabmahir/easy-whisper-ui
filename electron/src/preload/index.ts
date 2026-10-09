@@ -2,6 +2,8 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { EasyWhisperApi } from "../types/easy-whisper";
 
 const api: EasyWhisperApi = {
+  checkGpuReadiness: () => ipcRenderer.invoke("easy-whisper:gpu-readiness"),
+  getHardwareInfo: () => ipcRenderer.invoke("easy-whisper:hardware-info"),
   listDownloadedModels: () => ipcRenderer.invoke("easy-whisper:list-models"),
   downloadModel: (model) => ipcRenderer.invoke("easy-whisper:download-model", model),
   onModelDownloadProgress: (callback) => {

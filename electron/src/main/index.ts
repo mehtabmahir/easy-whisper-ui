@@ -10,6 +10,8 @@ import { TranscriptionManager } from "./services/transcriptionManager";
 import { getUninstallInfo, launchUninstaller } from "./services/uninstallManager";
 import { showWhisperHelp } from "./services/whisperHelp";
 import { listDownloadedModels, deleteDownloadedModel } from "./services/modelStorage";
+import { getHardwareInfo } from "./services/hardwareInfo";
+import { checkGpuReadiness } from "./services/gpuReadiness";
 
 import { getClearAudioCacheOnExit, setClearAudioCacheOnExit, openWorkspaceFolder, showSetupLog } from "./services/appSettings";
 
@@ -259,6 +261,10 @@ function broadcast(channel: string, payload: unknown): void {
 
 function registerIpcChannels(): void {
   ipcMain.handle("easy-whisper:get-cache-on-exit", () => getClearAudioCacheOnExit());
+  let hardwareInfo: ReturnType<typeof getHardwareInfo> | undefined;
+  let gpuReadiness: ReturnType<typeof checkGpuReadiness> | undefined;
+  ipcMain.handle("easy-whisper:gpu-readiness", () => gpuReadiness ??= checkGpuReadiness());
+  ipcMain.handle("easy-whisper:hardware-info", () => hardwareInfo ??= getHardwareInfo());
   ipcMain.handle("easy-whisper:set-cache-on-exit", (_event, value: unknown) => setClearAudioCacheOnExit(value));
   const openSettingsPath = async (action: () => Promise<void>): Promise<CompileResult> => {
     try { await action(); return { success: true }; }
