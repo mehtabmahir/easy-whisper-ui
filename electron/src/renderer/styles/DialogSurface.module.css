@@ -1,0 +1,11 @@
+.surface {
+  color: var(--text);
+  background: color-mix(in srgb, var(--option) 75%, transparent);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  box-shadow: var(--glass-shadow);
+  /* showModal can focus the dialog while its Continue button is disabled. */
+  outline: none;
+}
+
+.surface::backdrop { background: var(--overlay); }

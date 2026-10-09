@@ -159,6 +159,9 @@ function App(): JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
   const [creditsOpen, setCreditsOpen] = useState(false);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [retryingSetup, setRetryingSetup] = useState(false);
+  const [retryError, setRetryError] = useState<string>();
   const [helpRunning, setHelpRunning] = useState(false);
   const [skipRunning, setSkipRunning] = useState(false);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
@@ -416,6 +419,28 @@ function App(): JSX.Element {
   }, [api, appendConsole]);
 
   // Reflect compile progress in loader and auto-close only when compile finishes
+  useEffect(() => {
+    if (compileInfo.state === "error") {
+      setSettingsOpen(false);
+      setFaqOpen(false);
+      setCreditsOpen(false);
+      setRecoveryOpen(true);
+    } else if (compileInfo.state === "success") {
+      setRecoveryOpen(false);
+    }
+  }, [compileInfo]);
+
+  async function retrySetup() {
+    if (!api || retryingSetup) return;
+    setRetryingSetup(true);
+    setRetryError(undefined);
+    try {
+      const result = await api.cleanReinstall();
+      if (!result.success && !result.canceled) setRetryError(result.error ?? "Reinstall failed. Try again.");
+    } catch (error) { setRetryError((error as Error).message); }
+    finally { setRetryingSetup(false); }
+  }
+
   useEffect(() => {
     if (!showLoader) return;
     if (compileInfo.state === "running") {
@@ -817,9 +842,21 @@ function App(): JSX.Element {
     : model.startsWith("medium") ? { label: "2.1 GB", gib: 2.1 }
     : model === "large-v3" ? { label: "3.9 GB", gib: 3.9 } : undefined;
   const memoryStatus = modelMemoryStatus(modelMemory?.gib, hardware);
-  const showOperationStatus = isCompiling || isProcessing || helpRunning || liveChanging || skipRunning || Boolean(modelDownloadProgress && !settingsOpen);
+  const canReopenSetup = isCompiling || compileInfo.state === "error";
+  const reopenSetup = () => { setRetryError(undefined); setRecoveryOpen(true); };
+  const showOperationStatus = isCompiling || compileInfo.state === "error" || isProcessing || helpRunning || liveChanging || skipRunning || Boolean(modelDownloadProgress && !settingsOpen);
   const operationStatus = (
-    <div className={styles.compileStatus}>
+    <div className={`${styles.compileStatus} ${canReopenSetup ? styles.clickableProgress : ""}`}
+      role={canReopenSetup ? "button" : undefined}
+      tabIndex={canReopenSetup ? 0 : undefined}
+      aria-label={canReopenSetup ? "Show Whisper setup" : undefined}
+      aria-haspopup={canReopenSetup ? "dialog" : undefined}
+      title={canReopenSetup ? "Show Whisper setup" : undefined}
+      onClick={canReopenSetup ? reopenSetup : undefined}
+      onKeyDown={canReopenSetup ? event => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); reopenSetup(); }
+      } : undefined}>
+      {compileInfo.state === "error" && <span role="alert" title={compileStateLabel}>{compileInfo.message || "Setup failed. See console for details."}</span>}
       {isCompiling && <LoadingBar label="Whisper setup" {...setupProgress(compileInfo)} />}
       {modelDownloadProgress && !settingsOpen && <ModelDownloadBar progress={modelDownloadProgress} />}
       {isProcessing && !modelDownloadProgress && <LoadingBar key={queueState.processing} label="Transcription" paceSeconds={180} />}
@@ -832,22 +869,24 @@ function App(): JSX.Element {
 
   return (
     <>
-      {showLoader && (
+      {(showLoader || recoveryOpen) && (
         <FirstLaunchLoader
-          progress={loaderProgress}
+          progress={recoveryOpen ? setupProgress(compileInfo).progress : loaderProgress}
           estimateLimit={setupProgress(compileInfo).estimateLimit}
           paceSeconds={setupProgress(compileInfo).paceSeconds}
           failed={compileInfo.state === "error"}
-          message={loaderMessage}
-          canContinue={canContinue}
-          onContinue={handleLoaderContinue}
+          message={retryError ?? (recoveryOpen ? compileInfo.message : loaderMessage)}
+          canContinue={recoveryOpen || canContinue}
+          onContinue={() => { setRecoveryOpen(false); handleLoaderContinue(); }}
+          onReinstall={!isMac ? () => void retrySetup() : undefined}
+          reinstalling={retryingSetup}
         />
       )}
       {settingsOpen && <SettingsPanel busy={isCompiling || isProcessing || liveActive || queuedCount > 0}
         progress={compileInfo} onClose={() => setSettingsOpen(false)} />}
       {faqOpen && <FaqPanel onClose={() => setFaqOpen(false)} />}
       {creditsOpen && <CreditsPanel onClose={() => setCreditsOpen(false)} />}
-      <div className={`${styles.windowContainer} ${showLoader || settingsOpen || faqOpen || creditsOpen ? styles.modalBackground : ""}`} style={showLoader ? { pointerEvents: 'none', userSelect: 'none' } : {}}>
+      <div className={`${styles.windowContainer} ${showLoader || recoveryOpen || settingsOpen || faqOpen || creditsOpen ? styles.modalBackground : ""}`} style={showLoader || recoveryOpen ? { pointerEvents: 'none', userSelect: 'none' } : {}}>
         <div className={`${styles.titlebar} ${isMac ? styles.macTitlebar : ""}`}>
         <div className={styles.titleDragRegion}>
           <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.titleLogo} />
@@ -971,7 +1010,7 @@ function App(): JSX.Element {
                 <ActionIcon name="settings" /> Settings
               </button>
             </div>
-            {!showOperationStatus && <div className={styles.compileStatus}><span className={compileInfo.state === "success" ? styles.gpuReady : undefined}>{compileStateLabel}</span></div>}
+            {!showOperationStatus && compileInfo.state === "success" && <div className={styles.compileStatus}><span className={styles.gpuReady}>Ready</span></div>}
 
             <div className={styles.selectorGroup}>
               <label className={styles.selectorLabel}>
@@ -1146,6 +1185,7 @@ function App(): JSX.Element {
             {showOperationStatus && operationStatus}
             <div className={styles.consoleBlock}>
               <label htmlFor="console">Output</label>
+              <div className={styles.consoleSurface}>
               <textarea
                 ref={consoleRef}
                 id="console"
@@ -1156,6 +1196,7 @@ function App(): JSX.Element {
                 readOnly
                 value={helpText ?? consoleText}
               />
+              </div>
             </div>
           </main>
         </section>

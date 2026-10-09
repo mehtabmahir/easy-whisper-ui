@@ -320,6 +320,15 @@
   accent-color: var(--accent);
 }
 
+.clickableProgress { cursor: pointer; border-radius: 6px; }
+.clickableProgress:hover { background: var(--hover); }
+.clickableProgress:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .clickableProgress { transition: background .18s ease, transform .18s ease; }
+  .clickableProgress:hover { transform: translateY(-1px); }
+  .clickableProgress:active { transform: scale(.98); }
+}
+
 .compileStatus progress::-webkit-progress-bar {
   background: var(--track);
 }
@@ -525,7 +534,8 @@
   gap: 6px;
 }
 
-.consoleArea {
+.consoleSurface {
+  display: flex;
   height: 0;
   flex: 1;
   width: calc(100% + var(--panel-padding) * 2);
@@ -534,6 +544,17 @@
   background: linear-gradient(to bottom, transparent 0, var(--field) 80px);
   border-radius: 0 0 21px 21px;
   min-height: 180px;
+}
+
+.consoleSurface .consoleArea {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  mask-image: linear-gradient(to bottom, transparent, #000 24px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24px);
 }
 
 /* Active progress takes space from the console, not the window or sidebar. */
@@ -546,7 +567,7 @@
 }
 .operationActive .consoleBlock { gap: 6px; }
 .operationActive .consoleBlock,
-.operationActive .consoleArea { min-height: 0; }
+.operationActive .consoleSurface { min-height: 0; }
 .operationActive .consoleBlock > label { flex-shrink: 0; }
 
 @media(min-width: 1500px) {
@@ -586,7 +607,7 @@
  .workspace {
   grid-template-columns: 1fr;
 }
- .consoleArea {
+ .consoleSurface {
   min-height: 300px;
 }
 
@@ -639,7 +660,7 @@
   padding: 8px 0;
 }
 
-  .consoleBlock, .consoleArea {
+  .consoleBlock, .consoleSurface {
   min-height: 150px;
 }
 
