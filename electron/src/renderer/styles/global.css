@@ -14,6 +14,7 @@ textarea::placeholder { color: var(--placeholder); }
 ::-webkit-scrollbar-corner { background: transparent; }
 
 :root {
+  --logo-filter: none;
   --window-tint: rgba(8,10,14,.42);
   --on-accent: #17191c;
   --accent-hover: #eceef1;
@@ -35,6 +36,7 @@ textarea::placeholder { color: var(--placeholder); }
   --close-text: #ffd6db;
 }
 :root[data-theme="light"] {
+  --logo-filter: brightness(.32) saturate(.6);
   --window-tint: transparent;
   color-scheme: light;
   --text: #171923;
@@ -66,6 +68,7 @@ textarea::placeholder { color: var(--placeholder); }
 
 @media (prefers-color-scheme: light) {
 :root[data-theme="auto"] {
+  --logo-filter: brightness(.32) saturate(.6);
   --window-tint: transparent;
   color-scheme: light;
   --text: #171923;

@@ -34,7 +34,7 @@
 .titleLogo {
   width: 22px;
   height: 22px;
-  border-radius: 7px;
+  filter: var(--logo-filter);
 }
 
 .titleText {
@@ -163,8 +163,7 @@
 .headerLogo {
   width: 46px;
   height: 46px;
-  border-radius: 16px;
-  box-shadow: var(--glass-shadow);
+  filter: var(--logo-filter);
 }
 
 .header h1 {
