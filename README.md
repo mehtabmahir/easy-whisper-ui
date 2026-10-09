@@ -11,7 +11,7 @@ Transcribe audio and video locally with Whisper, with GPU acceleration on suppor
 | Platform | Requirements | Download |
 | --- | --- | --- |
 | Windows | Windows 10/11, x64 | [3.1.0 installer](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.1/EasyWhisperUI-Setup-3.1.0-win-x64.exe) |
-| macOS | macOS 13+, Apple Silicon | 3.1 coming later; [3.0.1 DMG](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.0/EasyWhisperUI-3.0.1-macOS-arm64.dmg) |
+| macOS | macOS 13+, Apple Silicon | [3.1.0 DMG](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.1/EasyWhisperUI-3.1.0-macOS-arm64.dmg) |
 | Linux | Beta; tested on Ubuntu | 3.1 pending; [previous releases](https://github.com/mehtabmahir/easy-whisper-ui/releases) |
 
 Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is also available.
@@ -71,7 +71,7 @@ The in-app **FAQ** button sits above Update, Donate, and Website. **Help** displ
 
 ## Troubleshooting
 
-The Mac app is ad-hoc signed and not notarized. If macOS blocks it, try **System Settings → Privacy & Security → Open Anyway**. For a “damaged” message, follow the [release's first-opening instructions](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.0#macos-first-opening).
+The Mac app is ad-hoc signed and not notarized. If macOS blocks it, try **System Settings → Privacy & Security → Open Anyway**. For a “damaged” message, follow the [release's first-opening instructions](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.1#macos-first-opening).
 
 For other problems, [open an issue](https://github.com/mehtabmahir/easy-whisper-ui/issues) with your OS, selected model, and console logs.
 
