@@ -31,24 +31,17 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 
 ## Features
 
-- **Polished controls** — Settings in the main action group, matching icons, and gentle animations with reduced-motion support.
-- **In-app FAQ and Credits** — transcript uses, subtitles, troubleshooting, copyright, and component licenses above the footer links.
-- **Local transcription** — process audio and video on your computer with Whisper.
-- **Batch processing** — open multiple files, drag and drop, or use Open With; FFmpeg handles format conversion.
-- **Live transcription** — transcribe microphone audio (beta).
-- **Languages and exports** — multilingual transcription, translation into English, and TXT/SRT output.
-- **Clear input-language selection** — full language names, an info button, and guidance when non-English audio needs a multilingual model.
-- **GPU acceleration** — Vulkan on Windows, Metal on Apple Silicon, or CPU-only processing.
-- **Verified GPU status** — displays detected GPUs and memory, then tests acceleration through Whisper itself. A small check model downloads automatically when needed; the status distinguishes verified acceleration from unavailable or incomplete checks.
-- **Required VRAM estimates** — red when the model exceeds detected capacity, yellow with less than 1 GB to spare, and green otherwise. Recognized integrated GPUs use an estimated budget of 70% of system RAM; actual usage varies.
-- **Model management** — download models in Settings or automatically when needed, track downloaded bytes and transfer speed, and delete individual models.
-- **Custom models** — select a local whisper.cpp-compatible model file.
-- **Saved themes and background blur** — Light, Dark, and Auto, with more transparent macOS panels and vibrancy, Windows 11 22H2+ Acrylic, and native macOS window controls.
-- **Queue controls** — Skip cancels the current file and continues; Stop cancels the whole queue, including its model downloads and audio preparation.
-- **Audio caching** — reuse converted audio across retries and model changes, with manual cleanup and optional cleanup on exit (enabled by default).
-- **Console and Help** — an edge-to-edge console with a smooth background and text fade, full Whisper CLI help, extra CLI arguments, and Settings shortcuts to the app workspace and saved setup logs. Loading progress sits above the console without crowding the sidebar.
-- **Setup and repair** — installation progress estimates and clean reinstall on Windows/Linux, preserving models and settings. Click setup progress to reopen the installation dialog; failures offer a reinstall button. Windows setup clears incomplete app-owned installation files before rebuilding. Installed Windows builds also offer uninstall from Settings.
-- **Unicode filenames on Windows** — transcribe files with accented and non-Latin names while keeping the original filenames for TXT/SRT exports.
+- **Private, local transcription** — turn audio and video into text on your own computer.
+- **GPU acceleration** — Vulkan on Windows and Metal on Apple Silicon, with automatic verification and a CPU-only option.
+- **Languages and subtitles** — multilingual transcription, translation into English, and TXT/SRT exports.
+- **Batch processing** — drag in multiple files, skip individual items, or stop the queue.
+- **Live transcription** — transcribe microphone audio in real time (beta).
+- **Model choice** — download, manage, or load custom models, with color-coded memory estimates.
+- **Clear download progress** — see size, speed and time remaining, and cancel downloads when needed.
+- **Light, Dark and Auto themes** — translucent backgrounds and a spacious output console.
+- **Faster retries** — cached audio avoids repeated conversion when retrying or changing models.
+- **Simple setup and repair** — guided installation and clean reinstall on Windows/Linux, preserving models and settings.
+- **Advanced controls** — extra Whisper arguments, built-in CLI help, and accessible setup logs.
 
 ## Quick start
 
