@@ -6,8 +6,9 @@ import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
 import ModelDownloadBar from "./ModelDownloadBar";
 
-export default function SettingsPanel({ busy, progress, onClose }: {
+export default function SettingsPanel({ busy, progress, downloadProgress, onClose }: {
   busy: boolean;
+  downloadProgress?: ModelDownloadProgress;
   progress: CompileProgressEvent;
   onClose: () => void;
 }) {
@@ -69,17 +70,12 @@ export default function SettingsPanel({ busy, progress, onClose }: {
   const [downloadSelection, setDownloadSelection] = useState("base");
   const [downloading, setDownloading] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState<string>();
-  const [downloadProgress, setDownloadProgress] = useState<ModelDownloadProgress>();
-  useEffect(() => window.easyWhisper?.onModelDownloadProgress((event) => {
-    if (event.model === downloadSelection) setDownloadProgress(event);
-  }), [downloadSelection]);
-  const working = savingCachePreference || reinstalling || uninstalling || clearingCache || modelBusy || downloading;
-  const closeBlocked = working && !reinstalling;
+  const working = savingCachePreference || reinstalling || uninstalling || clearingCache || modelBusy || downloading || Boolean(downloadProgress);
+  const closeBlocked = working && !reinstalling && !downloading && !downloadProgress;
 
   async function downloadModel() {
     if (!window.easyWhisper || busy || working) return;
     setDownloading(true);
-    setDownloadProgress(undefined);
     setDownloadMessage(undefined);
     try {
       const response = await window.easyWhisper.downloadModel(downloadSelection);
@@ -225,16 +221,20 @@ export default function SettingsPanel({ busy, progress, onClose }: {
         <p className={styles.note}>Download a model for offline use. Existing downloads are reused.</p>
         <div className={styles.modelActions}>
           <select aria-label="Model to download" value={downloadSelection} disabled={working}
-            onChange={(event) => { setDownloadSelection(event.target.value); setDownloadMessage(undefined); setDownloadProgress(undefined); }}>
+            onChange={(event) => { setDownloadSelection(event.target.value); setDownloadMessage(undefined); }}>
             {DOWNLOADABLE_MODELS.map((model) => <option key={model} value={model}>{model}</option>)}
           </select>
           <button type="button" onClick={() => void downloadModel()} disabled={busy || working || !window.easyWhisper}>
             {downloading ? "Downloading…" : "Download selected"}
           </button>
         </div>
-        {(downloading || downloadProgress?.state === "complete") && <ModelDownloadBar progress={downloadProgress} />}
         {busy && <p role="status">Finish setup or stop transcription first.</p>}
         {downloadMessage && <p role="status">{downloadMessage}</p>}
+      </div>}
+      {(downloading || downloadProgress) && <div role="status">
+        <p>Downloading {downloadProgress?.model ?? downloadSelection}…</p>
+        <ModelDownloadBar progress={downloadProgress} />
+        <button type="button" onClick={() => void window.easyWhisper?.cancelAll()}>Stop download</button>
       </div>}
       {modelsOpen && <div>
         <p className={styles.note}>Choose a downloaded model. It can be downloaded again when needed.</p>
@@ -272,7 +272,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
         {reinstalling ? "Reinstalling…" : "Clean reinstall"}
       </button>
       {busy && !reinstalling && progress.state !== "running" && <p role="status">Finish setup or stop transcription before reinstalling.</p>}
-      {(reinstalling || progress.state === "running") && <div role="status" aria-live="polite">
+      {!downloadProgress && (reinstalling || progress.state === "running") && <div role="status" aria-live="polite">
         <LoadingBar label="Whisper reinstall" {...setupProgress(progress)} paused={progress.state === "error"} />
         <p>{progress.state === "running" ? progress.message : "Preparing reinstall…"}</p>
         <p className={styles.note}>Keep the app open until setup finishes.</p>

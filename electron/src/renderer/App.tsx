@@ -844,7 +844,7 @@ function App(): JSX.Element {
   const memoryStatus = modelMemoryStatus(modelMemory?.gib, hardware);
   const canReopenSetup = isCompiling || compileInfo.state === "error";
   const reopenSetup = () => { setRetryError(undefined); setRecoveryOpen(true); };
-  const showOperationStatus = isCompiling || compileInfo.state === "error" || isProcessing || helpRunning || liveChanging || skipRunning || Boolean(modelDownloadProgress && !settingsOpen);
+  const showOperationStatus = !showLoader && !recoveryOpen && !settingsOpen && (isCompiling || compileInfo.state === "error" || isProcessing || helpRunning || liveChanging || skipRunning || Boolean(modelDownloadProgress));
   const operationStatus = (
     <div className={`${styles.compileStatus} ${canReopenSetup ? styles.clickableProgress : ""}`}
       role={canReopenSetup ? "button" : undefined}
@@ -857,12 +857,12 @@ function App(): JSX.Element {
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); reopenSetup(); }
       } : undefined}>
       {compileInfo.state === "error" && <span role="alert" title={compileStateLabel}>{compileInfo.message || "Setup failed. See console for details."}</span>}
-      {isCompiling && <LoadingBar label="Whisper setup" {...setupProgress(compileInfo)} />}
-      {modelDownloadProgress && !settingsOpen && <ModelDownloadBar progress={modelDownloadProgress} />}
-      {isProcessing && !modelDownloadProgress && <LoadingBar key={queueState.processing} label="Transcription" paceSeconds={180} />}
-      {helpRunning && <LoadingBar label="Loading help" paceSeconds={4} />}
-      {liveChanging && <LoadingBar label="Preparing live transcription" paceSeconds={60} />}
-      {skipRunning && <LoadingBar label="Skipping file" paceSeconds={4} />}
+      {modelDownloadProgress ? (!settingsOpen && <ModelDownloadBar progress={modelDownloadProgress} />)
+        : skipRunning ? <LoadingBar label="Skipping file" paceSeconds={4} />
+        : isCompiling ? <LoadingBar label="Whisper setup" {...setupProgress(compileInfo)} />
+        : liveChanging ? <LoadingBar label="Preparing live transcription" paceSeconds={60} />
+        : isProcessing ? <LoadingBar key={queueState.processing} label="Transcription" paceSeconds={180} />
+        : helpRunning ? <LoadingBar label="Loading help" paceSeconds={4} /> : null}
     </div>
   );
 
@@ -871,6 +871,7 @@ function App(): JSX.Element {
     <>
       {(showLoader || recoveryOpen) && (
         <FirstLaunchLoader
+          downloadProgress={modelDownloadProgress}
           progress={recoveryOpen ? setupProgress(compileInfo).progress : loaderProgress}
           estimateLimit={setupProgress(compileInfo).estimateLimit}
           paceSeconds={setupProgress(compileInfo).paceSeconds}
@@ -883,7 +884,7 @@ function App(): JSX.Element {
         />
       )}
       {settingsOpen && <SettingsPanel busy={isCompiling || isProcessing || liveActive || queuedCount > 0}
-        progress={compileInfo} onClose={() => setSettingsOpen(false)} />}
+        downloadProgress={modelDownloadProgress} progress={compileInfo} onClose={() => setSettingsOpen(false)} />}
       {faqOpen && <FaqPanel onClose={() => setFaqOpen(false)} />}
       {creditsOpen && <CreditsPanel onClose={() => setCreditsOpen(false)} />}
       <div className={`${styles.windowContainer} ${showLoader || recoveryOpen || settingsOpen || faqOpen || creditsOpen ? styles.modalBackground : ""}`} style={showLoader || recoveryOpen ? { pointerEvents: 'none', userSelect: 'none' } : {}}>
@@ -1000,8 +1001,8 @@ function App(): JSX.Element {
                 <ActionIcon name="clear" /> Clear
               </button>
               <button type="button" className={styles.secondaryButton} onClick={handleStop}
-                title="Stop processing and clear the queue"
-                disabled={!apiAvailable || (!isProcessing && queuedCount === 0)}><ActionIcon name="stop" /> Stop</button>
+                title="Stop transcription and downloads, and clear the queue"
+                disabled={!apiAvailable || (!isProcessing && queuedCount === 0 && !modelDownloadProgress && !liveChanging && !liveActive)}><ActionIcon name="stop" /> Stop</button>
               <button type="button" className={styles.secondaryButton} onClick={handleSkip}
                 title="Skip the current file and continue the queue"
                 disabled={!apiAvailable || !isProcessing || skipRunning}><ActionIcon name="skip" /> Skip</button>

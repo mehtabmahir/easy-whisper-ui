@@ -345,3 +345,25 @@ test('shutdown with cleanup disabled cancels active work and retains reusable au
   await restarted.clearAudioCache();
   await assert.rejects(fs.stat(cached.path), { code: 'ENOENT' });
 });
+
+test('Stop cancels a Settings download, removes partial files, and permits another model', async t => {
+  const { manager, root } = await fixture(t);
+  delete manager.ensureModel;
+  let started;
+  const ready = new Promise(resolve => { started = resolve; });
+  manager.downloadFile = async (_, destination, signal) => {
+    await fs.writeFile(destination, 'partial');
+    started();
+    await new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true }));
+  };
+  const pending = manager.downloadModel('tiny');
+  const cancelled = assert.rejects(pending, /cancelled/);
+  await ready;
+  await manager.cancelAll();
+  await cancelled;
+  const modelDir = path.join(root, 'whisper-workspace', 'models');
+  assert.deepEqual(await fs.readdir(modelDir), []);
+  manager.downloadFile = async (_, destination) => fs.writeFile(destination, 'complete');
+  await manager.downloadModel('base');
+  assert.equal(await fs.readFile(path.join(modelDir, 'ggml-base.bin'), 'utf8'), 'complete');
+});

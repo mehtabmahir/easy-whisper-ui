@@ -2,10 +2,7 @@ import { app } from "electron";
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
-import fsp from "node:fs/promises";
-import https from "node:https";
 import path from "node:path";
-import { pipeline } from "node:stream/promises";
 import { ConsoleEvent, LiveRequest, ModelSettings } from "../../types/easy-whisper";
 import { WORK_ROOT_NAME } from "./compileManager";
 import { resolveBinary } from "./binaryResolver";
@@ -20,10 +17,14 @@ type LiveEventName = keyof LiveEvents;
 type LiveListener<T extends LiveEventName> = (payload: LiveEvents[T]) => void;
 
 const ANSI_ESCAPE = /\u001b\[[0-9;]*[A-Za-z]/g;
-const MODEL_BASE_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main";
 
 export class LiveManager extends EventEmitter {
   private proc?: ChildProcessWithoutNullStreams;
+  private preparing?: AbortController;
+
+  constructor(private readonly downloadModel: (model: string, signal: AbortSignal) => Promise<void>) {
+    super();
+  }
 
   on<T extends LiveEventName>(event: T, listener: LiveListener<T>): this {
     return super.on(event, listener as any);
@@ -38,7 +39,7 @@ export class LiveManager extends EventEmitter {
   }
 
   async start(request: LiveRequest): Promise<void> {
-    if (this.proc) {
+    if (this.proc || this.preparing) {
       throw new Error("Live transcription already running.");
     }
 
@@ -49,65 +50,73 @@ export class LiveManager extends EventEmitter {
     const exe = streamBinary.command;
     const exeLabel = path.basename(exe);
 
-    const modelPath = await this.ensureModel(request.settings);
+    const controller = new AbortController();
+    this.preparing = controller;
+    try {
+      const modelPath = await this.ensureModel(request.settings, controller.signal);
+      controller.signal.throwIfAborted();
 
-    const args = [
-      "-m",
-      modelPath,
-      "-l",
-      request.settings.language,
-      "--step",
-      String(request.stepMs),
-      "--length",
-      String(request.lengthMs)
-    ];
+      const args = [
+        "-m",
+        modelPath,
+        "-l",
+        request.settings.language,
+        "--step",
+        String(request.stepMs),
+        "--length",
+        String(request.lengthMs)
+      ];
 
-    if (request.settings.cpuOnly) {
-      args.push("--no-gpu");
+      if (request.settings.cpuOnly) {
+        args.push("--no-gpu");
+      }
+
+      this.emitConsole({ source: "live", message: `Starting live transcription with ${exeLabel}.` });
+
+      await new Promise<void>((resolve, reject) => {
+        const child = spawn(exe, args);
+        this.proc = child;
+
+        child.stdout.on("data", (data) => {
+          const text = data.toString("utf8");
+          if (!text) {
+            return;
+          }
+          const cleaned = text.replace(ANSI_ESCAPE, "").trim();
+          if (cleaned.length > 0) {
+            this.emit("text", cleaned);
+          }
+        });
+
+        child.stderr.on("data", (data) => {
+          const msg = data.toString().trim();
+          if (msg.length > 0) {
+            this.emitConsole({ source: "live", message: msg });
+          }
+        });
+
+        child.once("spawn", () => {
+          this.emit("state", "started");
+          resolve();
+        });
+
+        child.once("error", (error) => {
+          this.proc = undefined;
+          reject(error);
+        });
+
+        child.once("close", () => {
+          this.proc = undefined;
+          this.emit("state", "stopped");
+        });
+      });
+    } finally {
+      this.preparing = undefined;
     }
-
-    this.emitConsole({ source: "live", message: `Starting live transcription with ${exeLabel}.` });
-
-    await new Promise<void>((resolve, reject) => {
-      const child = spawn(exe, args);
-      this.proc = child;
-
-      child.stdout.on("data", (data) => {
-        const text = data.toString("utf8");
-        if (!text) {
-          return;
-        }
-        const cleaned = text.replace(ANSI_ESCAPE, "").trim();
-        if (cleaned.length > 0) {
-          this.emit("text", cleaned);
-        }
-      });
-
-      child.stderr.on("data", (data) => {
-        const msg = data.toString().trim();
-        if (msg.length > 0) {
-          this.emitConsole({ source: "live", message: msg });
-        }
-      });
-
-      child.once("spawn", () => {
-        this.emit("state", "started");
-        resolve();
-      });
-
-      child.once("error", (error) => {
-        this.proc = undefined;
-        reject(error);
-      });
-
-      child.once("close", () => {
-        this.proc = undefined;
-        this.emit("state", "stopped");
-      });
-    });
   }
 
   async stop(): Promise<void> {
+    this.preparing?.abort();
     if (!this.proc) {
       return;
     }
@@ -128,7 +137,7 @@ export class LiveManager extends EventEmitter {
     this.emit("console", event);
   }
 
-  private async ensureModel(settings: ModelSettings, redirectDepth = 0): Promise<string> {
+  private async ensureModel(settings: ModelSettings, signal: AbortSignal): Promise<string> {
     if (settings.model === "custom") {
       const customPath = settings.customModelPath?.trim();
       if (!customPath) {
@@ -141,53 +150,8 @@ export class LiveManager extends EventEmitter {
       return customPath;
     }
 
-    const workRoot = path.join(app.getPath("userData"), WORK_ROOT_NAME);
-    const modelsDir = path.join(workRoot, "models");
-    await fsp.mkdir(modelsDir, { recursive: true });
-    const modelFile = `ggml-${settings.model}.bin`;
-    const modelPath = path.join(modelsDir, modelFile);
-
-    if (fs.existsSync(modelPath)) {
-      return modelPath;
-    }
-
-    this.emitConsole({ source: "live", message: `Downloading model ${modelFile}` });
-    await this.downloadFile(`${MODEL_BASE_URL}/${modelFile}`, modelPath, redirectDepth);
-    this.emitConsole({ source: "live", message: `Model ready ${modelFile}` });
-    return modelPath;
-  }
-
-  private async downloadFile(url: string, destination: string, redirectDepth = 0): Promise<void> {
-    if (redirectDepth > 5) {
-      throw new Error("Too many redirects while downloading model.");
-    }
-
-    await fsp.mkdir(path.dirname(destination), { recursive: true });
-
-    await new Promise<void>((resolve, reject) => {
-      https
-        .get(url, (response) => {
-          const status = response.statusCode ?? 0;
-          if (status >= 300 && status < 400 && response.headers.location) {
-            response.resume();
-            this.downloadFile(response.headers.location, destination, redirectDepth + 1)
-              .then(resolve)
-              .catch(reject);
-            return;
-          }
-
-          if (status >= 400) {
-            reject(new Error(`Failed to download model: ${status}`));
-            response.resume();
-            return;
-          }
-
-          const fileStream = fs.createWriteStream(destination);
-          pipeline(response, fileStream)
-            .then(() => resolve())
-            .catch((error) => reject(error));
-        })
-        .on("error", (error) => reject(error));
-    });
+    await this.downloadModel(settings.model, signal);
+    signal.throwIfAborted();
+    return path.join(app.getPath("userData"), WORK_ROOT_NAME, "models", `ggml-${settings.model}.bin`);
   }
 }

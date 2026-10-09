@@ -57,6 +57,9 @@ export class TranscriptionManager extends EventEmitter {
     this.modelDownload = controller;
     try {
       await this.ensureModel({ model }, signal ? AbortSignal.any([controller.signal, signal]) : controller.signal, quiet);
+    } catch (error) {
+      if (controller.signal.aborted || signal?.aborted) throw new Error("Model download cancelled.");
+      throw error;
     } finally {
       this.modelDownload = undefined;
     }
@@ -132,6 +135,7 @@ export class TranscriptionManager extends EventEmitter {
     this.queue = [];
     this.emitQueue();
     this.currentAbort?.abort();
+    this.modelDownload?.abort();
     await this.stopActiveProcess();
   }
 

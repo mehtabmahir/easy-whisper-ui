@@ -29,7 +29,7 @@ const rendererHtmlPath = path.join(__dirname, "../renderer/index.html");
 
 const compileManager = new CompileManager();
 const transcriptionManager = new TranscriptionManager();
-const liveManager = new LiveManager();
+const liveManager = new LiveManager((model, signal) => transcriptionManager.downloadModel(model, signal));
 let setupBusy = false;
 let reinstalling = false;
 let transcriptionBusy = false;
@@ -434,6 +434,7 @@ function registerIpcChannels(): void {
 
   ipcMain.handle("easy-whisper:cancel-all", async () => {
     await transcriptionManager.cancelAll();
+    await liveManager.stop();
   });
 
   ipcMain.handle("easy-whisper:skip-current", () => transcriptionManager.skipCurrent());

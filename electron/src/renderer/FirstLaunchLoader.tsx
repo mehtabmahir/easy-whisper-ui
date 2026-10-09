@@ -1,8 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import styles from "./styles/FirstLaunchLoader.module.css";
 import LoadingBar from "./LoadingBar";
+import ModelDownloadBar from "./ModelDownloadBar";
+import type { ModelDownloadProgress } from "../types/easy-whisper";
 
 interface FirstLaunchLoaderProps {
+  downloadProgress?: ModelDownloadProgress;
   progress: number;
   estimateLimit: number;
   paceSeconds: number;
@@ -14,7 +17,7 @@ interface FirstLaunchLoaderProps {
   reinstalling?: boolean;
 }
 
-const FirstLaunchLoader: React.FC<FirstLaunchLoaderProps> = ({ progress, estimateLimit, paceSeconds, message, canContinue, failed, onContinue, onReinstall, reinstalling }) => {
+const FirstLaunchLoader: React.FC<FirstLaunchLoaderProps> = ({ downloadProgress, progress, estimateLimit, paceSeconds, message, canContinue, failed, onContinue, onReinstall, reinstalling }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialog = dialogRef.current!;
@@ -31,7 +34,7 @@ const FirstLaunchLoader: React.FC<FirstLaunchLoaderProps> = ({ progress, estimat
         </div>
         <div className={styles.progressBlock}>
           <span className={styles.progressMessage}>{message}</span>
-          <LoadingBar label="Initial setup" progress={progress} estimateLimit={estimateLimit} paceSeconds={paceSeconds} complete={progress === 100 && !failed} paused={failed} />
+          {downloadProgress ? <ModelDownloadBar progress={downloadProgress} /> : <LoadingBar label="Initial setup" progress={progress} estimateLimit={estimateLimit} paceSeconds={paceSeconds} complete={progress === 100 && !failed} paused={failed} />}
         </div>
         <div className={styles.actions}>
         {failed && onReinstall && <button type="button" className={styles.continueButton}
