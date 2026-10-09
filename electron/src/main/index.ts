@@ -207,6 +207,16 @@ async function createMainWindow(): Promise<void> {
     }
   });
 
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Web links belong in the user's browser, not a new Electron window.
+    if (URL.canParse(url) && ["https:", "http:"].includes(new URL(url).protocol)) {
+      void shell.openExternal(url).catch((error) => {
+        console.error("Could not open link in the default browser:", error);
+      });
+    }
+    return { action: "deny" };
+  });
+
   const emitWindowState = (): void => {
     if (!mainWindow) return;
     broadcast("window:maximize-state", { maximized: mainWindow.isMaximized() });

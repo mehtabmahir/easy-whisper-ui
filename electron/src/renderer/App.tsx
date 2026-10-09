@@ -53,7 +53,7 @@ const DEFAULT_ARGS = "-tp 0.0 -mc 64 -et 3.0";
 const SETTINGS_KEY = "easy-whisper-ui.settings";
 const LOGO_URL = "./icon.png";
 const GITHUB_URL = "https://github.com/mehtabmahir/easy-whisper-ui/releases";
-const WEBSITE_URL = "https://mehtabmahir.me";
+const WEBSITE_URL = "https://mehtab.work";
 const DONATE_URL = "https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD";
 
 type PersistedSettings = {
@@ -1011,7 +1011,7 @@ function App(): JSX.Element {
                 target="_blank"
                 rel="noreferrer"
                 className={styles.socialButton}
-                title="Visit mehtabmahir.me"
+                title="Visit mehtab.work"
               >
                 <svg className={styles.socialIcon} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path
