@@ -6,8 +6,8 @@
   color: var(--text);
 }
 
-/* Blur the composed app once so nested glass panels cannot remain sharp behind Settings. */
-.settingsBackground { filter: blur(12px); }
+/* Blur the composed app once behind dialogs and setup, including nested glass panels. */
+.modalBackground { filter: blur(12px); }
 
 .titlebar {
   height: 44px;
@@ -517,6 +517,17 @@
   min-height: 180px;
 }
 
+/* Active progress takes space from the console, not the window or sidebar. */
+.operationActive .compileStatus {
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  margin-bottom: 12px;
+}
+.operationActive .consoleBlock,
+.operationActive .consoleArea { min-height: 0; }
+.operationActive .consoleBlock > label { flex-shrink: 0; }
+
 @media(min-width: 1500px) {
   .appShell {
   padding: 18px 32px;
@@ -671,6 +682,7 @@
   }
 }
 
+.infoButtons { display: flex; justify-content: space-between; gap: 6px; width: 100%; transform: translateY(12px); }
 .faqButton {
   display: inline-flex;
   align-items: center;
@@ -679,10 +691,9 @@
   flex-shrink: 0;
   gap: 6px;
   min-height: 30px;
-  padding: 5px 9px;
+  padding: 5px 0;
   font-size: 13px;
   font-weight: 500;
-  margin-bottom: -12px;
   border: 1px solid transparent;
   border-radius: 9px;
   color: var(--muted);

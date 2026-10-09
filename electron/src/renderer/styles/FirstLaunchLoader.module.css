@@ -20,7 +20,6 @@
   inset: 0;
   z-index: 1000;
   background: var(--overlay);
-  backdrop-filter: blur(24px);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -3,6 +3,7 @@ import styles from "./styles/App.module.css";
 import FirstLaunchLoader from "./FirstLaunchLoader";
 import SettingsPanel from "./SettingsPanel";
 import FaqPanel from "./FaqPanel";
+import CreditsPanel from "./CreditsPanel";
 import { LANGUAGE_CODES } from "./languages";
 import ActionIcon from "./ActionIcon";
 import LoadingBar from "./LoadingBar";
@@ -157,6 +158,7 @@ function App(): JSX.Element {
   }), []);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
+  const [creditsOpen, setCreditsOpen] = useState(false);
   const [helpRunning, setHelpRunning] = useState(false);
   const [skipRunning, setSkipRunning] = useState(false);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
@@ -808,6 +810,19 @@ function App(): JSX.Element {
   const queuedCount = queueState.awaiting.length;
   const isCompiling = compileInfo.state === "running";
   const isProcessing = queueState.isProcessing;
+  const showOperationStatus = isCompiling || isProcessing || helpRunning || liveChanging || skipRunning || Boolean(modelDownloadProgress && !settingsOpen);
+  const operationStatus = (
+    <div className={styles.compileStatus}>
+      <span>{compileStateLabel}</span>
+      {isCompiling && <LoadingBar label="Whisper setup" {...setupProgress(compileInfo)} />}
+      {modelDownloadProgress && !settingsOpen && <ModelDownloadBar progress={modelDownloadProgress} />}
+      {isProcessing && !modelDownloadProgress && <LoadingBar key={queueState.processing} label="Transcription" paceSeconds={180} />}
+      {helpRunning && <LoadingBar label="Loading help" paceSeconds={4} />}
+      {liveChanging && <LoadingBar label="Preparing live transcription" paceSeconds={60} />}
+      {skipRunning && <LoadingBar label="Skipping file" paceSeconds={4} />}
+    </div>
+  );
+
 
   return (
     <>
@@ -825,7 +840,8 @@ function App(): JSX.Element {
       {settingsOpen && <SettingsPanel busy={isCompiling || isProcessing || liveActive || queuedCount > 0}
         progress={compileInfo} onClose={() => setSettingsOpen(false)} />}
       {faqOpen && <FaqPanel onClose={() => setFaqOpen(false)} />}
-      <div className={`${styles.windowContainer} ${settingsOpen || faqOpen ? styles.settingsBackground : ""}`} style={showLoader ? { filter: 'blur(2.5px)', pointerEvents: 'none', userSelect: 'none' } : {}}>
+      {creditsOpen && <CreditsPanel onClose={() => setCreditsOpen(false)} />}
+      <div className={`${styles.windowContainer} ${showLoader || settingsOpen || faqOpen || creditsOpen ? styles.modalBackground : ""}`} style={showLoader ? { pointerEvents: 'none', userSelect: 'none' } : {}}>
         <div className={`${styles.titlebar} ${isMac ? styles.macTitlebar : ""}`}>
         <div className={styles.titleDragRegion}>
           <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.titleLogo} />
@@ -948,15 +964,7 @@ function App(): JSX.Element {
                 <ActionIcon name="settings" /> Settings
               </button>
             </div>
-            <div className={styles.compileStatus}>
-              <span>{compileStateLabel}</span>
-              {isCompiling && <LoadingBar label="Whisper setup" {...setupProgress(compileInfo)} />}
-              {modelDownloadProgress && !settingsOpen && <ModelDownloadBar progress={modelDownloadProgress} />}
-              {isProcessing && !modelDownloadProgress && <LoadingBar key={queueState.processing} label="Transcription" paceSeconds={180} />}
-              {helpRunning && <LoadingBar label="Loading help" paceSeconds={4} />}
-              {liveChanging && <LoadingBar label="Preparing live transcription" paceSeconds={60} />}
-              {skipRunning && <LoadingBar label="Skipping file" paceSeconds={4} />}
-            </div>
+            {!showOperationStatus && <div className={styles.compileStatus}><span>{compileStateLabel}</span></div>}
 
             <div className={styles.selectorGroup}>
               <label className={styles.selectorLabel}>
@@ -1026,11 +1034,15 @@ function App(): JSX.Element {
                 </div>
               )}
             </div>
+            <div className={styles.infoButtons}>
+            <button type="button" className={styles.faqButton} onClick={() => setCreditsOpen(true)}
+              aria-haspopup="dialog" aria-expanded={creditsOpen}>Credits</button>
             <button type="button" className={styles.faqButton} onClick={() => setFaqOpen(true)}
               aria-label="Frequently asked questions" aria-haspopup="dialog" aria-expanded={faqOpen}
               title="How to use your transcript">
               <ActionIcon name="help" /><span>FAQ</span>
             </button>
+            </div>
             <div className={styles.linkCluster}>
               <a
                 href={GITHUB_URL}
@@ -1080,7 +1092,7 @@ function App(): JSX.Element {
             </div>
           </aside>
 
-          <main className={styles.rightPanel}>
+          <main className={`${styles.rightPanel} ${showOperationStatus ? styles.operationActive : ""}`}>
             <div className={styles.argumentsBlock}>
               <label htmlFor="arguments">Arguments</label>
               <textarea
@@ -1128,6 +1140,7 @@ function App(): JSX.Element {
               <span>Queued: {queuedCount}</span>
             </div>
 
+            {showOperationStatus && operationStatus}
             <div className={styles.consoleBlock}>
               <label htmlFor="console">Output</label>
               <textarea

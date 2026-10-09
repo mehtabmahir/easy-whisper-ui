@@ -74,6 +74,7 @@ export default function SettingsPanel({ busy, progress, onClose }: {
     if (event.model === downloadSelection) setDownloadProgress(event);
   }), [downloadSelection]);
   const working = savingCachePreference || reinstalling || uninstalling || clearingCache || modelBusy || downloading;
+  const closeBlocked = working && !reinstalling;
 
   async function downloadModel() {
     if (!window.easyWhisper || busy || working) return;
@@ -184,10 +185,10 @@ export default function SettingsPanel({ busy, progress, onClose }: {
   }
 
   return <dialog ref={dialogRef} className={styles.panel} aria-labelledby="settings-title"
-    onCancel={(event) => { event.preventDefault(); if (!working) onClose(); }}>
+    onCancel={(event) => { event.preventDefault(); if (!closeBlocked) onClose(); }}>
     <header className={styles.header}>
       <h2 id="settings-title">Settings</h2>
-      <button type="button" onClick={onClose} disabled={working} aria-label="Close settings">Close</button>
+      <button type="button" onClick={onClose} disabled={closeBlocked} aria-label="Close settings">Close</button>
     </header>
     <section>
       <h3>Audio cache</h3>
@@ -270,8 +271,8 @@ export default function SettingsPanel({ busy, progress, onClose }: {
         disabled={busy || working || !window.easyWhisper}>
         {reinstalling ? "Reinstalling…" : "Clean reinstall"}
       </button>
-      {busy && !reinstalling && <p role="status">Finish setup or stop transcription before reinstalling.</p>}
-      {reinstalling && <div role="status" aria-live="polite">
+      {busy && !reinstalling && progress.state !== "running" && <p role="status">Finish setup or stop transcription before reinstalling.</p>}
+      {(reinstalling || progress.state === "running") && <div role="status" aria-live="polite">
         <LoadingBar label="Whisper reinstall" {...setupProgress(progress)} paused={progress.state === "error"} />
         <p>{progress.state === "running" ? progress.message : "Preparing reinstall…"}</p>
         <p className={styles.note}>Keep the app open until setup finishes.</p>
