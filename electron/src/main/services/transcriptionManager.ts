@@ -46,7 +46,7 @@ export class TranscriptionManager extends EventEmitter {
   private shuttingDown = false;
   private modelDownload?: AbortController;
 
-  async downloadModel(model: unknown): Promise<void> {
+  async downloadModel(model: unknown, signal?: AbortSignal, quiet = false): Promise<void> {
     if (typeof model !== "string" || !DOWNLOADABLE_MODELS.includes(model)) {
       throw new Error("Select a supported model.");
     }
@@ -56,7 +56,7 @@ export class TranscriptionManager extends EventEmitter {
     const controller = new AbortController();
     this.modelDownload = controller;
     try {
-      await this.ensureModel({ model }, controller.signal);
+      await this.ensureModel({ model }, signal ? AbortSignal.any([controller.signal, signal]) : controller.signal, quiet);
     } finally {
       this.modelDownload = undefined;
     }
@@ -293,7 +293,7 @@ export class TranscriptionManager extends EventEmitter {
     return { path: target, deleteAfter: true };
   }
 
-  private async ensureModel(settings: Pick<ModelSettings, "model" | "customModelPath">, signal: AbortSignal): Promise<string> {
+  private async ensureModel(settings: Pick<ModelSettings, "model" | "customModelPath">, signal: AbortSignal, quiet = false): Promise<string> {
     if (settings.model === "custom") {
       const customPath = settings.customModelPath?.trim();
       if (!customPath) {
@@ -314,11 +314,11 @@ export class TranscriptionManager extends EventEmitter {
     const modelPath = path.join(modelsDir, modelFile);
 
     if (fs.existsSync(modelPath)) {
-      this.emitConsole({ source: "transcription", message: `Using cached model ${modelFile}` });
+      if (!quiet) this.emitConsole({ source: "transcription", message: `Using cached model ${modelFile}` });
       return modelPath;
     }
 
-    this.emitConsole({ source: "transcription", message: `Downloading model ${modelFile}` });
+    if (!quiet) this.emitConsole({ source: "transcription", message: `Downloading model ${modelFile}` });
     const url = `${MODEL_BASE_URL}/${modelFile}`;
     const partial = `${modelPath}.${randomUUID()}.partial`;
     let progress: ModelDownloadProgress = { model: settings.model, receivedBytes: 0, bytesPerSecond: 0, state: "downloading" };
@@ -337,7 +337,7 @@ export class TranscriptionManager extends EventEmitter {
       this.emit("download", { ...progress, state: "error" });
       throw error;
     }
-    this.emitConsole({ source: "transcription", message: `Model downloaded: ${modelFile}` });
+    if (!quiet) this.emitConsole({ source: "transcription", message: `Model downloaded: ${modelFile}` });
     return modelPath;
   }
 

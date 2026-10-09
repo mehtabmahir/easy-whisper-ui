@@ -263,7 +263,28 @@ function registerIpcChannels(): void {
   ipcMain.handle("easy-whisper:get-cache-on-exit", () => getClearAudioCacheOnExit());
   let hardwareInfo: ReturnType<typeof getHardwareInfo> | undefined;
   let gpuReadiness: ReturnType<typeof checkGpuReadiness> | undefined;
-  ipcMain.handle("easy-whisper:gpu-readiness", () => gpuReadiness ??= checkGpuReadiness());
+  ipcMain.handle("easy-whisper:gpu-readiness", () => {
+    if (gpuReadiness) return gpuReadiness;
+    gpuReadiness = (async () => {
+      let result: import("../types/easy-whisper").GpuReadiness = { state: "unverified", message: "Waiting for the app to finish its current task." };
+      await runSetup(async () => {
+        broadcast("easy-whisper:console", { source: "system", message: "Testing Whisper GPU acceleration…" });
+        try {
+          result = await checkGpuReadiness(model => transcriptionManager.downloadModel(model, AbortSignal.timeout(120000), true));
+        } catch {
+          result = { state: "unverified", message: "GPU check incomplete." };
+        }
+        broadcast("easy-whisper:console", {
+          source: "system",
+          message: result.state === "ready" ? "Ready" : result.message
+        });
+        return { success: true };
+      });
+      return result;
+    })();
+    void gpuReadiness.then(result => { if (result.state === "unverified") gpuReadiness = undefined; }, () => { gpuReadiness = undefined; });
+    return gpuReadiness;
+  });
   ipcMain.handle("easy-whisper:hardware-info", () => hardwareInfo ??= getHardwareInfo());
   ipcMain.handle("easy-whisper:set-cache-on-exit", (_event, value: unknown) => setClearAudioCacheOnExit(value));
   const openSettingsPath = async (action: () => Promise<void>): Promise<CompileResult> => {

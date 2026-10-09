@@ -6,8 +6,38 @@ Module._load = function(name, ...args) {
   if (name === 'electron') return { app: {} };
   return originalLoad.call(this, name, ...args);
 };
-const { classifyGpuProbe } = require('../dist/main/services/gpuReadiness');
+const { classifyGpuProbe, ensureGpuCheckModel, GPU_CHECK_MODEL } = require('../dist/main/services/gpuReadiness');
 Module._load = originalLoad;
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const path = require('node:path');
+
+test('GPU check downloads the small model once and repairs an empty cached file', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'gpu-model-test-'));
+  try {
+    let downloads = 0;
+    const modelPath = path.join(dir, `ggml-${GPU_CHECK_MODEL}.bin`);
+    const download = async name => {
+      assert.equal(name, 'tiny.en-q5_1');
+      downloads++;
+      await fs.writeFile(modelPath, 'model');
+    };
+    assert.equal(await ensureGpuCheckModel(dir, download), modelPath);
+    await ensureGpuCheckModel(dir, download);
+    assert.equal(downloads, 1);
+    await fs.writeFile(modelPath, '');
+    await ensureGpuCheckModel(dir, download);
+    assert.equal(downloads, 2);
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});
+
+test('GPU check rejects failed downloads instead of probing an absent model', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'gpu-model-test-'));
+  try {
+    await assert.rejects(ensureGpuCheckModel(dir, async () => { throw new Error('offline'); }), /offline/);
+    await assert.rejects(ensureGpuCheckModel(dir, async () => {}), /ENOENT/);
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});
 
 test('GPU preference or device discovery alone never means ready', () => {
   assert.equal(classifyGpuProbe('use gpu = 1\nfound GPU device 0: Metal', true).state, 'unverified');

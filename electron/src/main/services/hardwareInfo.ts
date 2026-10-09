@@ -1,8 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import os from "node:os";
-import path from "node:path";
-import fsp from "node:fs/promises";
 import type { HardwareInfo, GpuInfo } from "../../types/easy-whisper";
 
 const exec = promisify(execFile);
@@ -29,12 +27,19 @@ export function macGpus(data: any, ramGiB: number): GpuInfo[] {
 }
 
 export function windowsGpus(data: any): GpuInfo[] {
-  return (Array.isArray(data) ? data : data ? [data] : []).map((gpu: any) => ({
-    name: String(gpu.name || "Unknown GPU"),
-    // DxDiag separates dedicated VRAM from shared RAM; WMI AdapterRAM can overflow at 4 GB.
-    memoryGiB: parseMemory(gpu.dedicated),
-    memoryKind: "dedicated" as const
-  }));
+  const adapters: any[] = Array.isArray(data) ? data : data ? [data] : [];
+  const seen = new Set<string>();
+  return adapters.flatMap((gpu): GpuInfo[] => {
+    const id = String(gpu.pnpDeviceId ?? "").trim().toLowerCase();
+    // Enumerate adapters, not displays. ROOT/SWD display drivers are not compute GPUs.
+    if (!/^(?:pci|acpi)\\/.test(id) || seen.has(id)) return [];
+    seen.add(id);
+    const bytes = Number(gpu.dedicatedBytes);
+    // Use the driver's 64-bit value; WMI AdapterRAM can overflow at 4 GB.
+    // Missing driver metadata stays unknown rather than borrowing another card's VRAM.
+    const memoryGiB = Number.isFinite(bytes) && bytes > 0 ? bytes / GIB : undefined;
+    return [{ name: String(gpu.name || "Unknown GPU"), memoryGiB, memoryKind: memoryGiB === undefined ? "unknown" : "dedicated" }];
+  });
 }
 
 export async function getHardwareInfo(): Promise<HardwareInfo> {
@@ -44,16 +49,24 @@ export async function getHardwareInfo(): Promise<HardwareInfo> {
       const { stdout } = await exec("/usr/sbin/system_profiler", ["SPDisplaysDataType", "-json"], { timeout: 15000, maxBuffer: 2 * 1024 * 1024 });
       info.gpus = macGpus(JSON.parse(stdout), info.ramGiB);
     } else if (process.platform === "win32") {
-      const temp = await fsp.mkdtemp(path.join(os.tmpdir(), "easy-whisper-gpu-"));
-      try {
-        const report = path.join(temp, "display.xml");
-        await exec("dxdiag.exe", ["/whql:off", "/x", report], { timeout: 25000, windowsHide: true });
-        const script = `$ErrorActionPreference='Stop'; [xml]$report=Get-Content -LiteralPath '${report.replace(/'/g, "''")}'; @($report.DxDiag.DisplayDevices.DisplayDevice | ForEach-Object { @{name=$_.CardName; dedicated=$_.DedicatedMemory} }) | ConvertTo-Json -Compress`;
-        const { stdout } = await exec("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], { timeout: 10000, windowsHide: true });
-        info.gpus = windowsGpus(JSON.parse(stdout));
-      } finally {
-        await fsp.rm(temp, { recursive: true, force: true });
-      }
+      const script = String.raw`
+        $ErrorActionPreference='Stop'
+        @(Get-CimInstance Win32_VideoController | ForEach-Object {
+          $memory=$null
+          try {
+            $driver=(Get-ItemProperty -LiteralPath ('Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\'+$_.PNPDeviceID)).Driver
+            if ($driver) {
+              $memory=(Get-ItemProperty -LiteralPath ('Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\'+$driver)).'HardwareInformation.qwMemorySize'
+              if ($memory -is [byte[]]) {
+                if ($memory.Length -eq 8) { $memory=[BitConverter]::ToUInt64($memory,0) } else { $memory=$null }
+              }
+            }
+          } catch { $memory=$null }
+          @{name=$_.Name; pnpDeviceId=$_.PNPDeviceID; dedicatedBytes=$memory}
+        }) | ConvertTo-Json -Compress
+      `;
+      const { stdout } = await exec("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], { timeout: 5000, windowsHide: true });
+      info.gpus = windowsGpus(stdout.trim() ? JSON.parse(stdout) : []);
     } else {
       const { stdout } = await exec("lspci", [], { timeout: 5000 });
       info.gpus = stdout.split("\n").filter(line => /VGA compatible controller|3D controller|Display controller/i.test(line))

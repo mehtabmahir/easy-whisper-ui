@@ -350,13 +350,13 @@ function App(): JSX.Element {
 
   useEffect(() => {
     let cancelled = false;
-    if (api && !cpuRequested) void api.checkGpuReadiness().then((result) => {
+    if (api && !cpuRequested && compileInfo.state === "success" && !queueState.isProcessing) void api.checkGpuReadiness().then((result) => {
       if (!cancelled) setGpuReadiness(result);
     }).catch(() => {
       if (!cancelled) setGpuReadiness({ state: "unverified", message: "GPU readiness could not be checked." });
     });
     return () => { cancelled = true; };
-  }, [api, cpuRequested]);
+  }, [api, cpuRequested, compileInfo.state, queueState.isProcessing]);
 
   const appendConsole = useCallback((line: string) => {
     if (!line) {
@@ -888,11 +888,7 @@ function App(): JSX.Element {
               </summary>
               <div className={styles.hardwarePopover}>
                 {hardware && <p>{hardware.cpu} · {Number(hardware.ramGiB.toFixed(1))} GB system RAM</p>}
-                {hardware?.gpus.some(gpu => gpu.metal) && <p>Metal supported.</p>}
-                <p>{cpuRequested ? "CPU processing is requested in the checkbox or arguments." : "GPU mode is automatic. Whisper selects an available backend when transcription starts."}</p>
-                {lastBackend && <p>Last reported backend: {lastBackend}.</p>}
-                {hardware?.gpus.some(gpu => gpu.memoryKind === "unified" || gpu.memoryKind === "shared") && <p>Shared memory is used by the GPU, system, and other apps. This is total memory, not free VRAM.</p>}
-                <p>{hardware?.note || "Detected hardware does not guarantee GPU acceleration. Transcription output reports the backend used."}</p>
+                <p>{cpuRequested ? "CPU only" : lastBackend ? `Backend: ${lastBackend}` : gpuReadiness?.message || "Checking GPU…"}</p>
               </div>
             </details>
             <span className={styles.processingMode} title={gpuReadiness?.message}>

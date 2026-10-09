@@ -146,6 +146,8 @@
 }
 
 .header {
+  position: relative;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -190,6 +192,8 @@
 }
 
 .workspace {
+  position: relative;
+  z-index: 1;
   flex: 1;
   display: grid;
   grid-template-columns: 280px minmax(0,1fr);

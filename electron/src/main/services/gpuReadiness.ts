@@ -9,29 +9,39 @@ import { WORK_ROOT_NAME } from "./compileManager";
 import type { GpuReadiness } from "../../types/easy-whisper";
 
 const exec = promisify(execFile);
+export const GPU_CHECK_MODEL = "tiny.en-q5_1";
+
+export async function ensureGpuCheckModel(modelsDir: string, downloadModel: (name: string) => Promise<void>): Promise<string> {
+  const model = path.join(modelsDir, `ggml-${GPU_CHECK_MODEL}.bin`);
+  try {
+    if ((await fsp.stat(model)).size > 0) return model;
+    await fsp.unlink(model);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+  await downloadModel(GPU_CHECK_MODEL);
+  if ((await fsp.stat(model)).size <= 0) throw new Error("GPU check model is empty.");
+  return model;
+}
 
 export function classifyGpuProbe(output: string, completed: boolean): GpuReadiness {
-  if (!completed) return { state: "unverified", message: "The GPU check did not complete. See transcription output when running a file." };
+  if (!completed) return { state: "unverified", message: "GPU check incomplete." };
   if (/whisper_backend_init_gpu:\s+(?:no GPU found|failed to initialize)/.test(output)) {
-    return { state: "unavailable", message: "Whisper could not initialize a GPU backend and used the CPU." };
+    return { state: "unavailable", message: "Whisper fell back to CPU." };
   }
   const match = output.match(/whisper_backend_init_gpu:\s+using (.+?) backend/);
   return match
-    ? { state: "ready", message: `Whisper completed a short local check using ${match[1]}. Larger models may need more memory.` }
-    : { state: "unverified", message: "Whisper did not report a GPU backend during the check." };
+    ? { state: "ready", message: `Verified with ${match[1]}.` }
+    : { state: "unverified", message: "No GPU backend reported." };
 }
 
-export async function checkGpuReadiness(): Promise<GpuReadiness> {
+export async function checkGpuReadiness(downloadModel: (name: string) => Promise<void>): Promise<GpuReadiness> {
   const binary = resolveBinary("whisper-cli", { allowSystemFallback: false });
   if (!binary.found) return { state: "unverified", message: "Finish Whisper setup to check GPU acceleration." };
   const modelsDir = path.join(app.getPath("userData"), WORK_ROOT_NAME, "models");
-  let model: string | undefined;
-  // Never download a model or load a large model just to check readiness.
-  for (const name of ["tiny.en", "tiny", "base.en", "base"]) {
-    const candidate = path.join(modelsDir, `ggml-${name}.bin`);
-    try { if ((await fsp.stat(candidate)).size > 0) { model = candidate; break; } } catch { /* not installed */ }
-  }
-  if (!model) return { state: "unverified", message: "A downloaded tiny or base model is needed for the startup check. You can still transcribe with any model." };
+  let model: string;
+  try { model = await ensureGpuCheckModel(modelsDir, downloadModel); }
+  catch { return { state: "unverified", message: "GPU check model download failed. Reopen the app to retry." }; }
   const dir = await fsp.mkdtemp(path.join(os.tmpdir(), "easy-whisper-gpu-check-"));
   try {
     // Synthetic silence, not microphone audio or a user's recording. No exports.
