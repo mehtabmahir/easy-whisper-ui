@@ -377,7 +377,54 @@ export class TranscriptionManager extends EventEmitter {
 
     const exeLabel = path.basename(whisper.command);
     this.emitConsole({ source: "transcription", message: `Running ${exeLabel} on ${path.basename(audioFile)}` });
-    await this.spawnWithLogs(whisper.command, args);
+    if (process.platform === "win32" && /[^\x00-\x7f]/.test(audioFile + modelPath + outputBase)) {
+      await this.runWithUnicodePaths(whisper.command, args);
+    } else {
+      await this.spawnWithLogs(whisper.command, args);
+    }
+  }
+
+  private async runWithUnicodePaths(command: string, args: string[]): Promise<void> {
+    // The Windows CLI uses narrow argv/file APIs. Relative ASCII aliases also work
+    // when the Windows user profile (and therefore the working directory) is Unicode.
+    const root = path.join(app.getPath("userData"), WORK_ROOT_NAME, "audio-cache");
+    await fsp.mkdir(root, { recursive: true });
+    const dir = await fsp.mkdtemp(path.join(root, "unicode-"));
+    const safeArgs = [...args];
+    let recoveryDir: string | undefined;
+    try {
+      for (const [flag, alias] of [["-m", "model.bin"], ["-f", "input.wav"]]) {
+        const index = safeArgs.indexOf(flag) + 1;
+        const source = safeArgs[index];
+        const destination = path.join(dir, alias);
+        // Hard links avoid copying multi-GB models. Cross-volume files need a copy.
+        try { await fsp.link(source, destination); }
+        catch { await fsp.copyFile(source, destination); }
+        this.currentAbort?.signal.throwIfAborted();
+        safeArgs[index] = alias;
+      }
+      const outputIndex = safeArgs.indexOf("-of") + 1;
+      const outputBase = safeArgs[outputIndex];
+      safeArgs[outputIndex] = "result";
+      await this.spawnWithLogs(command, safeArgs, dir);
+      this.currentAbort?.signal.throwIfAborted();
+      for (const file of await fsp.readdir(dir)) {
+        if (!file.startsWith("result.")) continue;
+        try { await fsp.copyFile(path.join(dir, file), outputBase + file.slice("result".length)); }
+        catch (error) {
+          recoveryDir = path.join(app.getPath("userData"), WORK_ROOT_NAME, "recovered-transcripts", path.basename(dir));
+          throw new Error(`Could not save transcript: ${(error as Error).message}. Results retained in ${recoveryDir}`);
+        }
+      }
+    } finally {
+      if (recoveryDir) {
+        await Promise.all(["model.bin", "input.wav"].map(file => fsp.rm(path.join(dir, file), { force: true })));
+        await fsp.mkdir(path.dirname(recoveryDir), { recursive: true });
+        await fsp.rename(dir, recoveryDir);
+      } else {
+        await fsp.rm(dir, { recursive: true, force: true });
+      }
+    }
   }
 
   private parseArgs(argumentText: string): string[] {
@@ -456,10 +503,10 @@ export class TranscriptionManager extends EventEmitter {
     });
   }
 
-  private async spawnWithLogs(command: string, args: string[]): Promise<void> {
+  private async spawnWithLogs(command: string, args: string[], cwd?: string): Promise<void> {
     this.currentAbort?.signal.throwIfAborted();
     await new Promise<void>((resolve, reject) => {
-      const child = spawn(command, args);
+      const child = spawn(command, args, cwd ? { cwd } : undefined);
       this.activeProcess = child;
 
       child.stdout.on("data", (data) => {
