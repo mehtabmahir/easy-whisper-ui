@@ -1,3 +1,44 @@
+; Preserve newer defaults before the legacy uninstaller restores its backup.
+!macro PreserveLegacyMediaExtension ROOT EXT
+  ClearErrors
+  ReadRegStr $R1 ${ROOT} "Software\Classes\.${EXT}" "Audio/Video for EasyWhisperUI_backup"
+  ${IfNot} ${Errors}
+    ReadRegStr $R0 ${ROOT} "Software\Classes\.${EXT}" ""
+    ${If} $R0 != "Audio/Video for EasyWhisperUI"
+      WriteRegStr ${ROOT} "Software\Classes\.${EXT}" "Audio/Video for EasyWhisperUI_backup" "$R0"
+    ${EndIf}
+  ${EndIf}
+!macroend
+
+!macro PreserveLegacyMediaAssociations ROOT
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "wav"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "mp3"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "m4a"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "flac"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "ogg"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "opus"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "aac"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "wma"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "mp4"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "m4v"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "mov"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "mkv"
+  !insertmacro PreserveLegacyMediaExtension ${ROOT} "avi"
+!macroend
+
+!macro customInit
+  Push $R0
+  Push $R1
+  ; initMultiUser selects the registry context before this hook.
+  !insertmacro PreserveLegacyMediaAssociations SHELL_CONTEXT
+  ${If} $installMode == "all"
+    ; All-users upgrades also remove an existing per-user installation.
+    !insertmacro PreserveLegacyMediaAssociations HKCU
+  ${EndIf}
+  Pop $R1
+  Pop $R0
+!macroend
+
 ; Older releases assigned every media extension to this single file class.
 ; Remove only our legacy defaults, preserving any replacement chosen since.
 !macro RestoreLegacyMediaExtension EXT
