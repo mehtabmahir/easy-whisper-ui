@@ -1,5 +1,6 @@
 // Display names mapped to the codes expected by the bundled whisper.cpp.
 export const LANGUAGE_CODES = {
+  "Auto detect": "auto",
   "Afrikaans": "af",
   "Albanian": "sq",
   "Amharic": "am",

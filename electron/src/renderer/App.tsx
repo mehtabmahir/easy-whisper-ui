@@ -1039,7 +1039,7 @@ function App(): JSX.Element {
                   <details className={styles.languageInfo}>
                     <summary aria-label="About input language" title="About input language">i</summary>
                     <p id="input-language-help">
-                      Language spoken in your audio or video. Non-English audio needs a multilingual model; .en models are English-only.
+                      Language spoken in your audio or video, or Auto detect to let Whisper identify it. Non-English audio needs a multilingual model; .en models are English-only.
                     </p>
                   </details>
                 </div>
