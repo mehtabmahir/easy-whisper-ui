@@ -64,86 +64,6 @@
       "output": "../build/electron-dist",
       "buildResources": "buildResources"
     },
-    "fileAssociations": [
-      {
-        "ext": "wav",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "mp3",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "m4a",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "flac",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "ogg",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "opus",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "aac",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "wma",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "mp4",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "m4v",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "mov",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "mkv",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      },
-      {
-        "ext": "avi",
-        "name": "Audio/Video for EasyWhisperUI",
-        "description": "Send audio/video files to EasyWhisperUI for transcription",
-        "role": "Editor"
-      }
-    ],
     "asar": true,
     "afterPack": "buildResources/scripts/after-pack.js",
     "extraResources": [
@@ -182,7 +102,8 @@
       "icon": "../resources/icon.ico"
     },
     "nsis": {
-      "deleteAppDataOnUninstall": true
+      "deleteAppDataOnUninstall": true,
+      "include": "buildResources/installer.nsh"
     },
     "linux": {
       "target": [
