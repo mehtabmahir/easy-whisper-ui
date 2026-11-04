@@ -6,6 +6,15 @@ export const DOWNLOADABLE_MODELS = [
   "base", "base.en", "tiny", "tiny.en", "tiny.en-q5_1"
 ];
 
+// whisper.cpp marks English-only models with `.en`, including quantized builds such as `tiny.en-q5_1`.
+export function isEnglishOnlyModel(model?: string, customModelPath?: string): boolean {
+  if (!model) return false;
+  if (model !== "custom") return /\.en(?:$|[-_.])/i.test(model);
+  // Custom files carry whatever name the user gave them, so only trust a clear ggml-style name.
+  const fileName = (customModelPath ?? "").split(/[/\\]/).pop() ?? "";
+  return /(?:^|[.\-_])en(?=$|[.\-_])/i.test(fileName.replace(/\.(?:bin|gguf|ggml)$/i, ""));
+}
+
 export function modelMemoryStatus(requiredGiB: number | undefined, hardware?: HardwareInfo): "unknown" | "red" | "yellow" | "green" {
   if (requiredGiB === undefined || !hardware) return "unknown";
   const capacities = hardware.gpus.flatMap(gpu => {

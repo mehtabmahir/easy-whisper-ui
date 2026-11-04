@@ -10,7 +10,7 @@ import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
 import ModelDownloadBar from "./ModelDownloadBar";
 import type { GpuReadiness, HardwareInfo, ModelDownloadProgress } from "../types/easy-whisper";
-import { DOWNLOADABLE_MODELS, modelMemoryStatus } from "../main/services/modelCatalog";
+import { DOWNLOADABLE_MODELS, isEnglishOnlyModel, modelMemoryStatus } from "../main/services/modelCatalog";
 const FIRST_LAUNCH_KEY = "easy-whisper-ui.first-launch";
 
 function isFirstLaunch(): boolean {
@@ -105,6 +105,25 @@ function loadTheme(): Theme {
 }
 document.documentElement.dataset.theme = loadTheme();
 document.documentElement.dataset.platform = window.easyWhisper?.platform() ?? "unknown";
+
+function languageName(code: string): string {
+  for (const [name, value] of Object.entries(LANGUAGE_CODES)) {
+    if (value === code) return name;
+  }
+  return code;
+}
+
+// whisper.cpp silently falls back to English for non-multilingual models, so explain it up front.
+function languageWarning(language: string, model: string, customModelPath?: string): string {
+  if (language === "en" || !isEnglishOnlyModel(model, customModelPath)) {
+    return "";
+  }
+  if (language === "auto") {
+    return "Auto detect needs a multilingual model. This model is English-only, so it will still transcribe in English.";
+  }
+  const suggestion = model === "custom" ? "a multilingual one" : `such as ${model.replace(/\.en.*$/i, "")}`;
+  return `This model is English-only, so it will transcribe in English. Choose a multilingual model ${suggestion} to use ${languageName(language)}.`;
+}
 
 function App(): JSX.Element {
   const [theme, setTheme] = useState<Theme>(loadTheme);
@@ -1053,8 +1072,7 @@ function App(): JSX.Element {
                 </select>
               </div>
               <p id="input-language-warning" className={styles.languageWarning} role="status">
-                {language !== "en" && model.endsWith(".en")
-                  ? `Choose a multilingual model such as ${model.slice(0, -3)} for this language.` : ""}
+                {languageWarning(language, model, customModelPath)}
               </p>
               </div>
               {model === "custom" && (

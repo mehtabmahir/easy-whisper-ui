@@ -17,7 +17,7 @@ import {
 } from "../../types/easy-whisper";
 import { WORK_ROOT_NAME } from "./compileManager";
 import { resolveBinary } from "./binaryResolver";
-import { DOWNLOADABLE_MODELS } from "./modelCatalog";
+import { DOWNLOADABLE_MODELS, isEnglishOnlyModel } from "./modelCatalog";
 
 interface QueueItem {
   file: string;
@@ -374,6 +374,14 @@ export class TranscriptionManager extends EventEmitter {
     }
 
     args.push("-l", settings.language);
+
+    if (settings.language !== "en" && isEnglishOnlyModel(settings.model, settings.customModelPath)) {
+      const requested = settings.language === "auto" ? "auto-detect" : settings.language;
+      this.emitConsole({
+        source: "transcription",
+        message: `Warning: ${path.basename(modelPath)} is English-only, so whisper.cpp ignores the ${requested} language setting. Choose a multilingual model to transcribe other languages.`
+      });
+    }
 
     if (settings.extraArgs.trim().length > 0) {
       args.push(...this.parseArgs(settings.extraArgs));
