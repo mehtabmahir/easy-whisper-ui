@@ -55,7 +55,8 @@ const SUPPORTED_FILE_EXTENSIONS = new Set([
   "opus"
 ]);
 
-const DEFAULT_ARGS = "-tp 0.0 -mc 64 -et 3.0";
+const DEFAULT_ARGS = "";
+const LEGACY_DEFAULT_ARGS = "-tp 0.0 -mc 64 -et 3.0";
 const SETTINGS_KEY = "easy-whisper-ui.settings";
 const LOGO_URL = "./icon.png";
 const WEBSITE_URL = "https://mehtab.work";
@@ -71,13 +72,19 @@ type PersistedSettings = {
   outputSrt?: boolean;
   openAfterComplete?: boolean;
   extraArgs?: string;
+  argumentsDefaultsVersion?: number;
   customModelPath?: string;
 };
 
 function loadPersistedSettings(): PersistedSettings {
   try {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
-    return raw ? JSON.parse(raw) : {};
+    const settings: PersistedSettings = raw ? JSON.parse(raw) : {};
+    // Only migrate the old preset, allowing harmless whitespace differences.
+    if (settings.argumentsDefaultsVersion !== 1 && typeof settings.extraArgs === "string" && settings.extraArgs.trim().replace(/\s+/g, " ") === LEGACY_DEFAULT_ARGS) {
+      settings.extraArgs = DEFAULT_ARGS;
+    }
+    return settings;
   } catch {
     return {};
   }
@@ -718,6 +725,7 @@ function App(): JSX.Element {
 
   useEffect(() => {
     savePersistedSettings({
+      argumentsDefaultsVersion: 1,
       model,
       language,
       cpuOnly,
@@ -1231,7 +1239,7 @@ function App(): JSX.Element {
               <label htmlFor="arguments">Arguments</label>
               <textarea
                 id="arguments"
-                placeholder="Example: --temperature 0.6 --max-context 1"
+                placeholder="Whisper defaults — add custom arguments"
                 rows={1}
                 value={extraArgs}
                 onChange={(event) => setExtraArgs(event.target.value)}
