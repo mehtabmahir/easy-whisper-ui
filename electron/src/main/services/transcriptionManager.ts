@@ -205,7 +205,7 @@ export class TranscriptionManager extends EventEmitter {
       if (nextItem.settings.transcriptReader) {
         this.previewSegments.clear();
         this.preview = { id: randomUUID(), source: nextItem.file, outputBase, original: '', markdown: '',
-          transcriptOnly: true, openReader: true, status: 'working', completed: 0, total: 0,
+          transcriptOnly: true, openReader: nextItem.settings.openAfterComplete, status: 'working', completed: 0, total: 0,
           preserved: 0, startedAt: Date.now(), message: 'Transcribing…' };
         this.emit('cleanup', { ...this.preview });
       }
@@ -222,7 +222,7 @@ export class TranscriptionManager extends EventEmitter {
         this.emitConsole({ source: "transcription", message: "Original transcript saved. Creating cleaned Markdown…" });
         const original = await fsp.readFile(outputBase + ".txt", "utf8");
         await cleanupTranscript({ source: nextItem.file, outputBase, original,
-          preferences: nextItem.settings.cleanup, signal: controller.signal,
+          preferences: nextItem.settings.cleanup, openReader: nextItem.settings.openAfterComplete, signal: controller.signal,
           emit: event => this.emit("cleanup", event) });
         controller.signal.throwIfAborted();
       } else if (!nextItem.settings.transcriptReader && nextItem.settings.openAfterComplete) {

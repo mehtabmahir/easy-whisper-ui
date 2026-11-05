@@ -69,7 +69,27 @@ test('normal transcription feeds the reader unchanged without invoking the LLM',
   await finished;
   assert.equal(result.original, original);
   assert.equal(result.transcriptOnly, true);
+  assert.equal(result.openReader, true);
   assert.equal(result.outputPath, file + '.txt');
   assert.equal(manager.failed.length, 0);
  } finally { await fs.rm(root, { recursive: true, force: true }); }
 });
+
+ test('normal preview respects an unchecked reader option while retaining text', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'reader-hidden-'));
+  try {
+   const file = path.join(root, 'test.wav');
+   const manager = new TranscriptionManager();
+   manager.ensureMp3 = async file => ({ path: file, deleteAfter: false });
+   manager.ensureModel = async () => 'model';
+   manager.runWhisper = async (_, __, ___, base) => fs.writeFile(base + '.txt', 'Saved text');
+   const events = [];
+   manager.on('cleanup', e => events.push(e));
+   const finished = new Promise(resolve => manager.once('finished', resolve));
+   manager.enqueue({ files: [file], settings: { ...settings, cleanup: undefined, transcriptReader: true, openAfterComplete: false } });
+   await finished;
+   assert.ok(events.length >= 2);
+   assert.ok(events.every(e => e.openReader === false));
+   assert.equal(events.at(-1).original, 'Saved text');
+  } finally { await fs.rm(root, { recursive: true, force: true }); }
+ });

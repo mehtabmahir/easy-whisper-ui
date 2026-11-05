@@ -1223,14 +1223,13 @@ function App(): JSX.Element {
               <label className={styles.checkbox}>
                 <input
                   type="checkbox"
-                  checked={cleanupEnabled || openAfterComplete}
-                  disabled={cleanupEnabled}
+                  checked={openAfterComplete}
                   onChange={(event) => setOpenAfterComplete(event.target.checked)}
                 />
                 <span>Open transcript reader</span>
               </label>
-              <label className={styles.checkbox} title="Create a separate Markdown copy. Local mode downloads a 491 MB model once; the original is always kept.">
-                <input type="checkbox" checked={cleanupEnabled} onChange={event => { setCleanupEnabled(event.target.checked); if (event.target.checked) setCleanupOpen(true); }}/>
+              <label className={styles.checkbox} title="Create a separate Markdown copy. Local mode downloads the selected model once; the original is always kept.">
+                <input type="checkbox" checked={cleanupEnabled} onChange={event => setCleanupEnabled(event.target.checked)}/>
                 <span>AI Cleanup</span>
               </label>
               <button type="button" className={styles.readerButton} onClick={() => setCleanupOpen(!cleanupOpen)} aria-expanded={cleanupOpen}>Transcript reader ↗</button>

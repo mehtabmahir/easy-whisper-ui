@@ -39,6 +39,7 @@ export async function cleanWithApi(text: string, model: string, key: string, sig
 
 export async function cleanupTranscript(input: {
   source: string; outputBase: string; original: string; preferences: CleanupPreferences;
+  openReader?: boolean;
   action?: TranscriptAction;
   signal: AbortSignal; emit: (event: CleanupEvent) => void;
 }): Promise<void> {
@@ -50,7 +51,7 @@ export async function cleanupTranscript(input: {
     ? `# ${actionLabel}\n\n> AI-generated from the transcript. Review against the original.\n\n${parts.join("\n\n")}`
     : markdownDocument(title, parts, preserved);
   const title = path.basename(source);
-  const event: CleanupEvent = { id: randomUUID(), source, original, action, outputBase, markdown: '', status: 'working',
+  const event: CleanupEvent = { id: randomUUID(), source, original, action, outputBase, openReader: input.openReader, markdown: '', status: 'working',
     completed: 0, total: 0, message: 'Preparing cleanup…', startedAt: Date.now(), preserved: 0 };
   const update = (patch: Partial<CleanupEvent>) => { Object.assign(event, patch); emit({ ...event }); };
   update({});
