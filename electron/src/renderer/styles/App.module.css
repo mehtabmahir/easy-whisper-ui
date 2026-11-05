@@ -865,8 +865,8 @@
 .queueTrigger:hover { color: var(--text); }
 .fileQueue::backdrop { background: transparent; }
 
-.readerButton { grid-column: 1 / -1; justify-self: stretch; align-self: center; min-height: 44px; padding: 10px 18px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--accent); color: var(--on-accent); cursor: pointer; font-size: 15px; font-weight: 600; }
-.readerButton:hover { background: var(--accent-hover); }
+.readerButton { justify-self: end; align-self: center; padding: 3px 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; }
+.readerButton:hover { color: var(--text); }
 .cleanupStage { padding: 9px 0; font-size: 12px; color: var(--muted); }
 
 .readerBackdrop { position: fixed; inset: 44px 0 0; z-index: 29; border: 0; background: var(--overlay); cursor: default; }
