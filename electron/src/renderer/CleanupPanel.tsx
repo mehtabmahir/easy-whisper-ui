@@ -72,12 +72,10 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
         <label>Local model<select disabled={busy} value={chosenModel.id} onChange={event => onPreferences({ ...preferences, localModel: event.target.value })}>
           {CLEANUP_MODELS.map(model => <option key={model.id} value={model.id}>{model.label} · {(model.files.reduce((sum, file) => sum + file.bytes, 0) / 1e9).toFixed(2)} GB</option>)}
         </select></label>
-        <p>{chosenModel.description}</p>
-        <p className={hardware && hardware.ramGiB < chosenModel.ramGiB ? styles.memoryWarning : styles.memoryHint} role="status">
-          Suggested system memory: {chosenModel.ramGiB} GB{hardware ? ` · This device: ${Math.round(hardware.ramGiB)} GB` : ''}.
-          {hardware && hardware.ramGiB < chosenModel.ramGiB ? ' Low memory: this model may run slowly or fail to load.' : ' Estimate only; other apps and GPU memory affect fit and speed.'}
+        <p className={hardware ? hardware.ramGiB < chosenModel.ramGiB ? styles.memoryWarning : styles.memoryFits : undefined}
+          role="status" title="Estimated system memory recommendation; actual use varies.">
+          {chosenModel.ramGiB} GB RAM suggested{hardware ? hardware.ramGiB < chosenModel.ramGiB ? ' · Low memory' : ' · Fits' : ''}
         </p>
-        <p>One-time download, then offline. Download size is not runtime memory use. Larger models are slower, especially on CPU.</p>
       </> : preferences.provider === 'custom' ? <>
         <p>Choose a GGUF instruction-tuned language model. Runs on this device. Whisper speech models cannot be used for cleanup.</p>
         <button disabled={busy} onClick={async () => {
