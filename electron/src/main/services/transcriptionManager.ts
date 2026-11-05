@@ -1,3 +1,4 @@
+import { TranscriptStream } from "./transcriptStream";
 import { cleanupTranscript } from "./transcriptCleanup";
 import { app, BrowserWindow, shell } from "electron";
 import { spawn, spawnSync, ChildProcessWithoutNullStreams } from "node:child_process";
@@ -47,6 +48,8 @@ export class TranscriptionManager extends EventEmitter {
   private failed: QueueItem[] = [];
   private activeProcess?: ChildProcessWithoutNullStreams;
   private processing = false;
+  private preview?: CleanupEvent;
+  private previewSegments = new Map<string, string>();
   private stage: "transcription" | "download" | "cleanup" = "transcription";
   private currentAbort?: AbortController;
   private clearingCache = false;
@@ -199,8 +202,20 @@ export class TranscriptionManager extends EventEmitter {
       const outputBase = audio.deleteAfter ? path.join(parsed.dir, `${parsed.name}.wav`) : nextItem.file;
       this.stage = "transcription";
       this.emitQueue();
+      if (nextItem.settings.transcriptReader) {
+        this.previewSegments.clear();
+        this.preview = { id: randomUUID(), source: nextItem.file, outputBase, original: '', markdown: '',
+          transcriptOnly: true, openReader: true, status: 'working', completed: 0, total: 0,
+          preserved: 0, startedAt: Date.now(), message: 'Transcribing…' };
+        this.emit('cleanup', { ...this.preview });
+      }
       await this.runWhisper(audio.path, modelPath, nextItem.settings, outputBase);
       controller.signal.throwIfAborted();
+      if (this.preview) {
+        this.preview = { ...this.preview, original: await fsp.readFile(outputBase + '.txt', 'utf8'),
+          status: 'complete', completed: 1, total: 1, message: 'Transcript saved', outputPath: outputBase + '.txt' };
+        this.emit('cleanup', { ...this.preview });
+      }
       if (nextItem.settings.cleanup) {
         this.stage = "cleanup";
         this.emitQueue();
@@ -210,22 +225,22 @@ export class TranscriptionManager extends EventEmitter {
           preferences: nextItem.settings.cleanup, signal: controller.signal,
           emit: event => this.emit("cleanup", event) });
         controller.signal.throwIfAborted();
-      } else if (nextItem.settings.transcriptReader) {
-        const original = await fsp.readFile(outputBase + '.txt', 'utf8');
-        this.emit('cleanup', { id: randomUUID(), source: nextItem.file, outputBase, original,
-          transcriptOnly: true, openReader: nextItem.settings.openAfterComplete, markdown: '', status: 'complete',
-          completed: 1, total: 1, preserved: 0, startedAt: Date.now(), message: 'Transcript saved', outputPath: outputBase + '.txt' });
-      } else if (nextItem.settings.openAfterComplete) {
+      } else if (!nextItem.settings.transcriptReader && nextItem.settings.openAfterComplete) {
         await this.openOutputAfterComplete(outputBase);
       }
       this.failed = this.failed.filter(item => path.resolve(item.file) !== path.resolve(nextItem.file));
       this.emitConsole({ source: "transcription", message: `Completed: ${path.basename(nextItem.file)}` });
     } catch (error) {
       const err = error as Error;
+      if (this.preview?.status === 'working') this.emit('cleanup', { ...this.preview,
+        status: controller.signal.aborted ? 'stopped' : 'error',
+        message: controller.signal.aborted ? 'Transcription stopped · partial preview' : `Transcription failed · partial preview: ${err.message}` });
       if (!controller.signal.aborted) this.failed.push({ ...nextItem, error: err.message });
       this.emitConsole({ source: "transcription", message: controller.signal.aborted
         ? `Stopped: ${path.basename(nextItem.file)}` : `Error processing ${nextItem.file}: ${err.message}` });
     } finally {
+      this.preview = undefined;
+      this.previewSegments.clear();
       if (audio?.deleteAfter) {
         this.emitConsole({ source: "transcription", message: `Cached converted audio for reuse: ${audio.path}` });
       }
@@ -565,7 +580,16 @@ export class TranscriptionManager extends EventEmitter {
       const child = spawn(command, args, cwd ? { cwd } : undefined);
       this.activeProcess = child;
 
+      const receiveSegment = (key: string, text: string) => {
+        if (!detectWhisperErrors || !this.preview || this.previewSegments.get(key) === text) return;
+        this.previewSegments.set(key, text);
+        this.preview.original = [...this.previewSegments.values()].join('\n');
+        this.emit('cleanup', { ...this.preview });
+      };
+      const stdoutTranscript = new TranscriptStream(receiveSegment);
+      const stderrTranscript = new TranscriptStream(receiveSegment);
       child.stdout.on("data", (data) => {
+        if (detectWhisperErrors) stdoutTranscript.push(data);
         const chunk = data.toString();
         const lines: string[] = chunk.replace(/\r/g, "\n").split(/\n+/);
         for (const raw of lines) {
@@ -584,6 +608,7 @@ export class TranscriptionManager extends EventEmitter {
         if (detectWhisperErrors && /^error:/i.test(line.trim())) whisperError ??= line.trim();
       };
       child.stderr.on("data", (data) => {
+        if (detectWhisperErrors) stderrTranscript.push(data);
         const chunk = data.toString();
         if (detectWhisperErrors) {
           const diagnosticLines = (stderrPending + chunk).split(/[\r\n]/);
@@ -605,6 +630,7 @@ export class TranscriptionManager extends EventEmitter {
       });
 
       child.once("close", (code) => {
+        stdoutTranscript.finish(); stderrTranscript.finish();
         this.activeProcess = undefined;
         inspectStderr(stderrPending);
         if (whisperError) {

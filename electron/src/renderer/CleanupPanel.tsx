@@ -71,7 +71,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
     </div>
     {result && <div className={styles.status}>
       <div><span role="status">{result.message}</span>{result.status === 'working' && <span>{Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')}</span>}</div>
-      {result.status === 'working' && !result.live && <>
+      {result.status === 'working' && !result.live && !result.transcriptOnly && <>
         <progress aria-label="Cleanup sections completed" max={result.total || 1} value={result.completed}/>
         <small>{result.completed} / {result.total || '…'} sections · You can read the original now.</small>
       </>}
