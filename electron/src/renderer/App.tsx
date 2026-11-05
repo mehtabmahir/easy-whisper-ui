@@ -910,7 +910,7 @@ function App(): JSX.Element {
   const memoryStatus = modelMemoryStatus(modelMemory?.gib, hardware);
   const canReopenSetup = isCompiling || compileInfo.state === "error";
   const reopenSetup = () => { setRetryError(undefined); setRecoveryOpen(true); };
-  const showOperationStatus = !showLoader && !recoveryOpen && !settingsOpen && (isCompiling || compileInfo.state === "error" || isProcessing || helpRunning || liveChanging || skipRunning || Boolean(modelDownloadProgress));
+  const showOperationStatus = !showLoader && !recoveryOpen && !settingsOpen && (isCompiling || compileInfo.state === "error" || (isProcessing && queueState.stage === "cleanup") || helpRunning || liveChanging || skipRunning || Boolean(modelDownloadProgress));
   const operationStatus = (
     <div className={`${styles.compileStatus} ${canReopenSetup ? styles.clickableProgress : ""}`}
       role={canReopenSetup ? "button" : undefined}
@@ -928,7 +928,6 @@ function App(): JSX.Element {
         : isCompiling ? <LoadingBar label="Whisper setup" {...setupProgress(compileInfo)} />
         : liveChanging ? <LoadingBar label="Preparing live transcription" paceSeconds={60} />
         : isProcessing && queueState.stage === "cleanup" ? <div role="status" className={styles.cleanupStage}>Cleaning transcript · progress in Transcript reader</div>
-        : isProcessing ? <LoadingBar key={queueState.processing} label="Transcription" paceSeconds={180} />
         : helpRunning ? <LoadingBar label="Loading help" paceSeconds={4} /> : null}
     </div>
   );
@@ -1083,7 +1082,7 @@ function App(): JSX.Element {
                 <ActionIcon name="settings" /> Settings
               </button>
             </div>
-            {!showOperationStatus && compileInfo.state === "success" && <div className={styles.compileStatus}><span className={styles.gpuReady}>Ready</span></div>}
+            {!showOperationStatus && !isProcessing && compileInfo.state === "success" && <div className={styles.compileStatus}><span className={styles.gpuReady}>Ready</span></div>}
 
             <div className={styles.selectorGroup}>
               <label className={styles.selectorLabel}>
