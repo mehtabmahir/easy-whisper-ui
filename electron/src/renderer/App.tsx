@@ -1200,11 +1200,12 @@ function App(): JSX.Element {
 
             <div className={styles.queueStatus}>
               <span>Processing: {getFileName(queueState.processing)}</span>
-              <span>Queued: {queuedCount}</span>
-            </div>
-
-            {queueState.items.length > 0 && (
+              <details className={styles.queueDropdown}
+                onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.open = false; }}
+                onKeyDown={event => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
+                <summary>Queued: {queuedCount}{queueState.items.some(item => item.status === "failed") ? " · Failed: " + queueState.items.filter(item => item.status === "failed").length : ""}</summary>
               <ul aria-label="Transcription queue" className={styles.fileQueue}>
+                {queueState.items.length === 0 && <li className={styles.queueEmpty}>No files in the queue</li>}
                 {queueState.items.map(item => (
                   <li key={item.id} className={styles.fileQueueItem}>
                     <div className={styles.fileQueueDetails}>
@@ -1221,7 +1222,8 @@ function App(): JSX.Element {
                   </li>
                 ))}
               </ul>
-            )}
+              </details>
+            </div>
 
             {showOperationStatus && operationStatus}
             <div className={styles.consoleBlock}>
