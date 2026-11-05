@@ -3,11 +3,15 @@ import Markdown from 'react-markdown';
 import type { CleanupEvent, CleanupPreferences } from '../types/easy-whisper';
 import styles from './styles/CleanupPanel.module.css';
 
-export default function CleanupPanel({ results, preferences, onPreferences, onClose, busy }: {
+export default function CleanupPanel({ results, preferences, onPreferences, onClose, busy: transcriptionBusy }: {
   results: CleanupEvent[]; preferences: CleanupPreferences;
   onPreferences: (preferences: CleanupPreferences) => void; onClose: () => void; busy: boolean;
 }) {
   const documentRef = useRef<HTMLDivElement>(null);
+  const [request, setRequest] = useState('');
+  const [requestOpen, setRequestOpen] = useState(false);
+  const actionWorking = results.some(item => item.action && item.status === 'working');
+  const busy = transcriptionBusy || actionWorking;
   const [selected, setSelected] = useState('');
   const [tab, setTab] = useState<'cleaned' | 'original'>('cleaned');
   const [key, setKey] = useState('');
@@ -26,6 +30,12 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
     await window.easyWhisper?.setCleanupApiKey('');
     setKey(''); setKeySaved(false); setNotice('');
     onPreferences(next);
+  };
+  const runAction = async (kind: 'summary' | 'custom') => {
+    if (!result || busy) return;
+    setTab('cleaned'); setNotice('');
+    try { await window.easyWhisper?.runTranscriptAction(result.id, preferences, { kind, request: kind === 'custom' ? request.trim() : undefined }); }
+    catch (error) { setNotice((error as Error).message); }
   };
   const saveKey = async () => {
     try { await window.easyWhisper?.setCleanupApiKey(key); setKeySaved(!!key.trim()); setKey(''); setNotice('Key updated for this session.'); }
@@ -70,11 +80,22 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
         <p>The key is never saved to disk. Add it again after restarting.</p>
       </>}
     </div>
+    {result && result.status !== 'working' && <section className={styles.postActions} aria-label="Transcript actions">
+      <span className={styles.eyebrow}>TRANSCRIPT ACTIONS</span>
+      <button disabled={busy} onClick={() => void runAction('summary')}>Summarize</button>
+      <button disabled={busy} aria-expanded={requestOpen} onClick={() => setRequestOpen(!requestOpen)}>Custom request</button>
+      {requestOpen && <>
+        <label>Your request<textarea disabled={busy} maxLength={2000} value={request} placeholder="e.g. List the action items" onChange={event => setRequest(event.target.value)}/></label>
+        <button disabled={busy || !request.trim()} onClick={() => void runAction('custom')}>Run request</button>
+      </>}
+      <small>Uses the selected model and original transcript. Saves a separate Markdown file.</small>
+    </section>}
+    {actionWorking && <div className={styles.postActions}><button onClick={() => void window.easyWhisper?.cancelTranscriptAction()}>Stop request</button></div>}
     {results.length > 1 && <select className={styles.history} aria-label="Recent transcripts" value={result?.id} onChange={event => setSelected(event.target.value)}>
-      {results.map(item => <option key={item.id} value={item.id}>{fileName(item.source)}</option>)}
+      {results.map(item => <option key={item.id} value={item.id}>{fileName(item.source)} · {item.action?.kind === 'summary' ? 'Summary' : item.action ? 'Custom response' : 'Transcript'}</option>)}
     </select>}
     <div className={styles.tabs} role="tablist" aria-label="Transcript version">
-      <button role="tab" aria-selected={tab === 'cleaned'} onClick={() => setTab('cleaned')}>Cleaned</button>
+      <button role="tab" aria-selected={tab === 'cleaned'} onClick={() => setTab('cleaned')}>{result?.action?.kind === 'summary' ? 'Summary' : result?.action ? 'Response' : 'Cleaned'}</button>
       <button role="tab" aria-selected={tab === 'original'} onClick={() => setTab('original')}>Original</button>
       <span className={styles.badge}>{result?.status === 'complete' ? '.md saved' : preferences.provider === 'local' || preferences.provider === 'custom' ? 'LOCAL AI' : preferences.provider === 'openai' ? 'OPENAI' : 'API'}</span>
     </div>

@@ -15,6 +15,7 @@ if (process.argv[2]) {
   const controller = new AbortController();
   cleanupTranscript({ source: 'meeting-sample.wav', outputBase: require('node:path').join(process.argv[2], 'meeting-sample.wav'),
     original: 'hello everyone thanks for joining today we need to review the release plan the budget is 450 dollars and we have 3 tasks remaining first we need to finish testing on windows then we need to update the documentation finally we should check the installer please keep the original recordings until friday',
+    action: process.argv.includes('--summary') ? { kind: 'summary' } : undefined,
     preferences: { provider: 'local', apiModel: '' }, signal: controller.signal,
     emit: event => {
       final = event;

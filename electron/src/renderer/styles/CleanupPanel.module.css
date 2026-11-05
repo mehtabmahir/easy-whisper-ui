@@ -69,3 +69,8 @@
 .settings option { background: var(--option); color: var(--text); }
 .settings small { font-size: 13px; line-height: 1.5; }
 .settings p { overflow-wrap: anywhere; }
+
+.postActions { display: flex; flex-direction: column; gap: 12px; padding: 0 24px 20px; margin-bottom: 18px; border-bottom: 1px solid var(--glass-border); }
+.postActions label { display: flex; flex-direction: column; gap: 9px; font-size: 14px; color: var(--muted); }
+.postActions textarea { width: 100%; min-height: 110px; resize: vertical; padding: 12px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--field); color: var(--text); font-size: 15px; }
+.postActions small { font-size: 13px; line-height: 1.5; color: var(--muted); }

@@ -36,7 +36,10 @@ export interface CleanupPreferences {
   apiEndpoint?: string;
   apiModel: string;
 }
+export type TranscriptAction = { kind: "summary" | "custom"; request?: string };
 export interface CleanupEvent {
+  action?: TranscriptAction;
+  outputBase?: string;
   id: string;
   source: string;
   original: string;
@@ -123,6 +126,8 @@ export interface HardwareInfo {
 }
 
 export type EasyWhisperApi = {
+  runTranscriptAction: (id: string, preferences: CleanupPreferences, action: TranscriptAction) => Promise<void>;
+  cancelTranscriptAction: () => Promise<void>;
   openCleanupModelFile: () => Promise<string | undefined>;
   setCleanupApiKey: (key: string) => Promise<void>;
   hasCleanupApiKey: () => Promise<boolean>;

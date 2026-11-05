@@ -143,3 +143,30 @@ test('custom models require an existing GGUF file with the correct header', asyn
     assert.equal(await validateCustomModel(file), file);
   } finally { await fs.rm(root, { recursive: true, force: true }); }
 });
+
+test('post-transcription actions accept concise responses, use custom instructions, and save separately', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'transcript-action-'));
+  const savedFetch = global.fetch;
+  const events = [];
+  const outputBase = path.join(root, 'meeting.wav');
+  setCleanupApiKey('test-key');
+  try {
+    await fs.writeFile(outputBase + '.cleaned.md', 'Existing cleaned transcript');
+    for (const action of [{ kind: 'summary' }, { kind: 'custom', request: 'List decisions only.' }]) {
+      global.fetch = async (_url, options) => {
+        const body = JSON.parse(options.body);
+        assert.match(body.messages[0].content, action.kind === 'summary' ? /Summarize/ : /List decisions only/);
+        return { ok: true, json: async () => ({ choices: [{ finish_reason: 'stop', message: { content: '## Decisions\n\n- Release on Friday.' } }] }) };
+      };
+      await cleanupTranscript({ source: 'meeting.wav', outputBase, original: 'The team discussed testing documentation and the remaining bugs for a long time before deciding to release on Friday.',
+        preferences: { provider: 'openai', apiModel: 'test' }, action, signal: new AbortController().signal, emit: e => events.push(e) });
+      const final = events.at(-1);
+      assert.equal(final.status, 'complete');
+      assert.equal(final.action.kind, action.kind);
+      assert.match(final.markdown, /Release on Friday/);
+      assert.doesNotMatch(final.markdown, /discussed testing documentation/);
+      assert.equal(final.outputPath, outputBase + (action.kind === 'summary' ? '.summary.md' : '.response.md'));
+    }
+    assert.equal(await fs.readFile(outputBase + '.cleaned.md', 'utf8'), 'Existing cleaned transcript');
+  } finally { global.fetch = savedFetch; await fs.rm(root, { recursive: true, force: true }); }
+});

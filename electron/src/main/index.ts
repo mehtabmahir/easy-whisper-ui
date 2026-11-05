@@ -1,5 +1,5 @@
-import { setCleanupApiKey, hasCleanupApiKey } from "./services/transcriptCleanup";
-import type { CleanupEvent } from "../types/easy-whisper";
+import { setCleanupApiKey, hasCleanupApiKey, cleanupTranscript } from "./services/transcriptCleanup";
+import type { CleanupEvent, CleanupPreferences, TranscriptAction } from "../types/easy-whisper";
 import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme, screen, shell } from "electron";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
@@ -32,6 +32,12 @@ const rendererHtmlPath = path.join(__dirname, "../renderer/index.html");
 const compileManager = new CompileManager();
 const transcriptionManager = new TranscriptionManager();
 const cleanupResults = new Map<string, CleanupEvent>();
+let transcriptActionAbort: AbortController | undefined;
+function publishCleanup(event: CleanupEvent) {
+  cleanupResults.set(event.id, event);
+  if (cleanupResults.size > 8) cleanupResults.delete(cleanupResults.keys().next().value!);
+  broadcast("easy-whisper:cleanup", event);
+}
 const liveManager = new LiveManager((model, signal) => transcriptionManager.downloadModel(model, signal));
 let setupBusy = false;
 let reinstalling = false;
@@ -83,6 +89,7 @@ if (!gotInstanceLock) {
 }
 
 app.on("before-quit", (event) => {
+  transcriptActionAbort?.abort();
   if (quitCleanupDone) return;
   event.preventDefault();
   if (quitting) return;
@@ -432,8 +439,8 @@ function registerIpcChannels(): void {
   });
 
   ipcMain.handle("easy-whisper:enqueue", async (_event, request: TranscriptionRequest) => {
-    if (setupBusy || quitting) {
-      broadcast("easy-whisper:console", { source: "system", message: "Wait for setup to finish before starting transcription." });
+    if (setupBusy || quitting || transcriptActionAbort) {
+      broadcast("easy-whisper:console", { source: "system", message: "Wait for the current task to finish before starting transcription." });
       return;
     }
     transcriptionManager.enqueue(request);
@@ -450,6 +457,19 @@ function registerIpcChannels(): void {
   });
 
   ipcMain.handle("easy-whisper:skip-current", () => transcriptionManager.skipCurrent());
+  ipcMain.handle("easy-whisper:transcript-action", async (_event, id: string, preferences: CleanupPreferences, action: TranscriptAction) => {
+    if (transcriptActionAbort || transcriptionBusy || setupBusy || liveBusy || quitting) throw new Error("Wait for the current task to finish.");
+    const result = cleanupResults.get(id);
+    if (!result?.original || !result.outputBase || result.status === 'working') throw new Error("Choose a finished transcript first.");
+    if (!action || !['summary', 'custom'].includes(action.kind) || (action.kind === 'custom' && (typeof action.request !== 'string' || !action.request.trim() || action.request.length > 2000))) throw new Error("Enter a request of up to 2,000 characters.");
+    const controller = new AbortController();
+    transcriptActionAbort = controller;
+    try {
+      await cleanupTranscript({ source: result.source, outputBase: result.outputBase, original: result.original,
+        preferences, action, signal: controller.signal, emit: publishCleanup });
+    } finally { transcriptActionAbort = undefined; }
+  });
+  ipcMain.handle("easy-whisper:cancel-transcript-action", () => { transcriptActionAbort?.abort(); });
   ipcMain.handle("easy-whisper:open-cleanup-model", async () => {
     const result = await dialog.showOpenDialog({ title: "Select Cleanup Model", properties: ["openFile"],
       filters: [{ name: "GGUF language models", extensions: ["gguf"] }] });
@@ -530,9 +550,7 @@ function registerIpcChannels(): void {
   });
 
   transcriptionManager.on("cleanup", (event: CleanupEvent) => {
-    cleanupResults.set(event.id, event);
-    if (cleanupResults.size > 8) cleanupResults.delete(cleanupResults.keys().next().value!);
-    broadcast("easy-whisper:cleanup", event);
+    publishCleanup(event);
   });
   transcriptionManager.on("queue", (event) => {
     transcriptionBusy = event.isProcessing || event.awaiting.length > 0;
