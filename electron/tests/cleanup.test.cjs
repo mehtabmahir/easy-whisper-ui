@@ -111,3 +111,35 @@ test('preserved wording still receives topic headings without losing content', (
   assert.equal(result.replace(/^#{2,3} .+$/gm, '').replace(/\s/g, ''), text.replace(/\s/g, ''));
   assert.doesNotMatch(structuredOriginal(text, 'invalid'), /## Section/);
 });
+
+test('compatible API uses the chosen endpoint and portable token parameter', async () => {
+  const savedFetch = global.fetch;
+  try {
+    global.fetch = async (url, options) => {
+      assert.equal(url, 'https://provider.example/v1/chat/completions');
+      const body = JSON.parse(options.body);
+      assert.equal(body.max_tokens, 4096);
+      assert.equal(body.store, undefined);
+      assert.equal(options.headers.Authorization, 'Bearer test-key');
+      return { ok: true, json: async () => ({ choices: [{ finish_reason: 'stop', message: { content: 'Done.' } }] }) };
+    };
+    assert.equal(await cleanWithApi('text', 'custom-model', 'test-key', new AbortController().signal, 'prompt', 'https://provider.example/v1/chat/completions'), 'Done.');
+    for (const endpoint of ['http://provider.example/v1', 'https://key@provider.example/v1', 'https://provider.example/v1?key=secret']) {
+      await assert.rejects(cleanWithApi('text', 'model', 'test-key', new AbortController().signal, 'prompt', endpoint), /HTTPS/);
+    }
+  } finally { global.fetch = savedFetch; }
+});
+
+test('custom models require an existing GGUF file with the correct header', async () => {
+  const { validateCustomModel } = require('../dist/main/services/transcriptCleanup');
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'cleanup-model-test-'));
+  try {
+    await assert.rejects(validateCustomModel(), /Choose a GGUF/);
+    await assert.rejects(validateCustomModel(path.join(root, 'whisper.bin')), /Choose a GGUF/);
+    const file = path.join(root, 'model.gguf');
+    await fs.writeFile(file, 'invalid');
+    await assert.rejects(validateCustomModel(file), /not a GGUF/);
+    await fs.writeFile(file, 'GGUFtest');
+    assert.equal(await validateCustomModel(file), file);
+  } finally { await fs.rm(root, { recursive: true, force: true }); }
+});

@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { EasyWhisperApi } from "../types/easy-whisper";
 
 const api: EasyWhisperApi = {
+  openCleanupModelFile: () => ipcRenderer.invoke("easy-whisper:open-cleanup-model"),
   setCleanupApiKey: key => ipcRenderer.invoke("easy-whisper:set-cleanup-key", key),
   hasCleanupApiKey: () => ipcRenderer.invoke("easy-whisper:has-cleanup-key"),
   getCleanupResults: () => ipcRenderer.invoke("easy-whisper:cleanup-results"),

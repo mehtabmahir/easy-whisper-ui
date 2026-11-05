@@ -31,7 +31,9 @@ export interface DownloadedModel {
 }
 
 export interface CleanupPreferences {
-  provider: "local" | "openai";
+  provider: "local" | "custom" | "openai" | "compatible";
+  customModelPath?: string;
+  apiEndpoint?: string;
   apiModel: string;
 }
 export interface CleanupEvent {
@@ -121,6 +123,7 @@ export interface HardwareInfo {
 }
 
 export type EasyWhisperApi = {
+  openCleanupModelFile: () => Promise<string | undefined>;
   setCleanupApiKey: (key: string) => Promise<void>;
   hasCleanupApiKey: () => Promise<boolean>;
   getCleanupResults: () => Promise<CleanupEvent[]>;

@@ -450,6 +450,11 @@ function registerIpcChannels(): void {
   });
 
   ipcMain.handle("easy-whisper:skip-current", () => transcriptionManager.skipCurrent());
+  ipcMain.handle("easy-whisper:open-cleanup-model", async () => {
+    const result = await dialog.showOpenDialog({ title: "Select Cleanup Model", properties: ["openFile"],
+      filters: [{ name: "GGUF language models", extensions: ["gguf"] }] });
+    return result.canceled ? undefined : result.filePaths[0];
+  });
   ipcMain.handle("easy-whisper:set-cleanup-key", (_event, key: string) => setCleanupApiKey(key));
   ipcMain.handle("easy-whisper:has-cleanup-key", () => hasCleanupApiKey());
   ipcMain.handle("easy-whisper:cleanup-results", () => [...cleanupResults.values()]);

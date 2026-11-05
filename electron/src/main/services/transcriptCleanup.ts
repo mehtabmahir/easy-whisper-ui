@@ -15,17 +15,20 @@ export function setCleanupApiKey(key: string): void {
 }
 export function hasCleanupApiKey(): boolean { return !!apiKey; }
 
-export async function cleanWithApi(text: string, model: string, key: string, signal: AbortSignal, prompt = CLEANUP_PROMPT): Promise<string> {
-  if (!key) throw new Error('Add an OpenAI API key in Cleanup settings. Your original transcript is saved.');
-  if (!model.trim() || model.length > 200) throw new Error('Enter an OpenAI text model ID in Cleanup settings.');
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+export async function cleanWithApi(text: string, model: string, key: string, signal: AbortSignal, prompt = CLEANUP_PROMPT, endpoint = 'https://api.openai.com/v1/chat/completions'): Promise<string> {
+  if (!key) throw new Error('Add an API key in Cleanup settings. Your original transcript is saved.');
+  if (!model.trim() || model.length > 200) throw new Error('Enter a text model ID in Cleanup settings.');
+  const url = new URL(endpoint);
+  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) throw new Error('Use an HTTPS chat completions endpoint without credentials or query parameters.');
+  const isOpenAI = url.origin === 'https://api.openai.com';
+  const response = await fetch(endpoint, {
     method: 'POST', redirect: 'error', signal: AbortSignal.any([signal, AbortSignal.timeout(120000)]),
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ model, store: false, max_completion_tokens: 4096,
+    body: JSON.stringify({ model, ...(isOpenAI ? { store: false, max_completion_tokens: 4096 } : { max_tokens: 4096 }),
       messages: [{ role: 'system', content: prompt }, { role: 'user', content: text }] })
   });
   // Never echo an API response body: it could contain transcript content or credentials.
-  if (!response.ok) throw new Error(`OpenAI cleanup failed (HTTP ${response.status}). Check your key, model access, and billing. Original transcript saved.`);
+  if (!response.ok) throw new Error(`API cleanup failed (HTTP ${response.status}). Check your key, model access, and billing. Original transcript saved.`);
   const data = await response.json() as { choices?: { finish_reason?: string; message?: { content?: string } }[] };
   const choice = data.choices?.[0];
   if (choice?.finish_reason === 'length') throw new IncompleteCleanupError('API cleanup returned incomplete output (text limit)');
@@ -53,14 +56,16 @@ export async function cleanupTranscript(input: {
     update({ total: chunks.length });
     // Snapshot the key for this job; changing settings cannot redirect an active request.
     const key = apiKey;
-    if (preferences.provider === 'openai') {
-      generate = text => cleanWithApi(text, preferences.apiModel, key, signal);
-      outline = text => cleanWithApi(text, preferences.apiModel, key, signal, OUTLINE_PROMPT);
+    if (preferences.provider === 'openai' || preferences.provider === 'compatible') {
+      const endpoint = preferences.provider === 'compatible' ? preferences.apiEndpoint?.trim() : undefined;
+      if (preferences.provider === 'compatible' && !endpoint) throw new Error('Enter your provider’s chat completions endpoint.');
+      generate = text => cleanWithApi(text, preferences.apiModel, key, signal, CLEANUP_PROMPT, endpoint);
+      outline = text => cleanWithApi(text, preferences.apiModel, key, signal, OUTLINE_PROMPT, endpoint);
     } else {
-      const modelPath = await ensureCleanupModel(path.join(app.getPath('userData'), 'whisper-workspace', 'cleanup-models'), signal,
+      const modelPath = preferences.provider === 'custom' ? await validateCustomModel(preferences.customModelPath) : await ensureCleanupModel(path.join(app.getPath('userData'), 'whisper-workspace', 'cleanup-models'), signal,
         message => update({ message }));
       signal.throwIfAborted();
-      update({ message: 'Loading tiny model…' });
+      update({ message: 'Loading model…' });
       const runtime = await loadRuntime();
       const llama = await runtime.getLlama({ build: 'never' });
       signal.throwIfAborted();
@@ -155,4 +160,16 @@ export async function cleanupTranscript(input: {
     await context?.dispose();
     await model?.dispose();
   }
+}
+
+export async function validateCustomModel(file?: string): Promise<string> {
+  if (!file || !path.isAbsolute(file) || path.extname(file).toLowerCase() !== '.gguf') throw new Error('Choose a GGUF language model file in Cleanup settings.');
+  const handle = await fs.open(file, 'r');
+  try {
+    if (!(await handle.stat()).isFile()) throw new Error('Choose a GGUF model file.');
+    const header = Buffer.alloc(4);
+    await handle.read(header, 0, 4, 0);
+    if (header.toString('ascii') !== 'GGUF') throw new Error('This file is not a GGUF language model.');
+  } finally { await handle.close(); }
+  return file;
 }
