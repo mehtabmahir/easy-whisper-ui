@@ -931,10 +931,11 @@ function App(): JSX.Element {
         downloadProgress={modelDownloadProgress} progress={compileInfo} onClose={() => setSettingsOpen(false)} />}
       {faqOpen && <FaqPanel onClose={() => setFaqOpen(false)} />}
       {creditsOpen && <CreditsPanel onClose={() => setCreditsOpen(false)} />}
+      {cleanupOpen && <button className={styles.readerBackdrop} aria-label="Close transcript reader" onClick={() => setCleanupOpen(false)} />}
       {cleanupOpen && <CleanupPanel results={cleanupResults} preferences={cleanupPreferences}
         onPreferences={setCleanupPreferences} onClose={() => setCleanupOpen(false)} busy={isProcessing}
       />}
-      <div className={`${styles.windowContainer} ${showLoader || recoveryOpen || settingsOpen || faqOpen || creditsOpen ? styles.modalBackground : ""}`} style={showLoader || recoveryOpen ? { pointerEvents: 'none', userSelect: 'none' } : {}}>
+      <div className={`${styles.windowContainer} ${showLoader || recoveryOpen || settingsOpen || faqOpen || creditsOpen || cleanupOpen ? styles.modalBackground : ""}`} style={showLoader || recoveryOpen ? { pointerEvents: 'none', userSelect: 'none' } : {}}>
         <div className={`${styles.titlebar} ${isMac ? styles.macTitlebar : ""}`}>
         <div className={styles.titleDragRegion}>
           <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.titleLogo} />
