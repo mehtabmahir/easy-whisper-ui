@@ -35,7 +35,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
   const elapsed = result ? Math.max(0, Math.floor((now - result.startedAt) / 1000)) : 0;
   return <aside className={styles.panel} aria-label="Transcript reader" onKeyDown={event => { if (event.key === "Escape" && !(event.target instanceof HTMLSelectElement)) onClose(); }}>
     <header className={styles.header}>
-      <div><span className={styles.eyebrow}>YOUR TRANSCRIPT</span><h2>A clearer read.</h2></div>
+      <div><h2>Transcript</h2></div>
       <div className={styles.actions}>
         <button type="button" onClick={onClose} aria-label="Close transcript reader">×</button>
       </div>
@@ -44,9 +44,9 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
     <nav className={styles.sidebar} aria-label="Transcript controls">
     <div className={styles.settings}>
       <span className={styles.eyebrow}>CLEANUP SETTINGS</span>
-      <label>Cleanup runs<select disabled={busy} value={preferences.provider}
+      <label>Model<select disabled={busy} value={preferences.provider}
         onChange={event => onPreferences({ ...preferences, provider: event.target.value as CleanupPreferences['provider'] })}>
-        <option value="local">On this device</option><option value="openai">With an OpenAI API key</option>
+        <option value="local">Qwen 2.5 · 0.5B (built-in)</option><option value="openai">Custom</option>
       </select></label>
       {preferences.provider === 'local' ? <p>Qwen 2.5 · 0.5B. A one-time 491 MB download, then offline. Uses available graphics acceleration.</p> : <>
         <p>Transcript text is sent to OpenAI for cleanup. API usage is billed to your account. Audio stays on this device.</p>
@@ -84,10 +84,10 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
     </nav>
     <section className={styles.reading} aria-label="Transcript output">
     <div ref={documentRef} className={styles.document} role="tabpanel" tabIndex={0} aria-label={tab === 'original' ? 'Original transcript' : 'Cleaned Markdown'}>
-      {!result ? <div className={styles.empty}><div className={styles.documentIcon}>Aa</div><h3>From spoken to readable.</h3><p>After transcription, a tiny model tidies punctuation and paragraphs into a separate Markdown file.</p><p>Your original is always kept.</p></div>
+      {!result ? <div className={styles.empty}><div className={styles.documentIcon}>Aa</div><h3>No transcript yet</h3><p>After transcription, the selected model formats the text into a separate Markdown file.</p><p>Your original is always kept.</p></div>
         : tab === 'original' ? <><h3>{fileName(result.source)}</h3><div className={styles.original}>{result.original}</div></>
         : result.markdown ? <Markdown skipHtml components={{ a: ({ children }) => <span>{children}</span>, img: ({ alt }) => <span>{alt ?? ''}</span> }}>{result.markdown}</Markdown>
-        : <div className={styles.empty}><div className={styles.documentIcon}>Aa</div><h3>{result.status === 'working' ? 'Making room to read.' : 'Your original is safe.'}</h3><p>{result.status === 'working' ? 'Cleaned text will appear here as it is written. Switch to Original to start reading.' : 'Switch to Original to read the transcript. Check cleanup settings before your next run.'}</p></div>}
+        : <div className={styles.empty}><div className={styles.documentIcon}>Aa</div><h3>{result.status === 'working' ? 'Formatting transcript…' : 'Original transcript available'}</h3><p>{result.status === 'working' ? 'Cleaned text will appear here as it is written. Switch to Original to start reading.' : 'Switch to Original to read the transcript. Check cleanup settings before your next run.'}</p></div>}
     </div>
 
     </section>
