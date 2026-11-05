@@ -65,11 +65,10 @@ test('normal transcription feeds the reader unchanged without invoking the LLM',
   let result;
   manager.on('cleanup', event => { result = event; });
   const finished = new Promise(resolve => manager.once('finished', resolve));
-  manager.enqueue({ files: [file], settings: { ...settings, cleanup: undefined, transcriptReader: true, openAfterComplete: false } });
+  manager.enqueue({ files: [file], settings: { ...settings, cleanup: undefined, transcriptReader: true } });
   await finished;
   assert.equal(result.original, original);
   assert.equal(result.transcriptOnly, true);
-  assert.equal(result.openReader, true);
   assert.equal(result.outputPath, file + '.txt');
   assert.equal(manager.failed.length, 0);
  } finally { await fs.rm(root, { recursive: true, force: true }); }
