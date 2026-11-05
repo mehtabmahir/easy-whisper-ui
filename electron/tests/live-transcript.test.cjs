@@ -16,9 +16,9 @@ test('live text opens the reader, preserves chunk boundaries, and saves in order
   const final = events.at(-1);
   assert.equal(final.status, 'complete');
   assert.equal(final.original, 'Hello world.\n\n你好');
-  assert.equal(await fs.readFile(final.outputPath, 'utf8'), 'Hello world.\n你好');
+  assert.equal(await fs.readFile(final.outputPath, 'utf8'), final.original);
   const second = new LiveTranscript(root, () => {}); await second.finish();
-  assert.equal((await fs.readdir(root)).length, 2);
+  assert.equal((await fs.readdir(root)).length, 4);
  } finally { await fs.rm(root, { recursive: true, force: true }); }
 });
 test('save failures keep live text available in the reader', async () => {
@@ -42,6 +42,7 @@ test('reader and LLM receive the merged live line while raw updates stay on disk
   assert.equal(latest.original, 'I am currently watching regular show.');
   const finished = await session.finish();
   assert.equal(finished.original, latest.original);
-  assert.match(await fs.readFile(finished.outputPath, 'utf8'), /watch\nI am/);
+  assert.equal(await fs.readFile(finished.outputPath, 'utf8'), finished.original);
+  assert.match(await fs.readFile(finished.outputBase + '.raw.txt', 'utf8'), /watch\nI am/);
  } finally { await fs.rm(root, { recursive: true, force: true }); }
 });
