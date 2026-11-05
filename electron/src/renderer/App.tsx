@@ -973,7 +973,7 @@ function App(): JSX.Element {
               <div className={styles.hardwarePopover}>
                 {hardware && <p>{hardware.cpu} · {Number(hardware.ramGiB.toFixed(1))} GB system RAM</p>}
                 <p>{cpuRequested ? "CPU only" : lastBackend ? `Backend: ${lastBackend}` : gpuReadiness?.message || "Checking GPU…"}</p>
-              </details>
+              </div>
             </details>
             <span className={styles.processingMode} title={gpuReadiness?.message}>
               GPU Acceleration: <span className={!cpuRequested && gpuReadiness?.state === "ready" ? styles.gpuReady : undefined}>
@@ -1061,7 +1061,7 @@ function App(): JSX.Element {
                     <p id="input-language-help">
                       Language spoken in your audio or video, or Auto detect to let Whisper identify it. Non-English audio needs a multilingual model; .en models are English-only.
                     </p>
-                  </div>
+                  </details>
                 </div>
                 <select id="input-language" value={language} aria-describedby="input-language-help input-language-warning"
                   onChange={(event) => setLanguage(event.target.value)}>
