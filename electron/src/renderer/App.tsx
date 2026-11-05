@@ -1251,13 +1251,15 @@ function App(): JSX.Element {
                 <input type="checkbox" checked={cleanupEnabled} onChange={event => setCleanupEnabled(event.target.checked)}/>
                 <span>AI Cleanup</span>
               </label>
+              <div className={styles.optionsTail}>
               <label className={styles.checkbox} title="Delete temporary converted audio when the app closes. Original files and transcripts are kept.">
                 <input type="checkbox" checked={clearCacheOnExit} disabled={!cachePreferenceReady || savingCachePreference}
                   onChange={event => void changeCacheOnExit(event.target.checked)} />
                 <span>Clear cache on exit</span>
               </label>
-              {cachePreferenceError && <span role="status">{cachePreferenceError}</span>}
               <button type="button" className={styles.readerButton} onClick={() => setCleanupOpen(!cleanupOpen)} aria-expanded={cleanupOpen}>Transcript reader ↗</button>
+              </div>
+              {cachePreferenceError && <span role="status">{cachePreferenceError}</span>}
             </div>
 
             <div className={styles.queueStatus}>
