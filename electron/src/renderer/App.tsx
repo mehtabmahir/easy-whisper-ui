@@ -153,7 +153,7 @@ function App(): JSX.Element {
   const [model, setModel] = useState<string>(persisted.model ?? "tiny.en");
   const [language, setLanguage] = useState<string>(persisted.language ?? "en");
   const [cpuOnly, setCpuOnly] = useState<boolean>(persisted.cpuOnly ?? false);
-  const [cleanupEnabled, setCleanupEnabled] = useState(persisted.cleanupEnabled ?? false);
+  const [cleanupEnabled, setCleanupEnabled] = useState(persisted.cleanupEnabled ?? true);
   const [cleanupPreferences, setCleanupPreferences] = useState<CleanupPreferences>(() => {
     const preferences = persisted.cleanupPreferences ?? { provider: "local", apiModel: "" };
     return { ...preferences, localModel: !preferences.localModel || ["qwen-0.5b", "qwen-1.5b"].includes(preferences.localModel) ? "qwen-3b" : preferences.localModel };
