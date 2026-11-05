@@ -1249,7 +1249,7 @@ function App(): JSX.Element {
                   <li key={item.id} className={styles.fileQueueItem}>
                     <div className={styles.fileQueueDetails}>
                       <span title={item.file}>{getFileName(item.file)}</span>
-                      <small>{item.status === "failed" ? "Failed" : item.status === "processing" ? queueState.stage === "cleanup" ? "Cleaning up" : "Transcribing" : "Waiting"}</small>
+                      <small>{item.status === "failed" ? "Failed" : item.status === "processing" ? queueState.stage === "cleanup" ? "Cleaning up" : queueState.stage === "download" ? "Downloading model" : "Transcribing" : "Waiting"}</small>
                       {item.error && <small className={styles.queueError}>{item.error}</small>}
                     </div>
                     {item.status === "failed" && <button type="button" disabled={isCompiling || liveActive}

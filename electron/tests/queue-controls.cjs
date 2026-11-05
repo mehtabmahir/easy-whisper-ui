@@ -69,3 +69,35 @@ test('Stop clears the queue without allowing a pending preparation to launch Whi
   assert.equal(ran, false);
   assert.equal(manager.processing, false);
 });
+
+test('a successful fresh run removes an older failed entry for the same file', async () => {
+  const manager = new TranscriptionManager();
+  manager.ensureMp3 = async file => ({ path: file, deleteAfter: false });
+  let fail = true;
+  manager.ensureModel = async () => { if (fail) throw new Error('Download interrupted'); return 'model'; };
+  manager.runWhisper = async () => {};
+  let finished = once(manager, 'finished');
+  manager.enqueue({ files: ['lecture.wav'], settings });
+  await finished;
+  assert.equal(manager.failed.length, 1);
+  fail = false;
+  finished = once(manager, 'finished');
+  manager.enqueue({ files: ['lecture.wav'], settings });
+  await finished;
+  assert.equal(manager.failed.length, 0);
+});
+
+test('waiting for a successful model download does not create a retryable failure', async () => {
+  const manager = new TranscriptionManager();
+  manager.ensureMp3 = async file => ({ path: file, deleteAfter: false });
+  let finishDownload;
+  manager.ensureModel = () => new Promise(resolve => { finishDownload = resolve; });
+  manager.runWhisper = async () => {};
+  const finished = once(manager, 'finished');
+  manager.enqueue({ files: ['lecture.wav'], settings });
+  await tick();
+  assert.equal(manager.failed.length, 0);
+  finishDownload('model');
+  await finished;
+  assert.equal(manager.failed.length, 0);
+});

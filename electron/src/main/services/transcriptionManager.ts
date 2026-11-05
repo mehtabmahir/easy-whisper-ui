@@ -47,7 +47,7 @@ export class TranscriptionManager extends EventEmitter {
   private failed: QueueItem[] = [];
   private activeProcess?: ChildProcessWithoutNullStreams;
   private processing = false;
-  private stage: "transcription" | "cleanup" = "transcription";
+  private stage: "transcription" | "download" | "cleanup" = "transcription";
   private currentAbort?: AbortController;
   private clearingCache = false;
   private shuttingDown = false;
@@ -197,6 +197,8 @@ export class TranscriptionManager extends EventEmitter {
       // Keep exports beside the original media, even when the input WAV is cached.
       const parsed = path.parse(nextItem.file);
       const outputBase = audio.deleteAfter ? path.join(parsed.dir, `${parsed.name}.wav`) : nextItem.file;
+      this.stage = "transcription";
+      this.emitQueue();
       await this.runWhisper(audio.path, modelPath, nextItem.settings, outputBase);
       controller.signal.throwIfAborted();
       if (nextItem.settings.cleanup) {
@@ -211,6 +213,7 @@ export class TranscriptionManager extends EventEmitter {
       } else if (nextItem.settings.openAfterComplete) {
         await this.openOutputAfterComplete(outputBase);
       }
+      this.failed = this.failed.filter(item => path.resolve(item.file) !== path.resolve(nextItem.file));
       this.emitConsole({ source: "transcription", message: `Completed: ${path.basename(nextItem.file)}` });
     } catch (error) {
       const err = error as Error;
@@ -357,6 +360,7 @@ export class TranscriptionManager extends EventEmitter {
       return modelPath;
     }
 
+    if (!quiet && this.processing) { this.stage = "download"; this.emitQueue(); }
     if (!quiet) this.emitConsole({ source: "transcription", message: `Downloading model ${modelFile}` });
     const url = `${MODEL_BASE_URL}/${modelFile}`;
     const partial = `${modelPath}.${randomUUID()}.partial`;
