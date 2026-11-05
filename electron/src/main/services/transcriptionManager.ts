@@ -1,3 +1,4 @@
+import { cleanupTranscript } from "./transcriptCleanup";
 import { app, BrowserWindow, shell } from "electron";
 import { spawn, spawnSync, ChildProcessWithoutNullStreams } from "node:child_process";
 import { EventEmitter } from "node:events";
@@ -9,6 +10,7 @@ import os from "node:os";
 import { createHash, randomUUID } from "node:crypto";
 import { pipeline } from "node:stream/promises";
 import {
+  CleanupEvent,
   ConsoleEvent,
   ModelDownloadProgress,
   ModelSettings,
@@ -27,6 +29,7 @@ interface QueueItem {
 }
 
 interface TranscriptionEvents {
+  cleanup: CleanupEvent;
   download: ModelDownloadProgress;
   console: ConsoleEvent;
   queue: QueueState;
@@ -44,6 +47,7 @@ export class TranscriptionManager extends EventEmitter {
   private failed: QueueItem[] = [];
   private activeProcess?: ChildProcessWithoutNullStreams;
   private processing = false;
+  private stage: "transcription" | "cleanup" = "transcription";
   private currentAbort?: AbortController;
   private clearingCache = false;
   private shuttingDown = false;
@@ -177,6 +181,7 @@ export class TranscriptionManager extends EventEmitter {
     }
 
     this.processing = true;
+    this.stage = "transcription";
     this.current = nextItem;
     const controller = new AbortController();
     this.currentAbort = controller;
@@ -194,7 +199,16 @@ export class TranscriptionManager extends EventEmitter {
       const outputBase = audio.deleteAfter ? path.join(parsed.dir, `${parsed.name}.wav`) : nextItem.file;
       await this.runWhisper(audio.path, modelPath, nextItem.settings, outputBase);
       controller.signal.throwIfAborted();
-      if (nextItem.settings.openAfterComplete) {
+      if (nextItem.settings.cleanup) {
+        this.stage = "cleanup";
+        this.emitQueue();
+        this.emitConsole({ source: "transcription", message: "Original transcript saved. Creating cleaned Markdown…" });
+        const original = await fsp.readFile(outputBase + ".txt", "utf8");
+        await cleanupTranscript({ source: nextItem.file, outputBase, original,
+          preferences: nextItem.settings.cleanup, signal: controller.signal,
+          emit: event => this.emit("cleanup", event) });
+        controller.signal.throwIfAborted();
+      } else if (nextItem.settings.openAfterComplete) {
         await this.openOutputAfterComplete(outputBase);
       }
       this.emitConsole({ source: "transcription", message: `Completed: ${path.basename(nextItem.file)}` });
@@ -384,7 +398,7 @@ export class TranscriptionManager extends EventEmitter {
       outputBase
     ];
 
-    if (settings.outputTxt) {
+    if (settings.outputTxt || settings.cleanup) {
       args.push("-otxt");
     }
     if (settings.outputSrt) {
@@ -622,7 +636,8 @@ export class TranscriptionManager extends EventEmitter {
       ],
       awaiting,
       processing: this.current?.file,
-      isProcessing: this.processing
+      isProcessing: this.processing,
+      stage: this.processing ? this.stage : undefined
     };
     this.emit("queue", state);
   }

@@ -2,6 +2,16 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { EasyWhisperApi } from "../types/easy-whisper";
 
 const api: EasyWhisperApi = {
+  setCleanupApiKey: key => ipcRenderer.invoke("easy-whisper:set-cleanup-key", key),
+  hasCleanupApiKey: () => ipcRenderer.invoke("easy-whisper:has-cleanup-key"),
+  getCleanupResults: () => ipcRenderer.invoke("easy-whisper:cleanup-results"),
+  revealCleanupFile: id => ipcRenderer.invoke("easy-whisper:reveal-cleanup", id),
+  onCleanup: callback => {
+    const channel = "easy-whisper:cleanup";
+    const handler = (_event: Electron.IpcRendererEvent, data: Parameters<typeof callback>[0]) => callback(data);
+    ipcRenderer.on(channel, handler);
+    return () => ipcRenderer.removeListener(channel, handler);
+  },
   checkGpuReadiness: () => ipcRenderer.invoke("easy-whisper:gpu-readiness"),
   getHardwareInfo: () => ipcRenderer.invoke("easy-whisper:hardware-info"),
   listDownloadedModels: () => ipcRenderer.invoke("easy-whisper:list-models"),

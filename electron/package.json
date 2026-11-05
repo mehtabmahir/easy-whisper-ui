@@ -8,7 +8,9 @@
   "description": "Electron frontend shell for EasyWhisperUI",
   "homepage": "https://github.com/mehtabmahir/easy-whisper-ui",
   "private": true,
-  "engines": { "node": ">=22.12.0" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:main\" \"npm:dev:preload\" \"npm:dev:renderer\" \"npm:dev:electron\"",
@@ -26,8 +28,10 @@
     "postinstall": "node buildResources/scripts/postinstall.js"
   },
   "dependencies": {
+    "node-llama-cpp": "3.22.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-markdown": "10.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
@@ -89,7 +93,9 @@
         {
           "from": "buildResources/mac-bin",
           "to": "mac-bin",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         }
       ]
     },
@@ -120,6 +126,11 @@
     },
     "rpm": {
       "synopsis": "EasyWhisperUI"
-    }
+    },
+    "asarUnpack": [
+      "node_modules/node-llama-cpp/bins/**/*",
+      "node_modules/node-llama-cpp/llama/**/*",
+      "node_modules/@node-llama-cpp/**/*"
+    ]
   }
 }

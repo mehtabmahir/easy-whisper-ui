@@ -1,3 +1,5 @@
+import { setCleanupApiKey, hasCleanupApiKey } from "./services/transcriptCleanup";
+import type { CleanupEvent } from "../types/easy-whisper";
 import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme, screen, shell } from "electron";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
@@ -29,6 +31,7 @@ const rendererHtmlPath = path.join(__dirname, "../renderer/index.html");
 
 const compileManager = new CompileManager();
 const transcriptionManager = new TranscriptionManager();
+const cleanupResults = new Map<string, CleanupEvent>();
 const liveManager = new LiveManager((model, signal) => transcriptionManager.downloadModel(model, signal));
 let setupBusy = false;
 let reinstalling = false;
@@ -447,6 +450,13 @@ function registerIpcChannels(): void {
   });
 
   ipcMain.handle("easy-whisper:skip-current", () => transcriptionManager.skipCurrent());
+  ipcMain.handle("easy-whisper:set-cleanup-key", (_event, key: string) => setCleanupApiKey(key));
+  ipcMain.handle("easy-whisper:has-cleanup-key", () => hasCleanupApiKey());
+  ipcMain.handle("easy-whisper:cleanup-results", () => [...cleanupResults.values()]);
+  ipcMain.handle("easy-whisper:reveal-cleanup", (_event, id: string) => {
+    const result = cleanupResults.get(id);
+    if (result?.outputPath) shell.showItemInFolder(result.outputPath);
+  });
   ipcMain.handle("easy-whisper:help", async () => {
     if (setupBusy || helpBusy) return { success: false, error: "Wait for setup or the current help request to finish." };
     helpBusy = true;
@@ -514,6 +524,11 @@ function registerIpcChannels(): void {
     broadcast("easy-whisper:model-download-progress", event);
   });
 
+  transcriptionManager.on("cleanup", (event: CleanupEvent) => {
+    cleanupResults.set(event.id, event);
+    if (cleanupResults.size > 8) cleanupResults.delete(cleanupResults.keys().next().value!);
+    broadcast("easy-whisper:cleanup", event);
+  });
   transcriptionManager.on("queue", (event) => {
     transcriptionBusy = event.isProcessing || event.awaiting.length > 0;
     broadcast("easy-whisper:queue", event);

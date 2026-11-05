@@ -30,7 +30,26 @@ export interface DownloadedModel {
   bytes: number;
 }
 
+export interface CleanupPreferences {
+  provider: "local" | "openai";
+  apiModel: string;
+}
+export interface CleanupEvent {
+  id: string;
+  source: string;
+  original: string;
+  markdown: string;
+  status: "working" | "complete" | "stopped" | "error";
+  completed: number;
+  total: number;
+  message: string;
+  startedAt: number;
+  preserved: number;
+  outputPath?: string;
+}
+
 export interface ModelSettings {
+  cleanup?: CleanupPreferences;
   model: string;
   language: string;
   cpuOnly: boolean;
@@ -58,6 +77,7 @@ export interface QueueState {
   awaiting: string[];
   processing?: string;
   isProcessing: boolean;
+  stage?: "transcription" | "cleanup";
 }
 
 export interface ConsoleEvent {
@@ -101,6 +121,11 @@ export interface HardwareInfo {
 }
 
 export type EasyWhisperApi = {
+  setCleanupApiKey: (key: string) => Promise<void>;
+  hasCleanupApiKey: () => Promise<boolean>;
+  getCleanupResults: () => Promise<CleanupEvent[]>;
+  revealCleanupFile: (id: string) => Promise<void>;
+  onCleanup: (callback: (event: CleanupEvent) => void) => () => void;
   checkGpuReadiness: () => Promise<GpuReadiness>;
   getHardwareInfo: () => Promise<HardwareInfo>;
   setTheme: (theme: "auto" | "light" | "dark") => Promise<void>;
