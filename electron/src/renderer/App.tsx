@@ -57,7 +57,6 @@ const SUPPORTED_FILE_EXTENSIONS = new Set([
 const DEFAULT_ARGS = "-tp 0.0 -mc 64 -et 3.0";
 const SETTINGS_KEY = "easy-whisper-ui.settings";
 const LOGO_URL = "./icon.png";
-const GITHUB_URL = "https://github.com/mehtabmahir/easy-whisper-ui/releases";
 const WEBSITE_URL = "https://mehtab.work";
 const DONATE_URL = "https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD";
 
@@ -1177,21 +1176,19 @@ function App(): JSX.Element {
             </button>
             </div>
             <div className={styles.linkCluster}>
-              <a
-                href={GITHUB_URL}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={openUpdates}
                 className={styles.socialButton}
-                title="Download the latest EasyWhisperUI release"
+                aria-haspopup="dialog"
+                aria-expanded={updateOpen}
+                title="Check for updates"
               >
-                <svg className={styles.socialIcon} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path
-                    fill="currentColor"
-                    d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.6-3.37-1.34-3.37-1.34-.45-1.17-1.11-1.48-1.11-1.48-.91-.62.07-.61.07-.61 1 .07 1.52 1.04 1.52 1.04.9 1.52 2.36 1.08 2.94.83.09-.65.35-1.08.64-1.33-2.22-.25-4.55-1.11-4.55-4.95 0-1.09.39-1.99 1.03-2.69-.1-.26-.45-1.29.1-2.68 0 0 .85-.27 2.78 1.03a9.63 9.63 0 0 1 5.06 0c1.93-1.3 2.78-1.03 2.78-1.03.55 1.39.2 2.42.1 2.68.64.7 1.03 1.6 1.03 2.69 0 3.85-2.33 4.69-4.56 4.94.36.31.68.92.68 1.86 0 1.34-.01 2.42-.01 2.75 0 .26.18.58.69.48A10 10 0 0 0 12 2Z"
-                  />
+                <svg className={styles.socialIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                  <path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.5-1L20 9M4 15l2.4 3A7 7 0 0 0 17.9 17" />
                 </svg>
                 <span>Update</span>
-              </a>
+              </button>
               <a
                 href={DONATE_URL}
                 target="_blank"

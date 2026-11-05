@@ -404,6 +404,8 @@
 }
 
 .socialButton {
+  background: transparent;
+  cursor: pointer;
   flex: 1;
   display: inline-flex;
   align-items: center;
