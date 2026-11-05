@@ -7,8 +7,12 @@ import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
 import ModelDownloadBar from "./ModelDownloadBar";
 
-export default function SettingsPanel({ busy, progress, downloadProgress, onClose, cleanupEnabled, onCleanupEnabled, cleanupPreferences, onCleanupPreferences }: {
+export default function SettingsPanel({ busy, progress, downloadProgress, onClose, cleanupEnabled, onCleanupEnabled, cleanupPreferences, onCleanupPreferences, whisperModel, onWhisperModel, customModelPath, onCustomModelPath }: {
   busy: boolean;
+  whisperModel: string;
+  onWhisperModel: (value: string) => void;
+  customModelPath?: string;
+  onCustomModelPath: (value: string) => void;
   cleanupEnabled: boolean;
   onCleanupEnabled: (value: boolean) => void;
   cleanupPreferences: CleanupPreferences;
@@ -17,6 +21,9 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
   progress: CompileProgressEvent;
   onClose: () => void;
 }) {
+  const [page, setPage] = useState<"settings" | "models">("settings");
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { dialogRef.current?.scrollTo(0, 0); headingRef.current?.focus(); }, [page]);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const isMac = window.easyWhisper?.platform() === "darwin";
   const [reinstalling, setReinstalling] = useState(false);
@@ -198,39 +205,33 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
   }
 
   return <dialog ref={dialogRef} className={styles.panel} aria-labelledby="settings-title"
-    onCancel={(event) => { event.preventDefault(); if (!closeBlocked) onClose(); }}>
+    onCancel={(event) => { event.preventDefault(); if (!closeBlocked) { if (page === "models") setPage("settings"); else onClose(); } }}>
     <header className={styles.header}>
-      <h2 id="settings-title">Settings</h2>
+      <div className={styles.pageHeading}>{page === "models" && <button type="button" onClick={() => setPage("settings")} disabled={closeBlocked}>← Back</button>}<h2 ref={headingRef} tabIndex={-1} id="settings-title">{page === "models" ? "Manage Models" : "Settings"}</h2></div>
       <button type="button" onClick={onClose} disabled={closeBlocked} aria-label="Close settings">Close</button>
     </header>
+    {page === "models" ? <>
     <section>
-      <h3>AI transcript</h3>
+      <h3>LLM</h3>
       <label className={styles.modelRow}><input type="checkbox" checked={cleanupEnabled} disabled={busy || working}
         onChange={event => onCleanupEnabled(event.target.checked)}/><span>Clean up after transcription</span></label>
       <CleanupSettings preferences={cleanupPreferences} onPreferences={onCleanupPreferences} busy={busy || working} compact />
     </section>
     <section className={styles.uninstallSection}>
-      <h3>Audio cache</h3>
-      <p role="status">Size: {cacheBytes === undefined ? 'Unavailable' : cacheBytes >= 1e9 ? `${(cacheBytes / 1e9).toFixed(2)} GB` : `${(cacheBytes / 1e6).toFixed(1)} MB`}</p>
-      <p className={styles.note}>Reuses converted audio across retries and model changes.</p>
-      <label className={styles.modelRow}>
-        <input type="checkbox" checked={clearOnExit} disabled={!cachePreferenceReady || working}
-          onChange={(event) => void changeCachePreference(event.target.checked)} />
-        <span>Clear audio cache on exit</span>
+      <h3>Whisper</h3>
+      <label className={styles.modelField}>Transcription model
+        <select disabled={busy || working} value={whisperModel} onChange={event => onWhisperModel(event.target.value)}>
+          {DOWNLOADABLE_MODELS.map(model => <option key={model} value={model}>{model}</option>)}
+          <option value="custom">Custom model file</option>
+        </select>
       </label>
-      <p className={styles.note}>Enabled by default. Turn off to keep cached audio between sessions. Original files and transcripts are preserved.</p>
-      <div className={styles.modelActions}>
-      <button type="button" onClick={() => void openAudioCacheFolder()} disabled={working || !window.easyWhisper}>Open audio folder</button>
-      <button type="button" onClick={() => void clearCache()} disabled={busy || working || !window.easyWhisper}>
-        {clearingCache ? "Clearing…" : "Clear audio cache"}
-      </button>
-      </div>
-      {busy && <p role="status">Available when setup and transcription finish.</p>}
-      {cacheResult && <p role="status">{cacheResult}</p>}
-      {clearingCache && <LoadingBar label="Clearing audio cache" paceSeconds={5} />}
-    </section>
-    <section className={styles.uninstallSection}>
-      <h3>Models</h3>
+      {whisperModel === 'custom' && <div className={styles.modelActions}>
+        <button disabled={busy || working} onClick={async () => {
+          try { const file = await window.easyWhisper?.openModelFile(); if (file) onCustomModelPath(file); }
+          catch { setModelMessage('Could not open the model picker.'); }
+        }}>Choose model file</button>
+        <p className={styles.note}>{customModelPath?.split(/[\\/]/).pop() ?? 'No model selected'}</p>
+      </div>}
       <div className={styles.modelActions}>
       <button type="button" onClick={() => setDownloadsOpen(!downloadsOpen)}
         disabled={working || !window.easyWhisper} aria-expanded={downloadsOpen}>
@@ -281,6 +282,31 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
         {modelMessage && <p role="status">{modelMessage}</p>}
       </div>}
     </section>
+    </> : <>
+    <section>
+      <h3>Manage Models</h3>
+      <button type="button" onClick={() => setPage("models")}>Manage Models</button>
+    </section>
+    <section className={styles.uninstallSection}>
+      <h3>Audio cache</h3>
+      <p role="status">Size: {cacheBytes === undefined ? 'Unavailable' : cacheBytes >= 1e9 ? `${(cacheBytes / 1e9).toFixed(2)} GB` : `${(cacheBytes / 1e6).toFixed(1)} MB`}</p>
+      <p className={styles.note}>Reuses converted audio across retries and model changes.</p>
+      <label className={styles.modelRow}>
+        <input type="checkbox" checked={clearOnExit} disabled={!cachePreferenceReady || working}
+          onChange={(event) => void changeCachePreference(event.target.checked)} />
+        <span>Clear audio cache on exit</span>
+      </label>
+      <p className={styles.note}>Enabled by default. Turn off to keep cached audio between sessions. Original files and transcripts are preserved.</p>
+      <div className={styles.modelActions}>
+      <button type="button" onClick={() => void openAudioCacheFolder()} disabled={working || !window.easyWhisper}>Open audio folder</button>
+      <button type="button" onClick={() => void clearCache()} disabled={busy || working || !window.easyWhisper}>
+        {clearingCache ? "Clearing…" : "Clear audio cache"}
+      </button>
+      </div>
+      {busy && <p role="status">Available when setup and transcription finish.</p>}
+      {cacheResult && <p role="status">{cacheResult}</p>}
+      {clearingCache && <LoadingBar label="Clearing audio cache" paceSeconds={5} />}
+    </section>
     <section className={styles.uninstallSection}>
       <h3>Logs</h3>
       <p className={styles.note}>View dependency setup and compilation details.</p>
@@ -318,6 +344,7 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
       {uninstallError && <p role="alert" className={styles.result}>{uninstallError}</p>}
       {uninstalling && <LoadingBar label="Opening uninstaller" paceSeconds={5} />}
     </section>
+    </>}
     </>}
   </dialog>;
 }

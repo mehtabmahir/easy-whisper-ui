@@ -42,3 +42,9 @@
   @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes contentIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 }
+
+.pageHeading { display: flex; align-items: center; gap: 14px; }
+.pageHeading h2:focus { outline: none; }
+.modelField { display: flex; flex-direction: column; gap: 9px; margin: 0 0 16px; font-size: 14px; color: var(--muted); }
+.modelField select { width: 100%; height: 48px; padding: 0 14px; font-size: 15px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--field); color: var(--text); }
+.modelField option { background: var(--option); color: var(--text); }
