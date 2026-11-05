@@ -37,7 +37,7 @@ export interface CleanupPreferences {
   apiEndpoint?: string;
   apiModel: string;
 }
-export type TranscriptAction = { kind: "summary" | "custom"; request?: string };
+export type TranscriptAction = { kind: "summary" | "custom" | "cleanup"; request?: string };
 export interface CleanupEvent {
   transcriptOnly?: boolean;
   openReader?: boolean;

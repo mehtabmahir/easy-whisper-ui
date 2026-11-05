@@ -25,7 +25,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, [result?.status, result?.id]);
-  const runAction = async (kind: 'summary' | 'custom') => {
+  const runAction = async (kind: 'summary' | 'custom' | 'cleanup') => {
     if (!result || busy) return;
     setTab('cleaned'); setNotice('');
     try { await window.easyWhisper?.runTranscriptAction(result.id, preferences, { kind, request: kind === 'custom' ? request.trim() : undefined }); }
@@ -50,6 +50,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
     <CleanupSettings preferences={preferences} onPreferences={onPreferences} busy={busy} />
     {result && result.status !== 'working' && <section className={styles.postActions} aria-label="Transcript actions">
       <span className={styles.eyebrow}>TRANSCRIPT ACTIONS</span>
+      <button disabled={busy} onClick={() => void runAction('cleanup')}>Clean up</button>
       <button disabled={busy} onClick={() => void runAction('summary')}>Summarize</button>
       <button disabled={busy} aria-expanded={requestOpen} onClick={() => setRequestOpen(!requestOpen)}>Custom request</button>
       {requestOpen && <>
@@ -61,10 +62,10 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
     {result?.live && result.status === 'working' && <div className={styles.postActions}><button onClick={() => void window.easyWhisper?.stopLiveTranscription()}>Stop Live</button></div>}
     {actionWorking && <div className={styles.postActions}><button onClick={() => void window.easyWhisper?.cancelTranscriptAction()}>Stop request</button></div>}
     {results.length > 1 && <select className={styles.history} aria-label="Recent transcripts" value={result?.id} onChange={event => setSelected(event.target.value)}>
-      {results.map(item => <option key={item.id} value={item.id}>{fileName(item.source)} · {item.action?.kind === 'summary' ? 'Summary' : item.action ? 'Custom response' : 'Transcript'}</option>)}
+      {results.map(item => <option key={item.id} value={item.id}>{fileName(item.source)} · {item.action?.kind === 'summary' ? 'Summary' : item.action?.kind === 'cleanup' ? 'Cleaned' : item.action ? 'Custom response' : 'Transcript'}</option>)}
     </select>}
     <div className={styles.tabs} role="tablist" aria-label="Transcript version">
-      {!result?.live && !result?.transcriptOnly && <button role="tab" aria-selected={tab === 'cleaned'} onClick={() => setTab('cleaned')}>{result?.live ? 'Formatted' : result?.action?.kind === 'summary' ? 'Summary' : result?.action ? 'Response' : 'Cleaned'}</button>}
+      {!result?.live && !result?.transcriptOnly && <button role="tab" aria-selected={tab === 'cleaned'} onClick={() => setTab('cleaned')}>{result?.live ? 'Formatted' : result?.action?.kind === 'summary' ? 'Summary' : result?.action?.kind === 'cleanup' ? 'Cleaned' : result?.action ? 'Response' : 'Cleaned'}</button>}
       <button role="tab" aria-selected={tab === 'original'} onClick={() => setTab('original')}>{result?.live || result?.transcriptOnly ? 'Transcript' : 'Original'}</button>
       <span className={styles.badge}>{result?.status === 'complete' ? result.live || result.transcriptOnly ? '.txt saved' : '.md saved' : preferences.provider === 'local' || preferences.provider === 'custom' ? 'LOCAL AI' : preferences.provider === 'openai' ? 'OPENAI' : 'API'}</span>
     </div>

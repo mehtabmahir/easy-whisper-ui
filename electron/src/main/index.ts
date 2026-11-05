@@ -480,7 +480,7 @@ function registerIpcChannels(): void {
     if (transcriptActionAbort || transcriptionBusy || setupBusy || liveBusy || quitting) throw new Error("Wait for the current task to finish.");
     const result = cleanupResults.get(id);
     if (!result?.original || !result.outputBase || result.status === 'working') throw new Error("Choose a finished transcript first.");
-    if (!action || !['summary', 'custom'].includes(action.kind) || (action.kind === 'custom' && (typeof action.request !== 'string' || !action.request.trim() || action.request.length > 2000))) throw new Error("Enter a request of up to 2,000 characters.");
+    if (!action || !['summary', 'custom', 'cleanup'].includes(action.kind) || (action.kind === 'custom' && (typeof action.request !== 'string' || !action.request.trim() || action.request.length > 2000))) throw new Error("Enter a request of up to 2,000 characters.");
     const controller = new AbortController();
     transcriptActionAbort = controller;
     try {

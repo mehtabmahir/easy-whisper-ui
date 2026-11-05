@@ -208,3 +208,20 @@ test('summary is saved when the final combining pass repeatedly hits its limit',
   assert.match(final.markdown, /retain their earlier text/);
  } finally { global.fetch = savedFetch; await fs.rm(root, { recursive: true, force: true }); }
 });
+
+test('Clean up action uses the requested verbatim prompt and saves a cleaned copy', async () => {
+ const root = await fs.mkdtemp(path.join(os.tmpdir(), 'verbatim-cleanup-'));
+ const savedFetch = global.fetch;
+ let final;
+ setCleanupApiKey('test-key');
+ try {
+  global.fetch = async (_url, options) => {
+   assert.equal(JSON.parse(options.body).messages[0].content, 'Clean up the text but make sure its verbatim');
+   return { ok: true, json: async () => ({ choices: [{ finish_reason: 'stop', message: { content: 'Hello everyone. We ordered 45 boxes today.' } }] }) };
+  };
+  await cleanupTranscript({ source: 'test.wav', outputBase: path.join(root, 'test'), original: 'hello everyone we ordered 45 boxes today', preferences: { provider: 'openai', apiModel: 'test' }, action: { kind: 'cleanup' }, signal: new AbortController().signal, emit: e => { final = e; } });
+  assert.equal(final.status, 'complete');
+  assert.match(final.outputPath, /\.cleaned\.md$/);
+  assert.match(final.markdown, /45 boxes/);
+ } finally { global.fetch = savedFetch; await fs.rm(root, { recursive: true, force: true }); }
+});
