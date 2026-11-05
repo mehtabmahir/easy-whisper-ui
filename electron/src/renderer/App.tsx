@@ -162,6 +162,7 @@ function App(): JSX.Element {
   const [lastBackend, setLastBackend] = useState<string>();
   const [consoleLines, setConsoleLines] = useState<string[]>([]);
   const [helpText, setHelpText] = useState<string | null>(null);
+  const queuePopoverRef = useRef<HTMLUListElement>(null);
   const [queueState, setQueueState] = useState<QueueState>({ items: [], awaiting: [], isProcessing: false });
   const [compileInfo, setCompileInfo] = useState<CompileProgressEvent>(() => ({
     step: "idle",
@@ -972,7 +973,7 @@ function App(): JSX.Element {
               <div className={styles.hardwarePopover}>
                 {hardware && <p>{hardware.cpu} · {Number(hardware.ramGiB.toFixed(1))} GB system RAM</p>}
                 <p>{cpuRequested ? "CPU only" : lastBackend ? `Backend: ${lastBackend}` : gpuReadiness?.message || "Checking GPU…"}</p>
-              </div>
+              </details>
             </details>
             <span className={styles.processingMode} title={gpuReadiness?.message}>
               GPU Acceleration: <span className={!cpuRequested && gpuReadiness?.state === "ready" ? styles.gpuReady : undefined}>
@@ -1060,7 +1061,7 @@ function App(): JSX.Element {
                     <p id="input-language-help">
                       Language spoken in your audio or video, or Auto detect to let Whisper identify it. Non-English audio needs a multilingual model; .en models are English-only.
                     </p>
-                  </details>
+                  </div>
                 </div>
                 <select id="input-language" value={language} aria-describedby="input-language-help input-language-warning"
                   onChange={(event) => setLanguage(event.target.value)}>
@@ -1200,11 +1201,17 @@ function App(): JSX.Element {
 
             <div className={styles.queueStatus}>
               <span>Processing: {getFileName(queueState.processing)}</span>
-              <details className={styles.queueDropdown}
-                onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.open = false; }}
-                onKeyDown={event => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
-                <summary>Queued: {queuedCount}{queueState.items.some(item => item.status === "failed") ? " · Failed: " + queueState.items.filter(item => item.status === "failed").length : ""}</summary>
-              <ul aria-label="Transcription queue" className={styles.fileQueue}>
+              <div className={styles.queueDropdown}>
+                <button type="button" className={styles.queueTrigger} aria-haspopup="dialog"
+                  onClick={event => {
+                    const panel = queuePopoverRef.current;
+                    if (!panel) return;
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    panel.style.right = Math.max(12, window.innerWidth - rect.right) + "px";
+                    panel.style.top = Math.min(rect.bottom + 8, window.innerHeight - 240) + "px";
+                    panel.togglePopover();
+                  }}>Queued: {queuedCount}{queueState.items.some(item => item.status === "failed") ? " · Failed: " + queueState.items.filter(item => item.status === "failed").length : ""} ▾</button>
+              <ul ref={queuePopoverRef} {...{ popover: "auto" }} aria-label="Transcription queue" className={styles.fileQueue}>
                 {queueState.items.length === 0 && <li className={styles.queueEmpty}>No files in the queue</li>}
                 {queueState.items.map(item => (
                   <li key={item.id} className={styles.fileQueueItem}>
@@ -1222,7 +1229,7 @@ function App(): JSX.Element {
                   </li>
                 ))}
               </ul>
-              </details>
+              </div>
             </div>
 
             {showOperationStatus && operationStatus}

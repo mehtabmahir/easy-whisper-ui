@@ -826,7 +826,8 @@
 .leftPanel { padding-bottom: 8px; }
 
 .fileQueue {
-  position: absolute;
+  position: fixed;
+  inset: auto;
   right: 0;
   top: calc(100% + 8px);
   z-index: 20;
@@ -838,9 +839,9 @@
   overflow-y: auto;
   border: 1px solid var(--glass-border);
   border-radius: 10px;
-  background: var(--glass);
-  backdrop-filter: blur(24px) saturate(125%);
-  -webkit-backdrop-filter: blur(24px) saturate(125%);
+  background: color-mix(in srgb, var(--option) 72%, transparent);
+  backdrop-filter: blur(32px) saturate(125%);
+  -webkit-backdrop-filter: blur(32px) saturate(125%);
   color: var(--text);
   box-shadow: var(--glass-shadow);
   font-size: 12px;
@@ -859,3 +860,7 @@
 .queueDropdown summary:hover { color: var(--text); }
 .queueEmpty { padding: 8px 0; color: var(--muted); }
 .fileQueueItem:last-child { border-bottom: 0; }
+
+.queueTrigger { padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+.queueTrigger:hover { color: var(--text); }
+.fileQueue::backdrop { background: transparent; }
