@@ -6,22 +6,47 @@ function settingsPath(): string {
   return path.join(app.getPath("userData"), "app-settings.json");
 }
 
-export function getClearAudioCacheOnExit(): boolean {
+function readSettings(): Record<string, unknown> {
   try {
-    return JSON.parse(fs.readFileSync(settingsPath(), "utf8")).clearAudioCacheOnExit !== false;
+    const value: unknown = JSON.parse(fs.readFileSync(settingsPath(), "utf8"));
+    return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") console.error("Could not read app settings:", error);
-    return true;
+    return {};
   }
+}
+
+function updateSettings(changes: Record<string, unknown>): void {
+  const target = settingsPath();
+  const settings = { ...readSettings(), ...changes };
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target + ".tmp", JSON.stringify(settings));
+  fs.renameSync(target + ".tmp", target);
+}
+
+export function getClearAudioCacheOnExit(): boolean {
+  return readSettings().clearAudioCacheOnExit !== false;
 }
 
 export function setClearAudioCacheOnExit(value: unknown): void {
   if (typeof value !== "boolean") throw new Error("Invalid audio cache preference.");
-  const target = settingsPath();
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  // Publish the preference atomically so quitting cannot read a partial write.
-  fs.writeFileSync(`${target}.tmp`, JSON.stringify({ clearAudioCacheOnExit: value }));
-  fs.renameSync(`${target}.tmp`, target);
+  updateSettings({ clearAudioCacheOnExit: value });
+}
+
+type PickerKind = "input" | "model";
+
+export function getPickerDirectory(kind: PickerKind): string {
+  const saved = readSettings()[kind + "Directory"];
+  if (typeof saved === "string" && path.isAbsolute(saved)) {
+    try { if (fs.statSync(saved).isDirectory()) return saved; } catch { /* Folder moved or unavailable. */ }
+  }
+  return app.getPath("documents");
+}
+
+export function rememberPickerDirectory(kind: PickerKind, file: string | undefined): void {
+  if (!file) return;
+  try { updateSettings({ [kind + "Directory"]: path.dirname(file) }); }
+  catch (error) { console.error("Could not save picker directory:", error); }
 }
 
 export async function openWorkspaceFolder(): Promise<void> {

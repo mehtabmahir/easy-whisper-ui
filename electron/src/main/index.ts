@@ -13,7 +13,7 @@ import { listDownloadedModels, deleteDownloadedModel } from "./services/modelSto
 import { getHardwareInfo } from "./services/hardwareInfo";
 import { checkGpuReadiness } from "./services/gpuReadiness";
 
-import { getClearAudioCacheOnExit, setClearAudioCacheOnExit, openWorkspaceFolder, showSetupLog } from "./services/appSettings";
+import { getPickerDirectory, rememberPickerDirectory, getClearAudioCacheOnExit, setClearAudioCacheOnExit, openWorkspaceFolder, showSetupLog } from "./services/appSettings";
 
 const isDev = process.env.NODE_ENV === "development";
 // Electron's native Acrylic backdrop requires Windows 11 22H2 (build 22621).
@@ -378,6 +378,7 @@ function registerIpcChannels(): void {
   ipcMain.handle("easy-whisper:open-dialog", async () => {
     const result = await dialog.showOpenDialog({
       title: "Open Audio/Video Files",
+      defaultPath: getPickerDirectory("input"),
       properties: ["openFile", "multiSelections"],
       filters: [
         {
@@ -404,12 +405,14 @@ function registerIpcChannels(): void {
     if (result.canceled) {
       return [];
     }
+    rememberPickerDirectory("input", result.filePaths[0]);
     return result.filePaths;
   });
 
   ipcMain.handle("easy-whisper:open-model-file", async () => {
     const result = await dialog.showOpenDialog({
       title: "Select Whisper Model File",
+      defaultPath: getPickerDirectory("model"),
       properties: ["openFile"],
       filters: [
         { name: "Whisper Models", extensions: ["bin", "gguf", "ggml"] },
@@ -421,6 +424,7 @@ function registerIpcChannels(): void {
       return undefined;
     }
 
+    rememberPickerDirectory("model", result.filePaths[0]);
     return result.filePaths[0];
   });
 
