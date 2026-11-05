@@ -31,5 +31,6 @@ export class LiveTranscript {
     this.event.message = this.writeError ? 'Could not save live transcript. Copy the text from this reader.' : 'Live transcript saved';
     if (!this.writeError) this.event.outputPath = this.event.outputBase + '.txt';
     this.publish();
+    return { ...this.event };
   }
 }

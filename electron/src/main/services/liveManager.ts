@@ -78,6 +78,7 @@ export class LiveManager extends EventEmitter {
         const child = spawn(exe, args);
         this.proc = child;
 
+        let previousText = '';
         const decoder = new StringDecoder("utf8");
         child.stdout.on("data", (data) => {
           const text = decoder.write(data);
@@ -85,7 +86,8 @@ export class LiveManager extends EventEmitter {
             return;
           }
           const cleaned = text.replace(ANSI_ESCAPE, "");
-          if (cleaned.length > 0) {
+          if (cleaned.trim().length > 0 && cleaned.trim() !== previousText) {
+            previousText = cleaned.trim();
             this.emit("text", cleaned);
           }
         });

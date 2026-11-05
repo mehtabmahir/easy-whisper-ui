@@ -35,6 +35,7 @@ const rendererHtmlPath = path.join(__dirname, "../renderer/index.html");
 const compileManager = new CompileManager();
 const transcriptionManager = new TranscriptionManager();
 const cleanupResults = new Map<string, CleanupEvent>();
+let liveCleanupPreferences: CleanupPreferences | undefined;
 let cleanupDownloadAbort: AbortController | undefined;
 let transcriptActionAbort: AbortController | undefined;
 function publishCleanup(event: CleanupEvent) {
@@ -546,7 +547,7 @@ function registerIpcChannels(): void {
   ipcMain.handle("easy-whisper:start-live", async (_event, request: LiveRequest) => {
     if (setupBusy || liveBusy) throw new Error("Setup or live transcription is already running.");
     liveBusy = true;
-    try { await liveManager.start(request); } catch (error) { liveBusy = false; throw error; }
+    try { liveCleanupPreferences = request.settings.cleanup; await liveManager.start(request); } catch (error) { liveBusy = false; throw error; }
   });
 
   ipcMain.handle("easy-whisper:stop-live", async () => {
@@ -589,7 +590,21 @@ function registerIpcChannels(): void {
   liveManager.on("state", (state) => {
     liveBusy = state === "started";
     if (state === 'started') liveTranscript = new LiveTranscript(path.join(app.getPath('userData'), 'whisper-workspace', 'live-transcripts'), publishCleanup);
-    else { const finished = liveTranscript; liveTranscript = undefined; void finished?.finish(); }
+    else {
+      const finished = liveTranscript;
+      const preferences = liveCleanupPreferences;
+      liveTranscript = undefined;
+      if (finished) {
+        const controller = new AbortController();
+        transcriptActionAbort = controller;
+        void finished.finish().then(async result => {
+          if (!quitting && result.original.trim() && result.outputBase && preferences) {
+            await cleanupTranscript({ source: result.source, outputBase: result.outputBase, original: result.original,
+              preferences, signal: controller.signal, emit: publishCleanup });
+          }
+        }).finally(() => { if (transcriptActionAbort === controller) transcriptActionAbort = undefined; });
+      }
+    }
     broadcast("easy-whisper:live-state", state);
   });
 }

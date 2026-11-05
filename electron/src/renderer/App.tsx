@@ -842,7 +842,7 @@ function App(): JSX.Element {
         await bridge.stopLiveTranscription();
       } else {
         await bridge.startLiveTranscription({
-          settings: buildSettings(),
+          settings: { ...buildSettings(), cleanup: { ...cleanupPreferences } },
           stepMs: 500,
           lengthMs: 5000
         });
@@ -853,7 +853,7 @@ function App(): JSX.Element {
     } finally {
       setLiveChanging(false);
     }
-  }, [appendConsole, buildSettings, ensureCustomModelReady, liveActive, liveChanging]);
+  }, [appendConsole, buildSettings, ensureCustomModelReady, liveActive, liveChanging, cleanupPreferences]);
 
   const compileStateLabel = useMemo(() => {
     if (compileInfo.state === "success") return "Ready";
