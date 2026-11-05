@@ -1036,7 +1036,6 @@ function App(): JSX.Element {
               >
                 <ActionIcon name={liveActive ? "stop" : "live"} />
                 {liveActive ? "Stop Live" : "Live"}
-                <span className={styles.betaLabel}>BETA</span>
               </button>
               <button
                 type="button"
@@ -1232,7 +1231,7 @@ function App(): JSX.Element {
               </label>
               <label className={styles.checkbox} title="Create a separate Markdown copy. Local mode downloads a 491 MB model once; the original is always kept.">
                 <input type="checkbox" checked={cleanupEnabled} onChange={event => { setCleanupEnabled(event.target.checked); if (event.target.checked) setCleanupOpen(true); }}/>
-                <span>Clean up transcript</span>
+                <span>AI Cleanup</span>
               </label>
               <button type="button" className={styles.readerButton} onClick={() => setCleanupOpen(!cleanupOpen)} aria-expanded={cleanupOpen}>Transcript reader ↗</button>
             </div>
