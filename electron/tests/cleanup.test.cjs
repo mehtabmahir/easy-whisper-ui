@@ -191,3 +191,20 @@ test('long summaries merge into a coherent result without assuming meetings', as
     assert.doesNotMatch(final.markdown, /## Part/);
   } finally { global.fetch = savedFetch; await fs.rm(root, { recursive: true, force: true }); }
 });
+
+test('summary is saved when the final combining pass repeatedly hits its limit', async () => {
+ const root = await fs.mkdtemp(path.join(os.tmpdir(), 'summary-limit-'));
+ const savedFetch = global.fetch;
+ let final;
+ setCleanupApiKey('test-key');
+ try {
+  global.fetch = async (_url, options) => {
+   const merge = JSON.parse(options.body).messages[0].content.startsWith('Combine these');
+   return { ok: true, json: async () => ({ choices: [{ finish_reason: merge ? 'length' : 'stop', message: { content: 'Sockets send and receive data.' } }] }) };
+  };
+  await cleanupTranscript({ source: 'lecture.wav', outputBase: path.join(root, 'lecture'), original: 'Sockets send and receive data. '.repeat(180), preferences: { provider: 'openai', apiModel: 'test' }, action: { kind: 'summary' }, signal: new AbortController().signal, emit: e => { final = e; } });
+  assert.equal(final.status, 'complete');
+  assert.match(await fs.readFile(final.outputPath, 'utf8'), /Sockets send and receive data/);
+  assert.match(final.markdown, /retain their earlier text/);
+ } finally { global.fetch = savedFetch; await fs.rm(root, { recursive: true, force: true }); }
+});
