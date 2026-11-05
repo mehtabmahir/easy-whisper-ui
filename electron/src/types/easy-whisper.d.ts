@@ -1,3 +1,12 @@
+export interface AppUpdateState {
+  status: "idle" | "checking" | "available" | "current" | "downloading" | "verifying" | "waiting" | "opening" | "error";
+  currentVersion: string;
+  version?: string;
+  receivedBytes?: number;
+  totalBytes?: number;
+  message?: string;
+}
+
 export type CompileStepState = "pending" | "running" | "success" | "error";
 
 export interface CompileProgressEvent {
@@ -155,6 +164,11 @@ export type EasyWhisperApi = {
   cleanReinstall: () => Promise<CompileResult>;
   getClearAudioCacheOnExit: () => Promise<boolean>;
   setClearAudioCacheOnExit: (value: boolean) => Promise<void>;
+  getAppUpdate: () => Promise<AppUpdateState>;
+  checkAppUpdate: () => Promise<void>;
+  installAppUpdate: () => Promise<void>;
+  cancelAppUpdate: () => Promise<void>;
+  onAppUpdate: (callback: (state: AppUpdateState) => void) => () => void;
   getAudioCacheSize: () => Promise<number>;
   openAudioCacheFolder: () => Promise<CompileResult>;
   openWorkspaceFolder: () => Promise<CompileResult>;

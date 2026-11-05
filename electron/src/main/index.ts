@@ -1,3 +1,4 @@
+import { AppUpdater } from "./services/appUpdater";
 import { LiveTranscript } from "./services/liveTranscript";
 import { ensureCleanupModel } from "./services/cleanupModel";
 import { cleanupModelsDirectory, listCleanupModels, deleteCleanupModel } from "./services/cleanupModelStorage";
@@ -50,6 +51,21 @@ let liveBusy = false;
 let helpBusy = false;
 let quitting = false;
 let quitCleanupDone = false;
+let liveSaving = 0;
+const appUpdater = new AppUpdater({ current: app.getVersion(), platform: process.platform, arch: process.arch,
+  directory: path.join(app.getPath('userData'), 'updates'),
+  busy: () => setupBusy || transcriptionBusy || liveBusy || helpBusy || !!transcriptActionAbort || !!cleanupDownloadAbort || liveSaving > 0,
+  emit: state => broadcast('easy-whisper:app-update', state),
+  handoff: async file => {
+    if (quitting || setupBusy || transcriptionBusy || liveBusy || helpBusy || transcriptActionAbort || cleanupDownloadAbort || liveSaving) throw new Error('The app is busy. Retry the update after the current task finishes.');
+    setupBusy = true;
+    try {
+      const error = await shell.openPath(file);
+      if (error) throw new Error('Could not open the installer. Please retry the update.');
+      app.quit();
+    } catch (error) { setupBusy = false; throw error; }
+  }
+});
 
 
 async function runSetup(action: () => Promise<CompileResult>): Promise<CompileResult> {
@@ -93,6 +109,7 @@ if (!gotInstanceLock) {
 }
 
 app.on("before-quit", (event) => {
+  appUpdater.cancel();
   transcriptActionAbort?.abort();
   cleanupDownloadAbort?.abort();
   if (quitCleanupDone) return;
@@ -275,6 +292,10 @@ function broadcast(channel: string, payload: unknown): void {
 }
 
 function registerIpcChannels(): void {
+  ipcMain.handle("easy-whisper:update-state", () => appUpdater.snapshot());
+  ipcMain.handle("easy-whisper:update-check", () => appUpdater.check());
+  ipcMain.handle("easy-whisper:update-install", () => appUpdater.install());
+  ipcMain.handle("easy-whisper:update-cancel", () => appUpdater.cancel());
   ipcMain.handle("easy-whisper:get-cache-on-exit", () => getClearAudioCacheOnExit());
   let hardwareInfo: ReturnType<typeof getHardwareInfo> | undefined;
   let gpuReadiness: ReturnType<typeof checkGpuReadiness> | undefined;
@@ -592,7 +613,7 @@ function registerIpcChannels(): void {
     else {
       const finished = liveTranscript;
       liveTranscript = undefined;
-      void finished?.finish();
+      if (finished) { liveSaving++; void finished.finish().finally(() => { liveSaving--; }); }
     }
     broadcast("easy-whisper:live-state", state);
   });
@@ -614,6 +635,10 @@ app.whenReady().then(() => {
   return createMainWindow();
 }).then(() => {
   broadcastExternalFiles(getSupportedFiles(process.argv));
+  if (app.isPackaged && ['darwin', 'win32'].includes(process.platform)) {
+    const timer = setTimeout(() => void appUpdater.check(), 10000);
+    timer.unref();
+  }
 }).catch((error) => {
   console.error("Failed to create main window", error);
 });

@@ -1,3 +1,5 @@
+import UpdatePanel from "./UpdatePanel";
+import type { AppUpdateState } from "../types/easy-whisper";
 import CleanupPanel from "./CleanupPanel";
 import type { CleanupEvent, CleanupPreferences } from "../types/easy-whisper";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -189,6 +191,23 @@ function App(): JSX.Element {
     setModelDownloadProgress(event.state === "downloading" ? event : undefined);
   }), []);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [appUpdate, setAppUpdate] = useState<AppUpdateState>({ status: 'idle', currentVersion: '' });
+  useEffect(() => {
+    const bridge = window.easyWhisper;
+    if (!bridge) return;
+    const unsubscribe = bridge.onAppUpdate(state => {
+      setAppUpdate(state);
+      if (state.status === 'available') setUpdateOpen(true);
+    });
+    void bridge.getAppUpdate().then(state => { setAppUpdate(state); if (state.status === 'available') setUpdateOpen(true); });
+    return unsubscribe;
+  }, []);
+  const openUpdates = () => {
+    setSettingsOpen(false); setUpdateOpen(true);
+    void window.easyWhisper?.checkAppUpdate();
+  };
+
   const [clearCacheOnExit, setClearCacheOnExit] = useState(true);
   const [cachePreferenceReady, setCachePreferenceReady] = useState(false);
   const [savingCachePreference, setSavingCachePreference] = useState(false);
@@ -949,7 +968,8 @@ function App(): JSX.Element {
           reinstalling={retryingSetup}
         />
       )}
-      {settingsOpen && <SettingsPanel busy={isCompiling || isProcessing || liveActive || queuedCount > 0 || cleanupResults.some(item => item.status === "working")}
+      {updateOpen && <UpdatePanel state={appUpdate} onClose={() => setUpdateOpen(false)} />}
+      {settingsOpen && <SettingsPanel onCheckUpdates={openUpdates} busy={isCompiling || isProcessing || liveActive || queuedCount > 0 || cleanupResults.some(item => item.status === "working")}
         downloadProgress={modelDownloadProgress} progress={compileInfo} onClose={() => setSettingsOpen(false)}
         cleanupEnabled={cleanupEnabled} onCleanupEnabled={setCleanupEnabled} cleanupPreferences={cleanupPreferences} onCleanupPreferences={setCleanupPreferences}
         whisperModel={model} onWhisperModel={setModel} customModelPath={customModelPath} onCustomModelPath={setCustomModelPath} />}
@@ -959,7 +979,7 @@ function App(): JSX.Element {
       {cleanupOpen && <CleanupPanel results={cleanupResults} preferences={cleanupPreferences}
         onPreferences={setCleanupPreferences} onClose={() => setCleanupOpen(false)} busy={isProcessing}
       />}
-      <div className={`${styles.windowContainer} ${showLoader || recoveryOpen || settingsOpen || faqOpen || creditsOpen || cleanupOpen ? styles.modalBackground : ""}`} style={showLoader || recoveryOpen ? { pointerEvents: 'none', userSelect: 'none' } : {}}>
+      <div className={`${styles.windowContainer} ${showLoader || recoveryOpen || settingsOpen || updateOpen || faqOpen || creditsOpen || cleanupOpen ? styles.modalBackground : ""}`} style={showLoader || recoveryOpen ? { pointerEvents: 'none', userSelect: 'none' } : {}}>
         <div className={`${styles.titlebar} ${isMac ? styles.macTitlebar : ""}`}>
         <div className={styles.titleDragRegion}>
           <img src={LOGO_URL} alt="EasyWhisperUI logo" className={styles.titleLogo} />

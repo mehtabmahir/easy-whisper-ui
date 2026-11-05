@@ -138,3 +138,9 @@ SDL2 (bundled on macOS)
 License: zlib
 https://www.libsdl.org/
 ```
+
+### App updates
+
+Windows and macOS builds check GitHub for a newer stable release after launch. You can also use **Settings → Updates → Check for updates**. Choose **Update** to download and verify the installer. The app waits for active work, opens the installer, then quits. On macOS, drag the updated app into Applications from the DMG. Linux updates remain manual.
+
+Release maintainers: publish a higher app version with the existing platform/architecture artifact names (`EasyWhisperUI-VERSION-macOS-ARCH.dmg` or `EasyWhisperUI-Setup-VERSION-win-ARCH.exe`). The GitHub release asset must expose a SHA-256 digest; missing or mismatched verification information prevents installation.

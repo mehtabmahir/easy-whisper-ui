@@ -43,6 +43,15 @@ const api: EasyWhisperApi = {
   compileWhisper: (options) => ipcRenderer.invoke("easy-whisper:compile", options),
   getClearAudioCacheOnExit: () => ipcRenderer.invoke("easy-whisper:get-cache-on-exit"),
   setClearAudioCacheOnExit: (value) => ipcRenderer.invoke("easy-whisper:set-cache-on-exit", value),
+  getAppUpdate: () => ipcRenderer.invoke("easy-whisper:update-state"),
+  checkAppUpdate: () => ipcRenderer.invoke("easy-whisper:update-check"),
+  installAppUpdate: () => ipcRenderer.invoke("easy-whisper:update-install"),
+  cancelAppUpdate: () => ipcRenderer.invoke("easy-whisper:update-cancel"),
+  onAppUpdate: callback => {
+    const handler = (_event: Electron.IpcRendererEvent, state: Parameters<typeof callback>[0]) => callback(state);
+    ipcRenderer.on("easy-whisper:app-update", handler);
+    return () => ipcRenderer.removeListener("easy-whisper:app-update", handler);
+  },
   getAudioCacheSize: () => ipcRenderer.invoke("easy-whisper:audio-cache-size"),
   openAudioCacheFolder: () => ipcRenderer.invoke("easy-whisper:open-audio-cache"),
   openWorkspaceFolder: () => ipcRenderer.invoke("easy-whisper:open-workspace-folder"),

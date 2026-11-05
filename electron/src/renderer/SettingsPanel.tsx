@@ -8,7 +8,8 @@ import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
 import ModelDownloadBar from "./ModelDownloadBar";
 
-export default function SettingsPanel({ busy, progress, downloadProgress, onClose, cleanupEnabled, onCleanupEnabled, cleanupPreferences, onCleanupPreferences, whisperModel, onWhisperModel, customModelPath, onCustomModelPath }: {
+export default function SettingsPanel({ busy, progress, downloadProgress, onClose, cleanupEnabled, onCleanupEnabled, cleanupPreferences, onCleanupPreferences, whisperModel, onWhisperModel, customModelPath, onCustomModelPath, onCheckUpdates }: {
+  onCheckUpdates: () => void;
   busy: boolean;
   whisperModel: string;
   onWhisperModel: (value: string) => void;
@@ -318,6 +319,10 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
       {busy && <p role="status">Available when setup and transcription finish.</p>}
       {cacheResult && <p role="status">{cacheResult}</p>}
       {clearingCache && <LoadingBar label="Clearing audio cache" paceSeconds={5} />}
+    </section>
+    <section className={styles.uninstallSection}>
+      <h3>Updates</h3>
+      <button onClick={onCheckUpdates} disabled={closeBlocked}>Check for updates</button>
     </section>
     <section className={styles.uninstallSection}>
       <h3>Logs</h3>
