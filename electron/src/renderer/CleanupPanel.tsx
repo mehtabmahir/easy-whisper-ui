@@ -12,12 +12,13 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
   const [request, setRequest] = useState('');
   const [requestOpen, setRequestOpen] = useState(false);
   const actionWorking = results.some(item => item.action && item.status === 'working');
-  const busy = transcriptionBusy || actionWorking;
+  const busy = transcriptionBusy || actionWorking || results.some(item => item.live && item.status === 'working');
   const [selected, setSelected] = useState('');
   const [tab, setTab] = useState<'cleaned' | 'original'>('cleaned');
   const [notice, setNotice] = useState('');
   const [now, setNow] = useState(Date.now());
   const result = results.find(item => item.id === selected) ?? results.at(-1);
+  useEffect(() => { setTab(result?.live ? 'original' : 'cleaned'); }, [result?.id]);
   useEffect(() => { setSelected(results.at(-1)?.id ?? ''); }, [results.at(-1)?.id]);
   useEffect(() => {
     if (result?.status !== 'working') return;
@@ -57,18 +58,19 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
       </>}
       <small>Uses the selected model and original transcript. Saves a separate Markdown file.</small>
     </section>}
+    {result?.live && result.status === 'working' && <div className={styles.postActions}><button onClick={() => void window.easyWhisper?.stopLiveTranscription()}>Stop Live</button></div>}
     {actionWorking && <div className={styles.postActions}><button onClick={() => void window.easyWhisper?.cancelTranscriptAction()}>Stop request</button></div>}
     {results.length > 1 && <select className={styles.history} aria-label="Recent transcripts" value={result?.id} onChange={event => setSelected(event.target.value)}>
       {results.map(item => <option key={item.id} value={item.id}>{fileName(item.source)} · {item.action?.kind === 'summary' ? 'Summary' : item.action ? 'Custom response' : 'Transcript'}</option>)}
     </select>}
     <div className={styles.tabs} role="tablist" aria-label="Transcript version">
-      <button role="tab" aria-selected={tab === 'cleaned'} onClick={() => setTab('cleaned')}>{result?.action?.kind === 'summary' ? 'Summary' : result?.action ? 'Response' : 'Cleaned'}</button>
+      <button role="tab" aria-selected={tab === 'cleaned'} onClick={() => setTab('cleaned')}>{result?.live ? 'Formatted' : result?.action?.kind === 'summary' ? 'Summary' : result?.action ? 'Response' : 'Cleaned'}</button>
       <button role="tab" aria-selected={tab === 'original'} onClick={() => setTab('original')}>Original</button>
       <span className={styles.badge}>{result?.status === 'complete' ? '.md saved' : preferences.provider === 'local' || preferences.provider === 'custom' ? 'LOCAL AI' : preferences.provider === 'openai' ? 'OPENAI' : 'API'}</span>
     </div>
     {result && <div className={styles.status}>
       <div><span role="status">{result.message}</span>{result.status === 'working' && <span>{Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')}</span>}</div>
-      {result.status === 'working' && <>
+      {result.status === 'working' && !result.live && <>
         <progress aria-label="Cleanup sections completed" max={result.total || 1} value={result.completed}/>
         <small>{result.completed} / {result.total || '…'} sections · You can read the original now.</small>
       </>}

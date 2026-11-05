@@ -1,3 +1,4 @@
+import { StringDecoder } from "node:string_decoder";
 import { app } from "electron";
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
@@ -77,12 +78,13 @@ export class LiveManager extends EventEmitter {
         const child = spawn(exe, args);
         this.proc = child;
 
+        const decoder = new StringDecoder("utf8");
         child.stdout.on("data", (data) => {
-          const text = data.toString("utf8");
+          const text = decoder.write(data);
           if (!text) {
             return;
           }
-          const cleaned = text.replace(ANSI_ESCAPE, "").trim();
+          const cleaned = text.replace(ANSI_ESCAPE, "");
           if (cleaned.length > 0) {
             this.emit("text", cleaned);
           }
@@ -106,6 +108,8 @@ export class LiveManager extends EventEmitter {
         });
 
         child.once("close", () => {
+          const tail = decoder.end().replace(ANSI_ESCAPE, "");
+          if (tail) this.emit("text", tail);
           this.proc = undefined;
           this.emit("state", "stopped");
         });

@@ -1,3 +1,4 @@
+import { LiveTranscript } from "./services/liveTranscript";
 import { ensureCleanupModel } from "./services/cleanupModel";
 import { cleanupModelsDirectory, listCleanupModels, deleteCleanupModel } from "./services/cleanupModelStorage";
 import { setCleanupApiKey, hasCleanupApiKey, cleanupTranscript } from "./services/transcriptCleanup";
@@ -579,12 +580,16 @@ function registerIpcChannels(): void {
     broadcast("easy-whisper:console", event);
   });
 
+  let liveTranscript: LiveTranscript | undefined;
   liveManager.on("text", (message) => {
+    liveTranscript?.append(message);
     broadcast("easy-whisper:live-text", message);
   });
 
   liveManager.on("state", (state) => {
     liveBusy = state === "started";
+    if (state === 'started') liveTranscript = new LiveTranscript(path.join(app.getPath('userData'), 'whisper-workspace', 'live-transcripts'), publishCleanup);
+    else { const finished = liveTranscript; liveTranscript = undefined; void finished?.finish(); }
     broadcast("easy-whisper:live-state", state);
   });
 }

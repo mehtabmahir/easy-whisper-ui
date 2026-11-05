@@ -39,6 +39,7 @@ export interface CleanupPreferences {
 }
 export type TranscriptAction = { kind: "summary" | "custom"; request?: string };
 export interface CleanupEvent {
+  live?: boolean;
   action?: TranscriptAction;
   outputBase?: string;
   id: string;
