@@ -10,7 +10,6 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
   const documentRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState('');
   const [tab, setTab] = useState<'cleaned' | 'original'>('cleaned');
-  const [settings, setSettings] = useState(false);
   const [key, setKey] = useState('');
   const [keySaved, setKeySaved] = useState(false);
   const [notice, setNotice] = useState('');
@@ -38,13 +37,13 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
     <header className={styles.header}>
       <div><span className={styles.eyebrow}>YOUR TRANSCRIPT</span><h2>A clearer read.</h2></div>
       <div className={styles.actions}>
-        <button type="button" onClick={() => setSettings(!settings)} aria-expanded={settings} aria-label="Cleanup settings" title="Cleanup settings">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--glass)"/><circle cx="15" cy="17" r="3" fill="var(--glass)"/></svg>
-        </button>
         <button type="button" onClick={onClose} aria-label="Close transcript reader">×</button>
       </div>
     </header>
-    {settings && <div className={styles.settings}>
+    <div className={styles.readerLayout}>
+    <nav className={styles.sidebar} aria-label="Transcript controls">
+    <div className={styles.settings}>
+      <span className={styles.eyebrow}>CLEANUP SETTINGS</span>
       <label>Cleanup runs<select disabled={busy} value={preferences.provider}
         onChange={event => onPreferences({ ...preferences, provider: event.target.value as CleanupPreferences['provider'] })}>
         <option value="local">On this device</option><option value="openai">With an OpenAI API key</option>
@@ -57,7 +56,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
           {keySaved && <button disabled={busy} onClick={() => { void window.easyWhisper?.setCleanupApiKey('').then(() => { setKeySaved(false); setNotice('Key removed.'); }); }}>Remove key</button>}</div>
         <p>The key is never saved to disk. Add it again after restarting.</p>
       </>}
-    </div>}
+    </div>
     {results.length > 1 && <select className={styles.history} aria-label="Recent transcripts" value={result?.id} onChange={event => setSelected(event.target.value)}>
       {results.map(item => <option key={item.id} value={item.id}>{fileName(item.source)}</option>)}
     </select>}
@@ -77,16 +76,21 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
       <summary>On this page · {topics.length} topics</summary>
       <ol>{topics.map((topic, index) => <li key={index}><button onClick={() => documentRef.current?.querySelectorAll('h2, h3')[index]?.scrollIntoView({ block: 'start' })}>{topic}</button></li>)}</ol>
     </details>}
-    <div ref={documentRef} className={styles.document} role="tabpanel" tabIndex={0} aria-label={tab === 'original' ? 'Original transcript' : 'Cleaned Markdown'}>
-      {!result ? <div className={styles.empty}><div className={styles.documentIcon}>Aa</div><h3>From spoken to readable.</h3><p>After transcription, a tiny model tidies punctuation and paragraphs into a separate Markdown file.</p><p>Your original is always kept.</p><button onClick={() => setSettings(true)}>Choose cleanup model</button></div>
-        : tab === 'original' ? <><h3>{fileName(result.source)}</h3><div className={styles.original}>{result.original}</div></>
-        : result.markdown ? <Markdown skipHtml components={{ a: ({ children }) => <span>{children}</span>, img: ({ alt }) => <span>{alt ?? ''}</span> }}>{result.markdown}</Markdown>
-        : <div className={styles.empty}><div className={styles.documentIcon}>Aa</div><h3>{result.status === 'working' ? 'Making room to read.' : 'Your original is safe.'}</h3><p>{result.status === 'working' ? 'Cleaned text will appear here as it is written. Switch to Original to start reading.' : 'Switch to Original to read the transcript. Check cleanup settings before your next run.'}</p></div>}
-    </div>
     <footer className={styles.footer}>
       <span>{notice || (result?.status === 'working' ? 'Draft · not saved yet' : 'AI edits can be imperfect. Compare with Original.')}</span>
       <div className={styles.actions}><button disabled={!result || (tab === 'cleaned' && !result.markdown)} onClick={() => void copy()}>Copy</button>
         <button disabled={!result?.outputPath} onClick={() => { if (result) void window.easyWhisper?.revealCleanupFile(result.id); }}>Show file</button></div>
     </footer>
+    </nav>
+    <section className={styles.reading} aria-label="Transcript output">
+    <div ref={documentRef} className={styles.document} role="tabpanel" tabIndex={0} aria-label={tab === 'original' ? 'Original transcript' : 'Cleaned Markdown'}>
+      {!result ? <div className={styles.empty}><div className={styles.documentIcon}>Aa</div><h3>From spoken to readable.</h3><p>After transcription, a tiny model tidies punctuation and paragraphs into a separate Markdown file.</p><p>Your original is always kept.</p></div>
+        : tab === 'original' ? <><h3>{fileName(result.source)}</h3><div className={styles.original}>{result.original}</div></>
+        : result.markdown ? <Markdown skipHtml components={{ a: ({ children }) => <span>{children}</span>, img: ({ alt }) => <span>{alt ?? ''}</span> }}>{result.markdown}</Markdown>
+        : <div className={styles.empty}><div className={styles.documentIcon}>Aa</div><h3>{result.status === 'working' ? 'Making room to read.' : 'Your original is safe.'}</h3><p>{result.status === 'working' ? 'Cleaned text will appear here as it is written. Switch to Original to start reading.' : 'Switch to Original to read the transcript. Check cleanup settings before your next run.'}</p></div>}
+    </div>
+
+    </section>
+    </div>
   </aside>;
 }

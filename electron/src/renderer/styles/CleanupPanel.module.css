@@ -1,4 +1,4 @@
-.panel { position: fixed; z-index: 30; top: 68px; right: 24px; bottom: 24px; width: min(520px, calc(100vw - 48px)); display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border-radius: 22px; border: 1px solid var(--glass-border); background: var(--glass); box-shadow: var(--glass-shadow); backdrop-filter: blur(28px) saturate(125%); }
+.panel { position: fixed; z-index: 30; top: 68px; right: 24px; left: 24px; bottom: 24px; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border-radius: 22px; border: 1px solid var(--glass-border); background: var(--glass); box-shadow: var(--glass-shadow); backdrop-filter: blur(28px) saturate(125%); }
 .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 24px 24px 18px; }
 .eyebrow { font-size: 10px; letter-spacing: .15em; color: var(--muted); font-weight: 600; }
 .header h2 { margin: 5px 0 0; font-size: 23px; letter-spacing: -.04em; font-weight: 550; }
@@ -51,3 +51,17 @@
 .contents li { margin: 5px 0; }
 .contents button { text-align: left; border: 0; background: transparent; padding: 2px 0; }
 .document h2, .document h3 { scroll-margin-top: 14px; }
+
+.readerLayout { display: grid; grid-template-columns: 250px minmax(0, 1fr); flex: 1; min-height: 0; border-top: 1px solid var(--glass-border); }
+.sidebar { overflow-y: auto; min-height: 0; border-right: 1px solid var(--glass-border); padding: 22px 0; background: var(--inset); }
+.reading { display: flex; min-width: 0; min-height: 0; }
+.reading .document { min-height: 0; padding: 30px 40px; font-size: 15px; }
+.sidebar .settings { max-height: none; overflow: visible; }
+.sidebar .tabs { flex-wrap: wrap; }
+.sidebar .badge { width: 100%; margin: 8px 0 0; }
+.sidebar .footer { flex-direction: column-reverse; align-items: flex-start; border-top: 0; gap: 14px; }
+.sidebar .contents { max-height: none; }
+.sidebar .status > div { flex-wrap: wrap; }
+.header { padding: 18px 24px; }
+@media (max-width: 760px) { .readerLayout { grid-template-columns: 200px minmax(0,1fr); } .reading .document { padding: 22px; } }
+@media (max-width: 520px) { .panel { left: 12px; right: 12px; } .readerLayout { grid-template-columns: 1fr; overflow-y: auto; } .sidebar { max-height: 220px; border-right: 0; border-bottom: 1px solid var(--glass-border); } .reading { min-height: 400px; } }
