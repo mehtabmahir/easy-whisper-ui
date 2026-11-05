@@ -321,13 +321,11 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
       {clearingCache && <LoadingBar label="Clearing audio cache" paceSeconds={5} />}
     </section>
     <section className={styles.uninstallSection}>
-      <h3>Updates</h3>
-      <button onClick={onCheckUpdates} disabled={closeBlocked}>Check for updates</button>
-    </section>
-    <section className={styles.uninstallSection}>
-      <h3>Logs</h3>
-      <p className={styles.note}>View dependency setup and compilation details.</p>
-      <button type="button" onClick={() => void showLog()} disabled={!window.easyWhisper}>Show log file</button>
+      <h3>Maintenance</h3>
+      <div className={styles.modelActions}>
+        <button type="button" onClick={onCheckUpdates} disabled={closeBlocked}>Check for updates</button>
+        <button type="button" onClick={() => void showLog()} disabled={!window.easyWhisper}>View logs</button>
+      </div>
       {logResult && <p role="status">{logResult}</p>}
     </section>
     {!isMac && <>
