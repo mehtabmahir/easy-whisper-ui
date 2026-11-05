@@ -1,3 +1,5 @@
+import CleanupPanel from "./CleanupPanel";
+import type { CleanupEvent, CleanupPreferences } from "../types/easy-whisper";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./styles/App.module.css";
 import FirstLaunchLoader from "./FirstLaunchLoader";
@@ -62,6 +64,8 @@ type PersistedSettings = {
   language?: string;
   cpuOnly?: boolean;
   outputTxt?: boolean;
+  cleanupEnabled?: boolean;
+  cleanupPreferences?: CleanupPreferences;
   outputSrt?: boolean;
   openAfterComplete?: boolean;
   extraArgs?: string;
@@ -148,6 +152,11 @@ function App(): JSX.Element {
   const [model, setModel] = useState<string>(persisted.model ?? "tiny.en");
   const [language, setLanguage] = useState<string>(persisted.language ?? "en");
   const [cpuOnly, setCpuOnly] = useState<boolean>(persisted.cpuOnly ?? false);
+  const [cleanupEnabled, setCleanupEnabled] = useState(persisted.cleanupEnabled ?? false);
+  const [cleanupPreferences, setCleanupPreferences] = useState<CleanupPreferences>(persisted.cleanupPreferences ?? { provider: "local", apiModel: "" });
+  const [cleanupOpen, setCleanupOpen] = useState(false);
+  const [cleanupResults, setCleanupResults] = useState<CleanupEvent[]>([]);
+  const cleanupActiveIdRef = useRef<string>();
   const [outputTxt, setOutputTxt] = useState<boolean>(persisted.outputTxt ?? true);
   const [outputSrt, setOutputSrt] = useState<boolean>(persisted.outputSrt ?? false);
   const [openAfterComplete, setOpenAfterComplete] = useState<boolean>(persisted.openAfterComplete ?? true);
@@ -413,6 +422,14 @@ function App(): JSX.Element {
       appendConsole(`[${event.source}] ${event.message}`);
     });
 
+    const removeCleanup = api.onCleanup(event => {
+      setCleanupResults(previous => [...previous.filter(item => item.id !== event.id), event].slice(-8));
+      if (cleanupActiveIdRef.current !== event.id) {
+        cleanupActiveIdRef.current = event.id;
+        setCleanupOpen(true);
+      }
+    });
+    void api.getCleanupResults().then(setCleanupResults);
     const removeQueue = api.onQueueState((state) => {
       setQueueState(state);
     });
@@ -431,6 +448,7 @@ function App(): JSX.Element {
 
     return () => {
       removeConsole();
+      removeCleanup();
       removeQueue();
       removeCompile();
       removeLiveText();
@@ -632,8 +650,9 @@ function App(): JSX.Element {
     outputSrt,
     openAfterComplete,
     extraArgs,
+    cleanup: cleanupEnabled ? { ...cleanupPreferences } : undefined,
     customModelPath: model === "custom" ? customModelPath : undefined
-  }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath]);
+  }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath, cleanupEnabled, cleanupPreferences]);
 
   const enqueueFiles = useCallback((files: string[]) => {
     const bridge = window.easyWhisper;
@@ -661,9 +680,11 @@ function App(): JSX.Element {
       outputSrt,
       openAfterComplete,
       extraArgs,
-      customModelPath
+      customModelPath,
+      cleanupEnabled,
+      cleanupPreferences
     });
-  }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath]);
+  }, [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath, cleanupEnabled, cleanupPreferences]);
 
   const handleOpen = useCallback(async () => {
     const bridge = window.easyWhisper;
@@ -883,6 +904,7 @@ function App(): JSX.Element {
         : skipRunning ? <LoadingBar label="Skipping file" paceSeconds={4} />
         : isCompiling ? <LoadingBar label="Whisper setup" {...setupProgress(compileInfo)} />
         : liveChanging ? <LoadingBar label="Preparing live transcription" paceSeconds={60} />
+        : isProcessing && queueState.stage === "cleanup" ? <div role="status" className={styles.cleanupStage}>Cleaning transcript · progress in Transcript reader</div>
         : isProcessing ? <LoadingBar key={queueState.processing} label="Transcription" paceSeconds={180} />
         : helpRunning ? <LoadingBar label="Loading help" paceSeconds={4} /> : null}
     </div>
@@ -984,7 +1006,7 @@ function App(): JSX.Element {
           </div>
         </header>
 
-        <section className={styles.workspace}>
+        <section className={`${styles.workspace} ${cleanupOpen ? styles.workspaceWithCleanup : ""}`}>
           <aside className={styles.leftPanel}>
             <div className={styles.buttonStack}>
               <button
@@ -1192,13 +1214,22 @@ function App(): JSX.Element {
               <label className={styles.checkbox}>
                 <input
                   type="checkbox"
-                  checked={openAfterComplete}
+                  checked={cleanupEnabled || openAfterComplete}
+                  disabled={cleanupEnabled}
                   onChange={(event) => setOpenAfterComplete(event.target.checked)}
                 />
-                <span>Open Transcription</span>
+                <span>{cleanupEnabled ? "Open in transcript reader" : "Open Transcription"}</span>
               </label>
             </div>
 
+            <div className={styles.cleanupControls}>
+              <label className={styles.checkbox} title="Keep the original and create a cleaned Markdown copy. Local mode downloads a 491 MB model once.">
+                <input type="checkbox" checked={cleanupEnabled} onChange={event => { setCleanupEnabled(event.target.checked); if (event.target.checked) setCleanupOpen(true); }}/>
+                <span>Clean up transcript</span>
+              </label>
+              <button type="button" onClick={() => setCleanupOpen(!cleanupOpen)} aria-expanded={cleanupOpen}>Transcript reader</button>
+              {cleanupEnabled && <small>{cleanupPreferences.provider === "local" ? "Local AI · 491 MB on first use" : "OpenAI · transcript text sent to your API account"} · Original .txt always kept</small>}
+            </div>
             <div className={styles.queueStatus}>
               <span>Processing: {getFileName(queueState.processing)}</span>
               <div className={styles.queueDropdown}>
@@ -1217,7 +1248,7 @@ function App(): JSX.Element {
                   <li key={item.id} className={styles.fileQueueItem}>
                     <div className={styles.fileQueueDetails}>
                       <span title={item.file}>{getFileName(item.file)}</span>
-                      <small>{item.status === "failed" ? "Failed" : item.status === "processing" ? "Transcribing" : "Waiting"}</small>
+                      <small>{item.status === "failed" ? "Failed" : item.status === "processing" ? queueState.stage === "cleanup" ? "Cleaning up" : "Transcribing" : "Waiting"}</small>
                       {item.error && <small className={styles.queueError}>{item.error}</small>}
                     </div>
                     {item.status === "failed" && <button type="button" disabled={isCompiling || liveActive}
@@ -1249,6 +1280,9 @@ function App(): JSX.Element {
               </div>
             </div>
           </main>
+          {cleanupOpen && <CleanupPanel results={cleanupResults} preferences={cleanupPreferences}
+            onPreferences={setCleanupPreferences} onClose={() => setCleanupOpen(false)} busy={isProcessing}
+          />}
         </section>
       </div>
     </div>

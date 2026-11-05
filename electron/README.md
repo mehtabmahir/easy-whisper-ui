@@ -200,3 +200,48 @@ On Linux, this path is implemented across dependency setup, compile, and install
 4. Renderer receives text via `easy-whisper:live-text` and state via `easy-whisper:live-state`
 
 If a distro-specific dependency, packaging, or runtime issue appears on Linux, please open an issue with logs.
+## Cleaned Markdown transcripts
+
+Enable **Clean up transcript** before opening audio/video. Whisper saves the
+original `.txt` first (even if text export is unchecked), then an optional editor
+creates a separate `.cleaned.md` beside it. Repeated runs use numbered filenames
+instead of overwriting previous Markdown. Cleanup does not change subtitle timing
+or rewrite the original transcript. Live microphone transcription is unchanged.
+
+The in-app **Transcript reader** opens beside the controls. Switch between
+**Cleaned** and **Original**, watch section progress and elapsed time, copy text,
+or reveal the saved Markdown. The last eight results remain available for this
+session. Drafts are incomplete until the panel says **Markdown saved**. Stop/Skip
+cancel cleanup and preserve the original; an optional cleanup error does not mark
+Whisper's successful transcription as failed.
+
+The default is **On this device**: Qwen2.5-0.5B-Instruct Q4_K_M through
+node-llama-cpp. First use downloads 491 MB from the official Qwen repository at a
+pinned revision and verifies SHA-256; later runs are offline. The runtime selects
+available GPU acceleration, with CPU fallback. No Python or separately running
+model server is needed. Models are stored in the app's
+`whisper-workspace/cleanup-models` folder. Build on each target platform with its
+native npm dependencies; native binaries must remain outside ASAR. macOS, Windows,
+and Linux require separate packaged-runtime checks.
+
+In the reader's **Cleanup settings**, users can instead select **With an OpenAI
+API key**, supply a model ID supporting Chat Completions, and add a key. This sends
+transcript text (not audio) to OpenAI and incurs API charges. The key stays in the
+main process's memory for this session and is never persisted; remove it from the
+same panel. Requests use `store: false`, a fixed HTTPS OpenAI endpoint, no redirect
+following, a token limit, and a timeout. Actual API access depends on the user's
+account; tests mock the network and do not require credentials.
+
+Cleanup operates on bounded sections, instructs the model to preserve content,
+and retains original sections when simple coverage/number checks detect large
+changes. These checks do not guarantee factual accuracy. The tiny model can miss
+errors or change meaning: compare important text with **Original**. It is an editor,
+not a summary generator or a tool-using agent.
+
+Validation: `npm run build`, `npm run typecheck`, then
+`node --test tests/*.cjs`. An opt-in native smoke test is available with
+`node tests/cleanup-smoke.cjs /path/to/test-profile`; it uses/downloads the tiny model
+inside that profile and writes only a synthetic transcript there.
+
+Model: https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF (Apache-2.0).
+Runtime: https://github.com/withcatai/node-llama-cpp (MIT).
