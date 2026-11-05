@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import type { CompileProgressEvent, DownloadedModel, ModelDownloadProgress, UninstallInfo } from "../types/easy-whisper";
+import type { CleanupPreferences, CompileProgressEvent, DownloadedModel, ModelDownloadProgress, UninstallInfo } from "../types/easy-whisper";
 import styles from "./styles/SettingsPanel.module.css";
 import { DOWNLOADABLE_MODELS } from "../main/services/modelCatalog";
+import CleanupSettings from "./CleanupSettings";
 import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
 import ModelDownloadBar from "./ModelDownloadBar";
 
-export default function SettingsPanel({ busy, progress, downloadProgress, onClose }: {
+export default function SettingsPanel({ busy, progress, downloadProgress, onClose, cleanupEnabled, onCleanupEnabled, cleanupPreferences, onCleanupPreferences }: {
   busy: boolean;
+  cleanupEnabled: boolean;
+  onCleanupEnabled: (value: boolean) => void;
+  cleanupPreferences: CleanupPreferences;
+  onCleanupPreferences: (value: CleanupPreferences) => void;
   downloadProgress?: ModelDownloadProgress;
   progress: CompileProgressEvent;
   onClose: () => void;
@@ -21,6 +26,17 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
   const [clearOnExit, setClearOnExit] = useState(true);
   const [cachePreferenceReady, setCachePreferenceReady] = useState(false);
   const [savingCachePreference, setSavingCachePreference] = useState(false);
+  const [cacheBytes, setCacheBytes] = useState<number>();
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      try { const bytes = await window.easyWhisper?.getAudioCacheSize(); if (active) setCacheBytes(bytes); }
+      catch { if (active) setCacheBytes(undefined); }
+    };
+    void refresh();
+    const timer = setInterval(() => void refresh(), 5000);
+    return () => { active = false; clearInterval(timer); };
+  }, []);
   const [logResult, setLogResult] = useState<string>();
   useEffect(() => {
     let active = true;
@@ -41,11 +57,11 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
     finally { setSavingCachePreference(false); }
   }
 
-  async function openWorkspaceFolder() {
+  async function openAudioCacheFolder() {
     setCacheResult(undefined);
     try {
-      const response = await window.easyWhisper?.openWorkspaceFolder();
-      if (response && !response.success) setCacheResult(response.error ?? "Could not open the workspace folder.");
+      const response = await window.easyWhisper?.openAudioCacheFolder();
+      if (response && !response.success) setCacheResult(response.error ?? "Could not open the audio folder.");
     }
     catch (error) { setCacheResult((error as Error).message); }
   }
@@ -124,6 +140,7 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
     setCacheResult(undefined);
     try {
       const result = await window.easyWhisper.clearAudioCache();
+      if (result.success) setCacheBytes(await window.easyWhisper.getAudioCacheSize());
       setCacheResult(result.success ? "Audio cache cleared." : result.error ?? "Could not clear the audio cache.");
     } catch (error) {
       setCacheResult((error as Error).message);
@@ -187,7 +204,14 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
       <button type="button" onClick={onClose} disabled={closeBlocked} aria-label="Close settings">Close</button>
     </header>
     <section>
+      <h3>AI transcript</h3>
+      <label className={styles.modelRow}><input type="checkbox" checked={cleanupEnabled} disabled={busy || working}
+        onChange={event => onCleanupEnabled(event.target.checked)}/><span>Clean up after transcription</span></label>
+      <CleanupSettings preferences={cleanupPreferences} onPreferences={onCleanupPreferences} busy={busy || working} compact />
+    </section>
+    <section className={styles.uninstallSection}>
       <h3>Audio cache</h3>
+      <p role="status">Size: {cacheBytes === undefined ? 'Unavailable' : cacheBytes >= 1e9 ? `${(cacheBytes / 1e9).toFixed(2)} GB` : `${(cacheBytes / 1e6).toFixed(1)} MB`}</p>
       <p className={styles.note}>Reuses converted audio across retries and model changes.</p>
       <label className={styles.modelRow}>
         <input type="checkbox" checked={clearOnExit} disabled={!cachePreferenceReady || working}
@@ -196,7 +220,7 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
       </label>
       <p className={styles.note}>Enabled by default. Turn off to keep cached audio between sessions. Original files and transcripts are preserved.</p>
       <div className={styles.modelActions}>
-      <button type="button" onClick={() => void openWorkspaceFolder()} disabled={working || !window.easyWhisper}>Open workspace folder</button>
+      <button type="button" onClick={() => void openAudioCacheFolder()} disabled={working || !window.easyWhisper}>Open audio folder</button>
       <button type="button" onClick={() => void clearCache()} disabled={busy || working || !window.easyWhisper}>
         {clearingCache ? "Clearing…" : "Clear audio cache"}
       </button>

@@ -63,3 +63,25 @@ test('log shortcut handles missing logs without fabricating one and opens existi
   openError = 'No text viewer';
   await assert.rejects(settings.showSetupLog(), /No text viewer/);
 });
+
+test('audio cache size counts nested files and refreshes after removal', async t => {
+  await fixture(t);
+  assert.equal(await settings.getAudioCacheSize(), 0);
+  const cache = path.join(root, 'whisper-workspace', 'audio-cache');
+  await fs.mkdir(path.join(cache, 'nested'), { recursive: true });
+  await fs.writeFile(path.join(cache, 'audio.wav'), Buffer.alloc(100));
+  await fs.writeFile(path.join(cache, 'nested', 'partial.wav'), Buffer.alloc(50));
+  await fs.writeFile(path.join(root, 'original.wav'), Buffer.alloc(999));
+  assert.equal(await settings.getAudioCacheSize(), 150);
+  await fs.rm(cache, { recursive: true });
+  assert.equal(await settings.getAudioCacheSize(), 0);
+});
+
+test('audio folder shortcut opens the actual cache and reports errors', async t => {
+  await fixture(t);
+  await settings.openAudioCacheFolder();
+  assert.equal(opened, path.join(root, 'whisper-workspace', 'audio-cache'));
+  assert.ok((await fs.stat(opened)).isDirectory());
+  openError = 'No file manager';
+  await assert.rejects(settings.openAudioCacheFolder(), /No file manager/);
+});

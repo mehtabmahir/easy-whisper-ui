@@ -15,7 +15,7 @@ import { listDownloadedModels, deleteDownloadedModel } from "./services/modelSto
 import { getHardwareInfo } from "./services/hardwareInfo";
 import { checkGpuReadiness } from "./services/gpuReadiness";
 
-import { getPickerDirectory, rememberPickerDirectory, getClearAudioCacheOnExit, setClearAudioCacheOnExit, openWorkspaceFolder, showSetupLog } from "./services/appSettings";
+import { getPickerDirectory, rememberPickerDirectory, getClearAudioCacheOnExit, setClearAudioCacheOnExit, openWorkspaceFolder, showSetupLog, getAudioCacheSize, openAudioCacheFolder } from "./services/appSettings";
 
 const isDev = process.env.NODE_ENV === "development";
 // Electron's native Acrylic backdrop requires Windows 11 22H2 (build 22621).
@@ -301,6 +301,8 @@ function registerIpcChannels(): void {
     try { await action(); return { success: true }; }
     catch (error) { return { success: false, error: (error as Error).message }; }
   };
+  ipcMain.handle("easy-whisper:audio-cache-size", () => getAudioCacheSize());
+  ipcMain.handle("easy-whisper:open-audio-cache", () => openSettingsPath(openAudioCacheFolder));
   ipcMain.handle("easy-whisper:open-workspace-folder", () => openSettingsPath(openWorkspaceFolder));
   ipcMain.handle("easy-whisper:show-setup-log", () => openSettingsPath(showSetupLog));
   ipcMain.handle("easy-whisper:list-models", () => listDownloadedModels());

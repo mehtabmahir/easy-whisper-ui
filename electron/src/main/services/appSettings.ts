@@ -68,3 +68,35 @@ export async function showSetupLog(): Promise<void> {
   const error = await shell.openPath(log);
   if (error) throw new Error(error);
 }
+
+function audioCacheFolder(): string {
+  return path.join(app.getPath("userData"), "whisper-workspace", "audio-cache");
+}
+
+export async function getAudioCacheSize(): Promise<number> {
+  const sizeOf = async (folder: string): Promise<number> => {
+    let entries;
+    try { entries = await fs.promises.readdir(folder, { withFileTypes: true }); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return 0; throw error; }
+    let bytes = 0;
+    for (const entry of entries) {
+      const target = path.join(folder, entry.name);
+      try {
+        // Do not follow links outside the cache, including entries replaced during a scan.
+        const stat = await fs.promises.lstat(target);
+        if (stat.isSymbolicLink()) continue;
+        if (stat.isDirectory()) bytes += await sizeOf(target);
+        else if (stat.isFile()) bytes += stat.size;
+      } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+    }
+    return bytes;
+  };
+  return sizeOf(audioCacheFolder());
+}
+
+export async function openAudioCacheFolder(): Promise<void> {
+  const folder = audioCacheFolder();
+  await fs.promises.mkdir(folder, { recursive: true });
+  const error = await shell.openPath(folder);
+  if (error) throw new Error(error);
+}

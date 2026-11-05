@@ -930,8 +930,9 @@ function App(): JSX.Element {
           reinstalling={retryingSetup}
         />
       )}
-      {settingsOpen && <SettingsPanel busy={isCompiling || isProcessing || liveActive || queuedCount > 0}
-        downloadProgress={modelDownloadProgress} progress={compileInfo} onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <SettingsPanel busy={isCompiling || isProcessing || liveActive || queuedCount > 0 || cleanupResults.some(item => item.status === "working")}
+        downloadProgress={modelDownloadProgress} progress={compileInfo} onClose={() => setSettingsOpen(false)}
+        cleanupEnabled={cleanupEnabled} onCleanupEnabled={setCleanupEnabled} cleanupPreferences={cleanupPreferences} onCleanupPreferences={setCleanupPreferences} />}
       {faqOpen && <FaqPanel onClose={() => setFaqOpen(false)} />}
       {creditsOpen && <CreditsPanel onClose={() => setCreditsOpen(false)} />}
       {cleanupOpen && <button className={styles.readerBackdrop} aria-label="Close transcript reader" onClick={() => setCleanupOpen(false)} />}

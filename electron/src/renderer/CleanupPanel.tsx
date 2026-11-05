@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import type { CleanupEvent, CleanupPreferences } from '../types/easy-whisper';
-import { CLEANUP_MODELS, cleanupModel } from '../main/services/cleanupModelCatalog';
-import type { HardwareInfo } from '../types/easy-whisper';
+import CleanupSettings from './CleanupSettings';
 import styles from './styles/CleanupPanel.module.css';
 
 export default function CleanupPanel({ results, preferences, onPreferences, onClose, busy: transcriptionBusy }: {
@@ -10,41 +9,26 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
   onPreferences: (preferences: CleanupPreferences) => void; onClose: () => void; busy: boolean;
 }) {
   const documentRef = useRef<HTMLDivElement>(null);
-  const [hardware, setHardware] = useState<HardwareInfo>();
-  useEffect(() => { void window.easyWhisper?.getHardwareInfo().then(setHardware).catch(() => {}); }, []);
-  const chosenModel = cleanupModel(preferences.localModel);
   const [request, setRequest] = useState('');
   const [requestOpen, setRequestOpen] = useState(false);
   const actionWorking = results.some(item => item.action && item.status === 'working');
   const busy = transcriptionBusy || actionWorking;
   const [selected, setSelected] = useState('');
   const [tab, setTab] = useState<'cleaned' | 'original'>('cleaned');
-  const [key, setKey] = useState('');
-  const [keySaved, setKeySaved] = useState(false);
   const [notice, setNotice] = useState('');
   const [now, setNow] = useState(Date.now());
   const result = results.find(item => item.id === selected) ?? results.at(-1);
   useEffect(() => { setSelected(results.at(-1)?.id ?? ''); }, [results.at(-1)?.id]);
-  useEffect(() => { void window.easyWhisper?.hasCleanupApiKey().then(setKeySaved); }, []);
   useEffect(() => {
     if (result?.status !== 'working') return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, [result?.status, result?.id]);
-  const changeDestination = async (next: CleanupPreferences) => {
-    await window.easyWhisper?.setCleanupApiKey('');
-    setKey(''); setKeySaved(false); setNotice('');
-    onPreferences(next);
-  };
   const runAction = async (kind: 'summary' | 'custom') => {
     if (!result || busy) return;
     setTab('cleaned'); setNotice('');
     try { await window.easyWhisper?.runTranscriptAction(result.id, preferences, { kind, request: kind === 'custom' ? request.trim() : undefined }); }
     catch (error) { setNotice((error as Error).message); }
-  };
-  const saveKey = async () => {
-    try { await window.easyWhisper?.setCleanupApiKey(key); setKeySaved(!!key.trim()); setKey(''); setNotice('Key updated for this session.'); }
-    catch { setNotice('Could not save the key. Check its format.'); }
   };
   const copy = async () => {
     try { await navigator.clipboard.writeText(tab === 'original' ? result?.original ?? '' : result?.markdown ?? ''); setNotice('Copied to clipboard.'); }
@@ -62,37 +46,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
     </header>
     <div className={styles.readerLayout}>
     <nav className={styles.sidebar} aria-label="Transcript controls">
-    <div className={styles.settings}>
-      <span className={styles.eyebrow}>CLEANUP SETTINGS</span>
-      <label>Model<select disabled={busy} value={preferences.provider}
-        onChange={event => void changeDestination({ ...preferences, provider: event.target.value as CleanupPreferences['provider'] })}>
-        <option value="local">Built-in model</option><option value="custom">Custom model file</option><option value="openai">OpenAI API Key</option><option value="compatible">Other API Key</option>
-      </select></label>
-      {preferences.provider === 'local' ? <>
-        <label>Local model<select disabled={busy} value={chosenModel.id} onChange={event => onPreferences({ ...preferences, localModel: event.target.value })}>
-          {CLEANUP_MODELS.map(model => <option key={model.id} value={model.id}>{model.label} · {(model.files.reduce((sum, file) => sum + file.bytes, 0) / 1e9).toFixed(2)} GB</option>)}
-        </select></label>
-        <p className={hardware ? hardware.ramGiB < chosenModel.ramGiB ? styles.memoryWarning : styles.memoryFits : undefined}
-          role="status" title="Estimated system memory recommendation; actual use varies.">
-          {chosenModel.ramGiB} GB RAM suggested{hardware ? hardware.ramGiB < chosenModel.ramGiB ? ' · Low memory' : ' · Fits' : ''}
-        </p>
-      </> : preferences.provider === 'custom' ? <>
-        <p>Choose a GGUF instruction-tuned language model. Runs on this device. Whisper speech models cannot be used for cleanup.</p>
-        <button disabled={busy} onClick={async () => {
-          const customModelPath = await window.easyWhisper?.openCleanupModelFile();
-          if (customModelPath) onPreferences({ ...preferences, customModelPath });
-        }}>Choose model file</button>
-        <p title={preferences.customModelPath}>{preferences.customModelPath ? fileName(preferences.customModelPath) : 'No model selected'}</p>
-      </> : <>
-        <p>Transcript text is sent to {preferences.provider === 'openai' ? 'OpenAI' : 'the provider at your endpoint'} for cleanup. API usage may be billed to your account. Audio stays on this device.</p>
-        {preferences.provider === 'compatible' && <label>Chat completions endpoint<input type="url" disabled={busy} value={preferences.apiEndpoint ?? ''} placeholder="https://provider.example/v1/chat/completions" onChange={event => void changeDestination({ ...preferences, apiEndpoint: event.target.value })}/><small>Requires an OpenAI-compatible API.</small></label>}
-        <label>Model ID<input disabled={busy} value={preferences.apiModel} placeholder="Model ID" onChange={event => onPreferences({ ...preferences, apiModel: event.target.value })}/></label>
-        <label>API key<input type="password" autoComplete="off" spellCheck={false} disabled={busy} value={key} placeholder={keySaved ? 'Key set for this session' : 'Paste your API key'} onChange={event => setKey(event.target.value)}/></label>
-        <div className={styles.keyActions}><button disabled={busy || !key.trim()} onClick={() => void saveKey()}>Use key for this session</button>
-          {keySaved && <button disabled={busy} onClick={() => { void window.easyWhisper?.setCleanupApiKey('').then(() => { setKeySaved(false); setNotice('Key removed.'); }); }}>Remove key</button>}</div>
-        <p>The key is never saved to disk. Add it again after restarting.</p>
-      </>}
-    </div>
+    <CleanupSettings preferences={preferences} onPreferences={onPreferences} busy={busy} />
     {result && result.status !== 'working' && <section className={styles.postActions} aria-label="Transcript actions">
       <span className={styles.eyebrow}>TRANSCRIPT ACTIONS</span>
       <button disabled={busy} onClick={() => void runAction('summary')}>Summarize</button>
