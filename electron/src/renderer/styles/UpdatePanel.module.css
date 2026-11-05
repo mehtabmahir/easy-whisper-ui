@@ -1,0 +1,8 @@
+.panel .content { display: flex; flex-direction: column; gap: 16px; }
+.panel .content p, .panel .content h3 { margin: 0; }
+.version { display: flex; flex-direction: column; gap: 6px; }
+.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--glass-border); }
+.panel .actions button { margin: 0; min-width: 92px; }
+.panel .primary { background: var(--accent); color: var(--on-accent); }
+.panel .primary:hover:not(:disabled) { background: var(--accent-hover); }
+.panel progress { display: block; margin-top: 12px; }
