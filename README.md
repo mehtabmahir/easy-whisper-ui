@@ -14,13 +14,13 @@ EasyWhisperUI brings local Whisper transcription, a real-time **Transcript Reade
 
 | Platform | Requirements | Download |
 | --- | --- | --- |
-| Windows | Windows 10/11, x64 | [3.2.0 installer](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.2.0/EasyWhisperUI-Setup-3.2.0-win-x64.exe) |
-| macOS | macOS 13+, Apple Silicon | [3.2.0 DMG](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.2.0/EasyWhisperUI-3.2.0-macOS-arm64.dmg) |
+| Windows | Windows 10/11, x64 | [3.2.0 installer](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.2.1/EasyWhisperUI-Setup-3.2.0-win-x64.exe) |
+| macOS | macOS 13+, Apple Silicon | [3.2.1 DMG](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.2.1/EasyWhisperUI-3.2.1-macOS-arm64.dmg) |
 | Linux | Beta; tested on Ubuntu | 3.2 pending; [previous releases](https://github.com/mehtabmahir/easy-whisper-ui/releases) |
 
 Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is also available.
 
-[Release notes](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.2.0)
+[Release notes](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.2.1)
 
 <table>
   <tr>
@@ -87,13 +87,13 @@ To translate into English, choose a multilingual model such as `medium`, select 
 
 Windows and macOS builds with the updater check for newer stable GitHub releases after launch. You can also use **Settings → Maintenance → Check for updates**. Choose **Update** to download and verify the installer. The app waits for active work, opens the installer, then quits. On macOS, drag the updated app into Applications. Older public builds without the updater need a manual upgrade first.
 
-See the [v3.2.0 release notes](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.2.0#issues-addressed) for the full list of addressed issues and remaining limitations.
+See the [v3.2.0 release notes](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.2.1#issues-addressed) for the full list of addressed issues and remaining limitations.
 
 ## Troubleshooting
 
 On Windows/Linux, try **Settings → Clean reinstall**. On Mac, restart the app. If the problem continues, use **Settings → Maintenance → View logs** and [open an issue](https://github.com/mehtabmahir/easy-whisper-ui/issues/new) with the error, log, OS, CPU, GPU, RAM, app version, and model. If no setup log exists, copy the console error.
 
-The Mac app is ad-hoc signed and not notarized. If macOS blocks it, try **System Settings → Privacy & Security → Open Anyway**. For a “damaged” message, follow the [release's first-opening instructions](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.2.0#macos-first-opening).
+The Mac app is ad-hoc signed and not notarized. If macOS blocks it, try **System Settings → Privacy & Security → Open Anyway**. For a “damaged” message, follow the [release's first-opening instructions](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.2.1#macos-first-opening).
 
 ## Development
 
