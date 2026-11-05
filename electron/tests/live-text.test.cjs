@@ -12,3 +12,7 @@ test('distinct statements and nonadjacent repeated statements stay in order', ()
  assert.equal(prepareLiveText('We use TCP.\nUDP differs.\nWe use TCP.'), 'We use TCP.\n\nUDP differs.\n\nWe use TCP.');
  assert.equal(prepareLiveText('[BLANK_AUDIO]'), '');
 });
+test('matching beginnings update one growing line even when the ending is revised', () => {
+ assert.equal(prepareLiveText('I am currently watch\nI am currently watching regular\nI am currently watching regular show.\nI am currently watching'), 'I am currently watching regular show.');
+ assert.equal(prepareLiveText('Hello test\nHello testing this model\nHello testing this model today.'), 'Hello testing this model today.');
+});

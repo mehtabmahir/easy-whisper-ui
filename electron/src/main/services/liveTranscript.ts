@@ -1,9 +1,11 @@
+import { prepareLiveText } from './liveText';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { CleanupEvent } from '../../types/easy-whisper';
 
 export class LiveTranscript {
+  private raw = '';
   private event: CleanupEvent;
   private writes: Promise<void>;
   private writeError?: Error;
@@ -18,7 +20,8 @@ export class LiveTranscript {
   private publish() { this.emit({ ...this.event }); }
   append(text: string) {
     if (!text) return;
-    this.event.original += text;
+    this.raw += text;
+    this.event.original = prepareLiveText(this.raw);
     this.event.message = 'Live transcription · listening';
     this.writes = this.writes.then(async () => {
       if (!this.writeError) await fs.appendFile(this.event.outputBase + '.txt', text);

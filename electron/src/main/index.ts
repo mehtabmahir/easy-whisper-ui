@@ -1,4 +1,3 @@
-import { prepareLiveText } from "./services/liveText";
 import { LiveTranscript } from "./services/liveTranscript";
 import { ensureCleanupModel } from "./services/cleanupModel";
 import { cleanupModelsDirectory, listCleanupModels, deleteCleanupModel } from "./services/cleanupModelStorage";
@@ -600,7 +599,7 @@ function registerIpcChannels(): void {
         transcriptActionAbort = controller;
         void finished.finish().then(async result => {
           if (!quitting && result.original.trim() && result.outputBase && preferences) {
-            await cleanupTranscript({ source: result.source, outputBase: result.outputBase, original: prepareLiveText(result.original),
+            await cleanupTranscript({ source: result.source, outputBase: result.outputBase, original: result.original,
               preferences, signal: controller.signal, emit: publishCleanup });
           }
         }).finally(() => { if (transcriptActionAbort === controller) transcriptActionAbort = undefined; });

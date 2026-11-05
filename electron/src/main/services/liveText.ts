@@ -15,6 +15,15 @@ export function prepareLiveText(raw: string): string {
     if (left === right || left.startsWith(right + ' ')) continue;
     // The last word may itself still be incomplete ("test" -> "testing").
     if (right.startsWith(left + ' ') || (right.startsWith(left) && left.length >= 3)) { result[result.length - 1] = text; continue; }
+    // Revisions can change the unfinished ending while retaining the beginning.
+    // Keep one growing line instead of printing every hypothesis as a new line.
+    let prefix = 0;
+    while (prefix < Math.min(left.length, right.length) && left[prefix] === right[prefix]) prefix++;
+    const requiredPrefix = Math.min(12, Math.min(left.length, right.length));
+    if (requiredPrefix >= 3 && prefix >= requiredPrefix) {
+      if (right.length >= left.length) result[result.length - 1] = text;
+      continue;
+    }
     let overlap = Math.min(a.length, b.length);
     while (overlap >= 2 && a.slice(-overlap).join(' ') !== b.slice(0, overlap).join(' ')) overlap--;
     if (overlap >= 2) {
