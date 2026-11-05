@@ -4,7 +4,7 @@ const Module = require('node:module');
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
-const { splitTranscript, reviewedText, markdownDocument } = require('../dist/main/services/cleanupText');
+const { splitTranscript, reviewedText, markdownDocument, hasRepetitionLoop, readableSection } = require('../dist/main/services/cleanupText');
 const originalLoad = Module._load;
 Module._load = function(name, ...args) {
   if (name === 'electron') return { app: { getPath: () => os.tmpdir() } };
@@ -69,5 +69,35 @@ test('cleanup emits original immediately, saves Markdown without overwriting, an
     assert.equal(events.at(-1).status, 'error');
     assert.equal(await fs.readFile(outputBase + '.txt', 'utf8'), original);
     assert.equal((await fs.readdir(root)).length, 3);
+  } finally { global.fetch = fetch; setCleanupApiKey(''); await fs.rm(root, { recursive: true, force: true }); }
+});
+
+test('repetition loops are detected and prose receives readable Markdown structure', () => {
+  assert.equal(hasRepetitionLoop('The producer enters the vault and locks the door. The consumer waits outside. '.repeat(8)), true);
+  assert.equal(hasRepetitionLoop('A short ordinary sentence.'), false);
+  const structured = readableSection('This is an ordinary sentence with all of its original words. '.repeat(20), 2);
+  assert.match(structured, /^## Section 3/);
+  assert.ok(structured.split('\n\n').length > 3);
+  assert.equal(readableSection('## Locking\n\n- Obtain the lock.\n- Release the lock.', 0), '## Locking\n\n- Obtain the lock.\n- Release the lock.');
+});
+test('an hour-sized transcript completes after one section hits the output limit', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'cleanup-long-'));
+  const fetch = global.fetch;
+  let calls = 0, last;
+  setCleanupApiKey('fake-test-key');
+  const original = 'The producer holds the lock while updating the shared counter. The consumer waits until the lock is released. '.repeat(600);
+  try {
+    global.fetch = async (_, options) => {
+      const text = JSON.parse(options.body).messages[1].content;
+      calls++;
+      return { ok: true, json: async () => ({ choices: [{ finish_reason: calls === 2 ? 'length' : 'stop', message: { content: '## Shared counter\n\n' + text } }] }) };
+    };
+    await cleanupTranscript({ source: 'lecture.wav', outputBase: path.join(root, 'lecture'), original,
+      preferences: { provider: 'openai', apiModel: 'test' }, signal: new AbortController().signal, emit: event => { last = event; } });
+    assert.equal(last.status, 'complete');
+    assert.equal(last.completed, splitTranscript(original).length);
+    assert.equal(last.preserved, 1);
+    assert.ok(calls > 25);
+    assert.match(await fs.readFile(last.outputPath, 'utf8'), /## Section 2/);
   } finally { global.fetch = fetch; setCleanupApiKey(''); await fs.rm(root, { recursive: true, force: true }); }
 });

@@ -37,3 +37,10 @@
 @media (prefers-reduced-motion: no-preference) { .panel { animation: reveal .25s ease-out; } @keyframes reveal { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } } }
 
 @media (max-height: 600px) { .panel { top: 52px; bottom: 12px; } .header { padding-top: 16px; } }
+
+.document h2 { margin: 1.8em 0 .7em; padding-bottom: .4em; border-bottom: 1px solid var(--glass-border); font-size: 20px; line-height: 1.4; letter-spacing: -.025em; }
+.document h3 { margin: 1.5em 0 .5em; font-size: 16px; line-height: 1.5; }
+.document ul, .document ol { padding-left: 1.5em; margin: .6em 0 1.4em; }
+.document li { padding-left: .2em; margin-bottom: .5em; }
+.document strong { font-weight: 650; }
+.document code { background: var(--inset); border-radius: 4px; padding: .1em .3em; font-size: .9em; }

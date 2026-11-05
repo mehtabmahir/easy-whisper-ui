@@ -4,7 +4,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { CleanupEvent, CleanupPreferences } from '../../types/easy-whisper';
 import { ensureCleanupModel } from './cleanupModel';
-import { CLEANUP_PROMPT, splitTranscript, reviewedText, markdownDocument } from './cleanupText';
+import { CLEANUP_PROMPT, splitTranscript, reviewedText, markdownDocument, IncompleteCleanupError, hasRepetitionLoop, readableSection } from './cleanupText';
 
 // Keep native ESM import intact when the surrounding Electron main code compiles to CommonJS.
 const loadRuntime = new Function("return import('node-llama-cpp')") as () => Promise<typeof import('node-llama-cpp')>;
@@ -28,6 +28,7 @@ export async function cleanWithApi(text: string, model: string, key: string, sig
   if (!response.ok) throw new Error(`OpenAI cleanup failed (HTTP ${response.status}). Check your key, model access, and billing. Original transcript saved.`);
   const data = await response.json() as { choices?: { finish_reason?: string; message?: { content?: string } }[] };
   const choice = data.choices?.[0];
+  if (choice?.finish_reason === 'length') throw new IncompleteCleanupError('API cleanup returned incomplete output (text limit)');
   if (choice?.finish_reason !== 'stop' || typeof choice.message?.content !== 'string') throw new Error('API cleanup returned an incomplete response. Original transcript saved.');
   return choice.message.content;
 }
@@ -67,8 +68,20 @@ export async function cleanupTranscript(input: {
         signal.throwIfAborted();
         const session = new runtime.LlamaChatSession({ contextSequence: context!.getSequence(), systemPrompt: CLEANUP_PROMPT });
         try {
-          const result = await session.promptWithMeta(text, { signal, temperature: 0, maxTokens: 3072, onTextChunk: onText });
-          if (result.stopReason === 'maxTokens') throw new Error('Cleanup reached its text limit. Original transcript saved.');
+          const sectionAbort = new AbortController();
+          let generated = '';
+          const result = await session.promptWithMeta(text, {
+            signal: AbortSignal.any([signal, sectionAbort.signal]), temperature: 0, maxTokens: 3072, repeatPenalty: { penalty: 1.1 },
+            onTextChunk: part => {
+              generated += part;
+              if (hasRepetitionLoop(generated)) {
+                sectionAbort.abort(new IncompleteCleanupError('Repeated model output'));
+                return;
+              }
+              onText(part);
+            }
+          });
+          if (result.stopReason === 'maxTokens' || sectionAbort.signal.aborted) throw new IncompleteCleanupError('Incomplete local output');
           return result.responseText;
         } finally { session.dispose({ disposeSequence: true }); }
       };
@@ -79,17 +92,22 @@ export async function cleanupTranscript(input: {
       signal.throwIfAborted();
       update({ message: `Cleaning section ${index + 1} of ${chunks.length}…` });
       let draft = '', lastUpdate = 0;
-      const result = await generate(chunk, text => {
+      let result = "";
+      try { result = await generate(chunk, text => {
         draft += text;
         if (Date.now() - lastUpdate > 200) {
           update({ markdown: markdownDocument(title, [...paragraphs, draft], preserved) });
           lastUpdate = Date.now();
         }
-      });
+      }); } catch (error) {
+        signal.throwIfAborted();
+        if (!(error instanceof IncompleteCleanupError)) throw error;
+        // Discard the unverified draft and retain this section; later sections still run.
+      }
       signal.throwIfAborted();
       const reviewed = reviewedText(chunk, result);
       if (reviewed.keptOriginal) preserved++;
-      paragraphs.push(reviewed.text);
+      paragraphs.push(readableSection(reviewed.text, index));
       update({ completed: index + 1, preserved, markdown: markdownDocument(title, paragraphs, preserved) });
     }
     signal.throwIfAborted();
