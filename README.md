@@ -14,7 +14,7 @@ EasyWhisperUI brings local Whisper transcription, a real-time **Transcript Reade
 
 | Platform | Requirements | Download |
 | --- | --- | --- |
-| Windows | Windows 10/11, x64 | [3.1.0 installer — 3.2 pending](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.1/EasyWhisperUI-Setup-3.1.0-win-x64.exe) |
+| Windows | Windows 10/11, x64 | [3.2.0 installer](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.2.0/EasyWhisperUI-Setup-3.2.0-win-x64.exe) |
 | macOS | macOS 13+, Apple Silicon | [3.2.0 DMG](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.2.0/EasyWhisperUI-3.2.0-macOS-arm64.dmg) |
 | Linux | Beta; tested on Ubuntu | 3.2 pending; [previous releases](https://github.com/mehtabmahir/easy-whisper-ui/releases) |
 

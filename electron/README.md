@@ -2,6 +2,10 @@
 
 This folder contains the **Electron-based desktop app** for EasyWhisperUI.
 
+## Development requirements
+
+Use **Node.js 22.12 or newer** and npm. Run `npm install` in this folder before building or starting development.
+
 ## Overview
 
 The app is split into three layers:
@@ -218,7 +222,10 @@ Whisper's successful transcription as failed.
 The default is **On this device**: Qwen2.5-1.5B-Instruct Q4_K_M through
 node-llama-cpp. First use downloads 1.12 GB from the official Qwen repository at a
 pinned revision and verifies SHA-256; later runs are offline. The runtime selects
-available GPU acceleration, with CPU fallback. No Python or separately running
+available GPU acceleration, with CPU fallback. On Windows, local AI selects Vulkan
+when available and falls back to CPU; CUDA is excluded from runtime selection and
+the Windows CUDA packages are excluded from the installer. macOS retains its
+existing backend selection. No Python or separately running
 model server is needed. Models are stored in the app's
 `whisper-workspace/cleanup-models` folder. Build on each target platform with its
 native npm dependencies; native binaries must remain outside ASAR. macOS, Windows,
