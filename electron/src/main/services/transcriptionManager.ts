@@ -413,7 +413,7 @@ export class TranscriptionManager extends EventEmitter {
     if (process.platform === "win32" && /[^\x00-\x7f]/.test(audioFile + modelPath + outputBase)) {
       await this.runWithUnicodePaths(whisper.command, args);
     } else {
-      await this.spawnWithLogs(whisper.command, args);
+      await this.spawnWithLogs(whisper.command, args, undefined, true);
     }
   }
 
@@ -439,7 +439,7 @@ export class TranscriptionManager extends EventEmitter {
       const outputIndex = safeArgs.indexOf("-of") + 1;
       const outputBase = safeArgs[outputIndex];
       safeArgs[outputIndex] = "result";
-      await this.spawnWithLogs(command, safeArgs, dir);
+      await this.spawnWithLogs(command, safeArgs, dir, true);
       this.currentAbort?.signal.throwIfAborted();
       for (const file of await fsp.readdir(dir)) {
         if (!file.startsWith("result.")) continue;
@@ -536,7 +536,7 @@ export class TranscriptionManager extends EventEmitter {
     });
   }
 
-  private async spawnWithLogs(command: string, args: string[], cwd?: string): Promise<void> {
+  private async spawnWithLogs(command: string, args: string[], cwd?: string, detectWhisperErrors = false): Promise<void> {
     this.currentAbort?.signal.throwIfAborted();
     await new Promise<void>((resolve, reject) => {
       const child = spawn(command, args, cwd ? { cwd } : undefined);
@@ -553,8 +553,20 @@ export class TranscriptionManager extends EventEmitter {
         }
       });
 
+      // whisper-cli can report a file error yet exit successfully after skipping it.
+      // Buffer stderr lines because a diagnostic may span multiple data events.
+      let stderrPending = "";
+      let whisperError: string | undefined;
+      const inspectStderr = (line: string) => {
+        if (detectWhisperErrors && /^error:/i.test(line.trim())) whisperError ??= line.trim();
+      };
       child.stderr.on("data", (data) => {
         const chunk = data.toString();
+        if (detectWhisperErrors) {
+          const diagnosticLines = (stderrPending + chunk).split(/[\r\n]/);
+          stderrPending = diagnosticLines.pop() ?? "";
+          diagnosticLines.forEach(inspectStderr);
+        }
         const lines: string[] = chunk.replace(/\r/g, "\n").split(/\n+/);
         for (const raw of lines) {
           const line = raw.trim();
@@ -571,7 +583,10 @@ export class TranscriptionManager extends EventEmitter {
 
       child.once("close", (code) => {
         this.activeProcess = undefined;
-        if (code === 0) {
+        inspectStderr(stderrPending);
+        if (whisperError) {
+          reject(new Error(whisperError));
+        } else if (code === 0) {
           resolve();
         } else {
           reject(new Error(`${command} exited with code ${code}`));

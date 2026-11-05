@@ -51,3 +51,16 @@ test('failed items can be explicitly removed', async () => {
   const done = finish(m); m.enqueue({ files: ['bad.mp3'], settings }); await done;
   await m.removeQueueItem(m.failed[0].id); assert.equal(m.failed.length, 0);
 });
+
+test('Whisper stderr errors with exit zero remain failed while later files continue', async () => {
+  const m = manager();
+  m.runWhisper = file => m.spawnWithLogs(process.execPath, ['-e', file === 'bad.wav'
+    ? "process.stderr.write('err'); setTimeout(() => process.stderr.write('or: failed to read audio file'), 10)"
+    : "process.stdout.write('error: is a word in this transcript'); process.stderr.write('normal diagnostic\\n')"], undefined, true);
+  const done = finish(m);
+  m.enqueue({ files: ['bad.wav', 'good.wav'], settings });
+  await done;
+  assert.equal(m.failed.length, 1);
+  assert.equal(m.failed[0].file, 'bad.wav');
+  assert.equal(m.failed[0].error, 'error: failed to read audio file');
+});
