@@ -2,7 +2,7 @@
 
 <img src="resources/icon.png" alt="EasyWhisperUI logo" width="140" />
 
-**Watch your transcript appear. Turn it into something useful.**
+**Local transcription, powered by your hardware.**
 
 EasyWhisperUI brings local Whisper transcription, a real-time **Transcript Reader**, and **Local AI Summaries** together in one desktop app. Follow recordings as they transcribe, clean up the text, and create structured summaries or custom responses without leaving the reader. Local processing works offline after downloading the required tools and models.
 
@@ -24,36 +24,33 @@ Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is 
 
 <table>
   <tr>
-    <th width="50%">macOS</th>
-    <th width="50%">Windows</th>
+    <th width="50%">Transcript Reader</th>
+    <th width="50%">Main Window</th>
   </tr>
   <tr>
-    <td><a href="resources/preview-macos.png"><img src="resources/preview-macos.png" alt="EasyWhisperUI on macOS" width="100%" /></a></td>
-    <td><a href="resources/preview-windows.png"><img src="resources/preview-windows.png" alt="EasyWhisperUI on Windows" width="100%" /></a></td>
+    <td><a href="resources/preview-transcript-reader.png"><img src="resources/preview-transcript-reader.png" alt="EasyWhisperUI Transcript Reader with local AI controls" width="100%" /></a></td>
+    <td><a href="resources/preview-main-window.png"><img src="resources/preview-main-window.png" alt="EasyWhisperUI main transcription window" width="100%" /></a></td>
   </tr>
 </table>
 
-## A note from me
+## New in 3.2
 
-EasyWhisperUI has come a long way—from the original C++ app to a full rewrite in Electron, and now a redesigned interface with more reliable setup and GPU checks.
+### A new Transcript Reader
 
-I've heard your feedback, issues, and the many feature requests. Countless hours have gone into rebuilding, testing, and making the app easier to use. Your bug reports and suggestions help shape what I work on next. There's more to come!
+Watch file transcriptions appear as Whisper processes your recording, or use **Live** to follow microphone speech in real time. A spacious reading area, Markdown support, and topic navigation make longer transcripts easier to read. Live transcription also merges overlapping phrases to reduce repetition.
 
-Special thanks to past contributors, such as [celerycoloured](https://github.com/celerycoloured) who authored the initial macOS release back when it was C++, and to everyone who has supported the project through donations, bug reports, and feature requests. Your contributions helped make EasyWhisperUI better.
+### Local AI Summaries!
 
-## The new Transcript Reader
+Turn lectures, interviews, and meetings into structured summaries without leaving the app. Choose **Clean up** to organize your transcript, **Summarize** for the key points, or **Custom request** for your own instructions. Results save as separate Markdown files, keeping the original transcript intact.
 
-Follow file transcriptions as Whisper produces text, or start **Live** to see microphone speech appear in the reader. A spacious reading area, Markdown headings, topic navigation, and controls on the left keep the transcript easy to work with. The console remains available for raw output.
+Run locally with built-in **Qwen 2.5 models from 1.5B to 14B**, load your own GGUF model, or connect an OpenAI-compatible API provider. Local models work offline after downloading.
 
-After transcription, choose **Clean up**, **Summarize**, or **Custom request**. Compare AI output against the original, copy text, and open saved Markdown documents. The original transcript is preserved. For normal files, **Open transcript reader** controls automatic opening; live sessions always open it. Live overlap merging reduces repeated partial phrases without needing an AI model.
+### More improvements
 
-## Local AI Summaries!
-
-Turn lectures, interviews and meetings into readable summaries with headings and key points. Use **Clean up** for a structured transcript or **Custom request** for your own instructions. Results save alongside the transcript as separate Markdown files.
-
-Choose Qwen 2.5 **1.5B, 3B, 7B or 14B** models, from **1.12 GB to 7.34 GB**. The default is 1.5B. Larger models can handle more demanding text but take more memory and time. You can also load a custom GGUF language model or use an OpenAI / OpenAI-compatible API key. Local models work offline after downloading; API providers receive transcript text and may charge for usage. Keys stay in memory for the session.
-
-Manage Whisper and AI models together under **Settings → Manage Models**. AI output can change meaning or miss details, so review important results against the original.
+- **Unified model management** — manage Whisper and AI models together in Settings.
+- **Queue and retries** — view queued files, remove waiting items, and retry failed transcriptions.
+- **Audio cache controls** — check storage use, open the cache folder, and choose whether to clear it on exit.
+- **In-app updates** — check for new releases, download the installer, and close the app automatically when it opens.
 
 ## Features
 
@@ -125,6 +122,8 @@ Thank you to my supporters:
 - Rödvarg R — $2
 
 ## Credits
+
+Special thanks to past contributors, such as [celerycoloured](https://github.com/celerycoloured) who authored the initial macOS release back when it was C++, and to everyone who has supported the project through donations, bug reports, and feature requests. Your contributions helped make EasyWhisperUI better.
 
 [whisper.cpp](https://github.com/ggerganov/whisper.cpp) by Georgi Gerganov · [FFmpeg](https://ffmpeg.org) · [Windows FFmpeg builds](https://github.com/BtbN/FFmpeg-Builds) · [macOS FFmpeg builds](https://ffmpeg.martin-riedl.de/) · [SDL2](https://www.libsdl.org/) · [electron-builder](https://www.electron.build/)
 
