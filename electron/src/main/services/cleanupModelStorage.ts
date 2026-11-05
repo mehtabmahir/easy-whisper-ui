@@ -1,11 +1,11 @@
 import { app } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { CLEANUP_MODELS } from './cleanupModelCatalog';
+import { CLEANUP_MODELS, RETIRED_CLEANUP_MODELS } from './cleanupModelCatalog';
 import type { DownloadedModel } from '../../types/easy-whisper';
 export const cleanupModelsDirectory = () => path.join(app.getPath('userData'), 'whisper-workspace', 'cleanup-models');
 async function filesFor(id: string) {
-  const model = CLEANUP_MODELS.find(model => model.id === id);
+  const model = [...CLEANUP_MODELS, ...RETIRED_CLEANUP_MODELS].find(model => model.id === id);
   if (!model) throw new Error('Invalid model selection.');
   const root = cleanupModelsDirectory();
   const folder = await fs.lstat(root).catch(error => { if (error.code === 'ENOENT') return undefined; throw error; });
@@ -23,7 +23,7 @@ async function filesFor(id: string) {
 }
 export async function listCleanupModels(): Promise<DownloadedModel[]> {
   const models: DownloadedModel[] = [];
-  for (const model of CLEANUP_MODELS) {
+  for (const model of [...CLEANUP_MODELS, ...RETIRED_CLEANUP_MODELS]) {
     const files = await filesFor(model.id);
     if (files.length) models.push({ file: model.id, name: model.label + (files.length < model.files.length ? ' (incomplete)' : ''), bytes: files.reduce((sum, file) => sum + file.bytes, 0) });
   }

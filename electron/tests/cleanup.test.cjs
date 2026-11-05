@@ -4,7 +4,7 @@ const Module = require('node:module');
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
-const { splitTranscript, reviewedText, markdownDocument, hasRepetitionLoop, readableSection, structuredOriginal, outlinePassages } = require('../dist/main/services/cleanupText');
+const { CLEANUP_PROMPT, splitTranscript, reviewedText, markdownDocument, hasRepetitionLoop, readableSection, structuredOriginal, outlinePassages } = require('../dist/main/services/cleanupText');
 const originalLoad = Module._load;
 Module._load = function(name, ...args) {
   if (name === 'electron') return { app: { getPath: () => os.tmpdir() } };
@@ -209,14 +209,14 @@ test('summary is saved when the final combining pass repeatedly hits its limit',
  } finally { global.fetch = savedFetch; await fs.rm(root, { recursive: true, force: true }); }
 });
 
-test('Clean up action uses the requested verbatim prompt and saves a cleaned copy', async () => {
+test('Clean up action uses the automatic cleanup prompt and saves a cleaned copy', async () => {
  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'verbatim-cleanup-'));
  const savedFetch = global.fetch;
  let final;
  setCleanupApiKey('test-key');
  try {
   global.fetch = async (_url, options) => {
-   assert.equal(JSON.parse(options.body).messages[0].content, 'Clean up the text but make sure its verbatim');
+   assert.equal(JSON.parse(options.body).messages[0].content, CLEANUP_PROMPT);
    return { ok: true, json: async () => ({ choices: [{ finish_reason: 'stop', message: { content: 'Hello everyone. We ordered 45 boxes today.' } }] }) };
   };
   await cleanupTranscript({ source: 'test.wav', outputBase: path.join(root, 'test'), original: 'hello everyone we ordered 45 boxes today', preferences: { provider: 'openai', apiModel: 'test' }, action: { kind: 'cleanup' }, signal: new AbortController().signal, emit: e => { final = e; } });

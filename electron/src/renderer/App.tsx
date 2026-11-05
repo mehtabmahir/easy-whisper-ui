@@ -156,7 +156,7 @@ function App(): JSX.Element {
   const [cleanupEnabled, setCleanupEnabled] = useState(persisted.cleanupEnabled ?? false);
   const [cleanupPreferences, setCleanupPreferences] = useState<CleanupPreferences>(() => {
     const preferences = persisted.cleanupPreferences ?? { provider: "local", apiModel: "" };
-    return { ...preferences, localModel: !preferences.localModel || preferences.localModel === "qwen-0.5b" ? "qwen-1.5b" : preferences.localModel };
+    return { ...preferences, localModel: !preferences.localModel || ["qwen-0.5b", "qwen-1.5b"].includes(preferences.localModel) ? "qwen-3b" : preferences.localModel };
   });
   const [cleanupOpen, setCleanupOpen] = useState(false);
   const [cleanupResults, setCleanupResults] = useState<CleanupEvent[]>([]);

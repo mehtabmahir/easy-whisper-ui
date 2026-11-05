@@ -43,7 +43,7 @@ Watch file transcriptions appear as Whisper processes your recording, or use **L
 
 Turn lectures, interviews, and meetings into structured summaries without leaving the app. Choose **Clean up** to organize your transcript, **Summarize** for the key points, or **Custom request** for your own instructions. Results save as separate Markdown files, keeping the original transcript intact.
 
-Run locally with built-in **Qwen 2.5 models from 1.5B to 14B**, load your own GGUF model, or connect an OpenAI-compatible API provider. Local models work offline after downloading.
+Run locally with built-in **Qwen 2.5 models from 3B to 14B**, load your own GGUF model, or connect an OpenAI-compatible API provider. Local models work offline after downloading.
 
 ### More improvements
 
@@ -80,7 +80,7 @@ To translate into English, choose a multilingual model such as `medium`, select 
 
 - **macOS:** Apple Silicon, macOS 13 or newer. Whisper, Metal support and FFmpeg are bundled.
 - **Windows:** Windows 10/11 x64. Initial setup downloads dependencies and builds Whisper. Current Vulkan-capable graphics drivers enable GPU acceleration; native Acrylic blur requires Windows 11 22H2 or newer.
-- **Local AI:** suggested system memory is 6 GB for 1.5B, 8 GB for 3B, 12 GB for 7B, and 16 GB for 14B. Estimates vary with other apps and GPU memory; download size is not runtime memory use. The reader and ordinary transcription do not require a language model.
+- **Local AI:** suggested system memory is 8 GB for 3B, 12 GB for 7B, and 16 GB for 14B. Estimates vary with other apps and GPU memory; download size is not runtime memory use. The reader and ordinary transcription do not require a language model.
 - **Linux:** support remains beta; 3.2 installers and in-app updates are pending.
 
 ## App updates

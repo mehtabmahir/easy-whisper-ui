@@ -7,15 +7,16 @@ const { createHash } = require('node:crypto');
 const { CLEANUP_MODELS, cleanupModel } = require('../dist/main/services/cleanupModelCatalog');
 const { ensureCleanupModel } = require('../dist/main/services/cleanupModel');
 test('catalog has verified official models up to 8 GB, including all shards', () => {
-  assert.equal(CLEANUP_MODELS.length, 4);
+  assert.equal(CLEANUP_MODELS.length, 3);
   for (const model of CLEANUP_MODELS) {
     assert.match(model.repo, /^Qwen\//);
     assert.match(model.revision, /^[a-f0-9]{40}$/);
     assert.ok(model.files.reduce((n, f) => n + f.bytes, 0) < 8e9);
     for (const file of model.files) assert.match(file.sha256, /^[a-f0-9]{64}$/);
   }
-  assert.equal(cleanupModel().id, 'qwen-1.5b');
-  assert.equal(cleanupModel('qwen-0.5b').id, 'qwen-1.5b');
+  assert.equal(cleanupModel('qwen-1.5b').id, 'qwen-3b');
+  assert.equal(cleanupModel().id, 'qwen-3b');
+  assert.equal(cleanupModel('qwen-0.5b').id, 'qwen-3b');
   assert.equal(cleanupModel('qwen-7b').id, 'qwen-7b');
   assert.throws(() => cleanupModel('unknown'), /Unknown/);
   assert.equal(cleanupModel('qwen-14b').files.length, 2);

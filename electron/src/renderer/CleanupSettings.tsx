@@ -35,7 +35,7 @@ export default function CleanupSettings({ preferences, onPreferences, busy, comp
         </select></label>
         <p className={hardware ? hardware.ramGiB < chosenModel.ramGiB ? styles.memoryWarning : styles.memoryFits : undefined}
           role="status" title="Estimated system memory recommendation; actual use varies.">
-          {chosenModel.ramGiB} GB RAM suggested{hardware ? hardware.ramGiB < chosenModel.ramGiB ? ' · Low memory' : ' · Fits' : ''}
+          {chosenModel.ramGiB} GB RAM suggested{hardware ? hardware.ramGiB < chosenModel.ramGiB ? ' · Low memory' : ' · Fits' : ''} · <span title="Relative quality estimate for built-in models; results vary.">Quality: {chosenModel.quality}</span>
         </p>
       </> : preferences.provider === 'custom' ? <>
         <p>Choose a GGUF instruction-tuned language model. Runs on this device. Whisper speech models cannot be used for cleanup.</p>

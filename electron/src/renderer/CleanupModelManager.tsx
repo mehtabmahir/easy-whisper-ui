@@ -11,7 +11,7 @@ export default function CleanupModelManager({ busy, onBusy, mode }: { mode: "dow
   const [selectedModel, setSelectedModel] = useState("");
   const [modelBusy, setModelBusy] = useState(false);
   const [modelMessage, setModelMessage] = useState<string>();
-  const [downloadSelection, setDownloadSelection] = useState("qwen-1.5b");
+  const [downloadSelection, setDownloadSelection] = useState("qwen-3b");
   const [downloading, setDownloading] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState<string>();
   const working = modelBusy || downloading;
