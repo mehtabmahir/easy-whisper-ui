@@ -1,21 +1,6 @@
 // Official Qwen GGUF releases, pinned by revision and SHA-256. Sizes are download bytes.
 export const CLEANUP_MODELS = [
   {
-    "id": "qwen-0.5b",
-    "label": "Qwen 2.5 \u00b7 0.5B",
-    "ramGiB": 4,
-    "description": "Fastest; limited accuracy. Not recommended for detailed summaries.",
-    "repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
-    "revision": "9217f5db79a29953eb74d5343926648285ec7e67",
-    "files": [
-      {
-        "name": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
-        "bytes": 491400032,
-        "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
-      }
-    ]
-  },
-  {
     "id": "qwen-1.5b",
     "label": "Qwen 2.5 \u00b7 1.5B",
     "ramGiB": 6,
@@ -87,7 +72,7 @@ export const CLEANUP_MODELS = [
   }
 ] as const;
 export function cleanupModel(id?: string) {
-  const model = CLEANUP_MODELS.find(item => item.id === (id ?? "qwen-0.5b"));
+  const model = CLEANUP_MODELS.find(item => item.id === (!id || id === "qwen-0.5b" ? "qwen-1.5b" : id));
   if (!model) throw new Error("Unknown cleanup model. Choose a built-in model again.");
   return model;
 }

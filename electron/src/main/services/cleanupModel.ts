@@ -2,8 +2,6 @@ import fs from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
-export const MODEL_FILE = 'qwen2.5-0.5b-instruct-q4_k_m.gguf';
-export const MODEL_BYTES = 491400032;
 import { cleanupModel } from './cleanupModelCatalog';
 async function digest(file: string, signal: AbortSignal) {
   const hash = createHash('sha256');

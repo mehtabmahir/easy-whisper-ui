@@ -215,8 +215,8 @@ session. Drafts are incomplete until the panel says **Markdown saved**. Stop/Ski
 cancel cleanup and preserve the original; an optional cleanup error does not mark
 Whisper's successful transcription as failed.
 
-The default is **On this device**: Qwen2.5-0.5B-Instruct Q4_K_M through
-node-llama-cpp. First use downloads 491 MB from the official Qwen repository at a
+The default is **On this device**: Qwen2.5-1.5B-Instruct Q4_K_M through
+node-llama-cpp. First use downloads 1.12 GB from the official Qwen repository at a
 pinned revision and verifies SHA-256; later runs are offline. The runtime selects
 available GPU acceleration, with CPU fallback. No Python or separately running
 model server is needed. Models are stored in the app's
@@ -243,5 +243,5 @@ Validation: `npm run build`, `npm run typecheck`, then
 `node tests/cleanup-smoke.js /path/to/test-profile`; it uses/downloads the tiny model
 inside that profile and writes only a synthetic transcript there.
 
-Model: https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF (Apache-2.0).
+Model: https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF (Apache-2.0).
 Runtime: https://github.com/withcatai/node-llama-cpp (MIT).
