@@ -74,3 +74,6 @@
 .postActions label { display: flex; flex-direction: column; gap: 9px; font-size: 14px; color: var(--muted); }
 .postActions textarea { width: 100%; min-height: 110px; resize: vertical; padding: 12px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--field); color: var(--text); font-size: 15px; }
 .postActions small { font-size: 13px; line-height: 1.5; color: var(--muted); }
+
+.settings .memoryHint, .settings .memoryWarning { padding: 10px 12px; border: 1px solid var(--glass-border); border-radius: 10px; }
+.settings .memoryWarning { color: var(--text); border-color: #d28b45; background: rgba(210,139,69,.12); }

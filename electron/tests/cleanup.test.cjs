@@ -170,3 +170,24 @@ test('post-transcription actions accept concise responses, use custom instructio
     assert.equal(await fs.readFile(outputBase + '.cleaned.md', 'utf8'), 'Existing cleaned transcript');
   } finally { global.fetch = savedFetch; await fs.rm(root, { recursive: true, force: true }); }
 });
+
+test('long summaries merge into a coherent result without assuming meetings', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'summary-merge-'));
+  const savedFetch = global.fetch;
+  let merges = 0, final;
+  setCleanupApiKey('test-key');
+  try {
+    global.fetch = async (_url, options) => {
+      const prompt = JSON.parse(options.body).messages[0].content;
+      const merging = prompt.startsWith('Combine these');
+      if (merging) merges++; else assert.match(prompt, /Do not assume this is a meeting/);
+      return { ok: true, json: async () => ({ choices: [{ finish_reason: 'stop', message: { content: merging ? '## Streams and Sockets\n\nSockets support bidirectional communication.' : 'Sockets can send and receive data.' } }] }) };
+    };
+    await cleanupTranscript({ source: 'lecture.wav', outputBase: path.join(root, 'lecture'), original: 'Sockets can send and receive data. '.repeat(150),
+      preferences: { provider: 'openai', apiModel: 'test' }, action: { kind: 'summary' }, signal: new AbortController().signal, emit: e => { final = e; } });
+    assert.equal(final.status, 'complete');
+    assert.ok(merges > 0);
+    assert.match(final.markdown, /Streams and Sockets/);
+    assert.doesNotMatch(final.markdown, /## Part/);
+  } finally { global.fetch = savedFetch; await fs.rm(root, { recursive: true, force: true }); }
+});

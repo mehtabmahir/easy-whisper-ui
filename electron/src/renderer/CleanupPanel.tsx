@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import type { CleanupEvent, CleanupPreferences } from '../types/easy-whisper';
+import { CLEANUP_MODELS, cleanupModel } from '../main/services/cleanupModelCatalog';
+import type { HardwareInfo } from '../types/easy-whisper';
 import styles from './styles/CleanupPanel.module.css';
 
 export default function CleanupPanel({ results, preferences, onPreferences, onClose, busy: transcriptionBusy }: {
@@ -8,6 +10,9 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
   onPreferences: (preferences: CleanupPreferences) => void; onClose: () => void; busy: boolean;
 }) {
   const documentRef = useRef<HTMLDivElement>(null);
+  const [hardware, setHardware] = useState<HardwareInfo>();
+  useEffect(() => { void window.easyWhisper?.getHardwareInfo().then(setHardware).catch(() => {}); }, []);
+  const chosenModel = cleanupModel(preferences.localModel);
   const [request, setRequest] = useState('');
   const [requestOpen, setRequestOpen] = useState(false);
   const actionWorking = results.some(item => item.action && item.status === 'working');
@@ -61,9 +66,19 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
       <span className={styles.eyebrow}>CLEANUP SETTINGS</span>
       <label>Model<select disabled={busy} value={preferences.provider}
         onChange={event => void changeDestination({ ...preferences, provider: event.target.value as CleanupPreferences['provider'] })}>
-        <option value="local">Built-in · Qwen 0.5B</option><option value="custom">Custom model file</option><option value="openai">OpenAI API Key</option><option value="compatible">Other API Key</option>
+        <option value="local">Built-in model</option><option value="custom">Custom model file</option><option value="openai">OpenAI API Key</option><option value="compatible">Other API Key</option>
       </select></label>
-      {preferences.provider === 'local' ? <p>Qwen 2.5 · 0.5B. A one-time 491 MB download, then offline. Uses available graphics acceleration.</p> : preferences.provider === 'custom' ? <>
+      {preferences.provider === 'local' ? <>
+        <label>Local model<select disabled={busy} value={chosenModel.id} onChange={event => onPreferences({ ...preferences, localModel: event.target.value })}>
+          {CLEANUP_MODELS.map(model => <option key={model.id} value={model.id}>{model.label} · {(model.files.reduce((sum, file) => sum + file.bytes, 0) / 1e9).toFixed(2)} GB</option>)}
+        </select></label>
+        <p>{chosenModel.description}</p>
+        <p className={hardware && hardware.ramGiB < chosenModel.ramGiB ? styles.memoryWarning : styles.memoryHint} role="status">
+          Suggested system memory: {chosenModel.ramGiB} GB{hardware ? ` · This device: ${Math.round(hardware.ramGiB)} GB` : ''}.
+          {hardware && hardware.ramGiB < chosenModel.ramGiB ? ' Low memory: this model may run slowly or fail to load.' : ' Estimate only; other apps and GPU memory affect fit and speed.'}
+        </p>
+        <p>One-time download, then offline. Download size is not runtime memory use. Larger models are slower, especially on CPU.</p>
+      </> : preferences.provider === 'custom' ? <>
         <p>Choose a GGUF instruction-tuned language model. Runs on this device. Whisper speech models cannot be used for cleanup.</p>
         <button disabled={busy} onClick={async () => {
           const customModelPath = await window.easyWhisper?.openCleanupModelFile();

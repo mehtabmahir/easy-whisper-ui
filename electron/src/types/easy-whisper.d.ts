@@ -31,6 +31,7 @@ export interface DownloadedModel {
 }
 
 export interface CleanupPreferences {
+  localModel?: string;
   provider: "local" | "custom" | "openai" | "compatible";
   customModelPath?: string;
   apiEndpoint?: string;
@@ -82,7 +83,7 @@ export interface QueueState {
   awaiting: string[];
   processing?: string;
   isProcessing: boolean;
-  stage?: "transcription" | "cleanup";
+  stage?: "transcription" | "download" | "cleanup";
 }
 
 export interface ConsoleEvent {
