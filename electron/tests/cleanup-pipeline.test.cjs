@@ -50,3 +50,26 @@ test('cleanup forces Whisper text output even when the normal text checkbox is o
   await manager.runWhisper('/test.wav', '/model.bin', { ...settings, cleanup: undefined });
   assert.equal(argumentsUsed.includes('-otxt'), false);
 });
+
+test('normal transcription feeds the reader unchanged without invoking the LLM', async () => {
+ const root = await fs.mkdtemp(path.join(os.tmpdir(), 'normal-reader-'));
+ try {
+  const file = path.join(root, 'normal.wav');
+  const manager = new TranscriptionManager();
+  manager.ensureMp3 = async file => ({ path: file, deleteAfter: false });
+  manager.ensureModel = async () => 'model';
+  const original = 'Yes. Yes. This repetition is intentional.';
+  manager.runWhisper = async (_, __, ___, base) => fs.writeFile(base + '.txt', original);
+  manager.openOutputAfterComplete = async () => assert.fail('must use reader');
+  cleanup = async () => assert.fail('must not invoke LLM');
+  let result;
+  manager.on('cleanup', event => { result = event; });
+  const finished = new Promise(resolve => manager.once('finished', resolve));
+  manager.enqueue({ files: [file], settings: { ...settings, cleanup: undefined, transcriptReader: true } });
+  await finished;
+  assert.equal(result.original, original);
+  assert.equal(result.transcriptOnly, true);
+  assert.equal(result.outputPath, file + '.txt');
+  assert.equal(manager.failed.length, 0);
+ } finally { await fs.rm(root, { recursive: true, force: true }); }
+});

@@ -427,7 +427,7 @@ function App(): JSX.Element {
 
     const removeCleanup = api.onCleanup(event => {
       setCleanupResults(previous => [...previous.filter(item => item.id !== event.id), event].slice(-8));
-      if (cleanupActiveIdRef.current !== event.id) {
+      if (cleanupActiveIdRef.current !== event.id && event.openReader !== false) {
         cleanupActiveIdRef.current = event.id;
         setCleanupOpen(true);
       }
@@ -653,6 +653,7 @@ function App(): JSX.Element {
     outputSrt,
     openAfterComplete,
     extraArgs,
+    transcriptReader: true,
     cleanup: cleanupEnabled ? { ...cleanupPreferences } : undefined,
     customModelPath: model === "custom" ? customModelPath : undefined
   }), [model, language, cpuOnly, outputTxt, outputSrt, openAfterComplete, extraArgs, customModelPath, cleanupEnabled, cleanupPreferences]);
@@ -1207,7 +1208,7 @@ function App(): JSX.Element {
               <label className={styles.checkbox}>
                 <input
                   type="checkbox"
-                  checked={outputTxt}
+                  checked={true} disabled title="Text is saved for the transcript reader"
                   onChange={(event) => setOutputTxt(event.target.checked)}
                 />
                 <span>Output .txt File</span>
@@ -1227,7 +1228,7 @@ function App(): JSX.Element {
                   disabled={cleanupEnabled}
                   onChange={(event) => setOpenAfterComplete(event.target.checked)}
                 />
-                <span>{cleanupEnabled ? "Open in transcript reader" : "Open Transcription"}</span>
+                <span>Open transcript reader</span>
               </label>
               <label className={styles.checkbox} title="Create a separate Markdown copy. Local mode downloads a 491 MB model once; the original is always kept.">
                 <input type="checkbox" checked={cleanupEnabled} onChange={event => { setCleanupEnabled(event.target.checked); if (event.target.checked) setCleanupOpen(true); }}/>

@@ -39,6 +39,8 @@ export interface CleanupPreferences {
 }
 export type TranscriptAction = { kind: "summary" | "custom"; request?: string };
 export interface CleanupEvent {
+  transcriptOnly?: boolean;
+  openReader?: boolean;
   live?: boolean;
   action?: TranscriptAction;
   outputBase?: string;
@@ -56,6 +58,7 @@ export interface CleanupEvent {
 }
 
 export interface ModelSettings {
+  transcriptReader?: boolean;
   cleanup?: CleanupPreferences;
   model: string;
   language: string;

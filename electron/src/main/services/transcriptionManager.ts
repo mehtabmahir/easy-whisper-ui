@@ -210,6 +210,11 @@ export class TranscriptionManager extends EventEmitter {
           preferences: nextItem.settings.cleanup, signal: controller.signal,
           emit: event => this.emit("cleanup", event) });
         controller.signal.throwIfAborted();
+      } else if (nextItem.settings.transcriptReader) {
+        const original = await fsp.readFile(outputBase + '.txt', 'utf8');
+        this.emit('cleanup', { id: randomUUID(), source: nextItem.file, outputBase, original,
+          transcriptOnly: true, openReader: nextItem.settings.openAfterComplete, markdown: '', status: 'complete',
+          completed: 1, total: 1, preserved: 0, startedAt: Date.now(), message: 'Transcript saved', outputPath: outputBase + '.txt' });
       } else if (nextItem.settings.openAfterComplete) {
         await this.openOutputAfterComplete(outputBase);
       }
@@ -402,7 +407,7 @@ export class TranscriptionManager extends EventEmitter {
       outputBase
     ];
 
-    if (settings.outputTxt || settings.cleanup) {
+    if (settings.outputTxt || settings.cleanup || settings.transcriptReader) {
       args.push("-otxt");
     }
     if (settings.outputSrt) {

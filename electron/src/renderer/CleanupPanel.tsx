@@ -18,7 +18,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
   const [notice, setNotice] = useState('');
   const [now, setNow] = useState(Date.now());
   const result = results.find(item => item.id === selected) ?? results.at(-1);
-  useEffect(() => { setTab(result?.live ? 'original' : 'cleaned'); }, [result?.id]);
+  useEffect(() => { setTab(result?.live || result?.transcriptOnly ? 'original' : 'cleaned'); }, [result?.id]);
   useEffect(() => { setSelected(results.at(-1)?.id ?? ''); }, [results.at(-1)?.id]);
   useEffect(() => {
     if (result?.status !== 'working') return;
@@ -64,9 +64,9 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
       {results.map(item => <option key={item.id} value={item.id}>{fileName(item.source)} · {item.action?.kind === 'summary' ? 'Summary' : item.action ? 'Custom response' : 'Transcript'}</option>)}
     </select>}
     <div className={styles.tabs} role="tablist" aria-label="Transcript version">
-      {!result?.live && <button role="tab" aria-selected={tab === 'cleaned'} onClick={() => setTab('cleaned')}>{result?.live ? 'Formatted' : result?.action?.kind === 'summary' ? 'Summary' : result?.action ? 'Response' : 'Cleaned'}</button>}
-      <button role="tab" aria-selected={tab === 'original'} onClick={() => setTab('original')}>{result?.live ? 'Transcript' : 'Original'}</button>
-      <span className={styles.badge}>{result?.status === 'complete' ? result.live ? '.txt saved' : '.md saved' : preferences.provider === 'local' || preferences.provider === 'custom' ? 'LOCAL AI' : preferences.provider === 'openai' ? 'OPENAI' : 'API'}</span>
+      {!result?.live && !result?.transcriptOnly && <button role="tab" aria-selected={tab === 'cleaned'} onClick={() => setTab('cleaned')}>{result?.live ? 'Formatted' : result?.action?.kind === 'summary' ? 'Summary' : result?.action ? 'Response' : 'Cleaned'}</button>}
+      <button role="tab" aria-selected={tab === 'original'} onClick={() => setTab('original')}>{result?.live || result?.transcriptOnly ? 'Transcript' : 'Original'}</button>
+      <span className={styles.badge}>{result?.status === 'complete' ? result.live || result.transcriptOnly ? '.txt saved' : '.md saved' : preferences.provider === 'local' || preferences.provider === 'custom' ? 'LOCAL AI' : preferences.provider === 'openai' ? 'OPENAI' : 'API'}</span>
     </div>
     {result && <div className={styles.status}>
       <div><span role="status">{result.message}</span>{result.status === 'working' && <span>{Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')}</span>}</div>
@@ -80,7 +80,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
       <ol>{topics.map((topic, index) => <li key={index}><button onClick={() => documentRef.current?.querySelectorAll('h2, h3')[index]?.scrollIntoView({ block: 'start' })}>{topic}</button></li>)}</ol>
     </details>}
     <footer className={styles.footer}>
-      <span>{notice || (result?.status === 'working' ? 'Draft · not saved yet' : result?.live ? 'Live transcript · repeated updates merged' : 'AI edits can be imperfect. Compare with Original.')}</span>
+      <span>{notice || (result?.status === 'working' ? 'Draft · not saved yet' : result?.live ? 'Live transcript · repeated updates merged' : result?.transcriptOnly ? 'Whisper transcript' : 'AI edits can be imperfect. Compare with Original.')}</span>
       <div className={styles.actions}><button disabled={!result || (tab === 'cleaned' && !result.markdown)} onClick={() => void copy()}>Copy</button>
         <button disabled={!result?.outputPath} onClick={() => { if (result) void window.easyWhisper?.revealCleanupFile(result.id); }}>Show file</button></div>
     </footer>
