@@ -48,3 +48,5 @@
 .modelField { display: flex; flex-direction: column; gap: 9px; margin: 0 0 16px; font-size: 14px; color: var(--muted); }
 .modelField select { width: 100%; height: 48px; padding: 0 14px; font-size: 15px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--field); color: var(--text); }
 .modelField option { background: var(--option); color: var(--text); }
+
+.panel .modelGroupHeading { margin-top: 24px; }

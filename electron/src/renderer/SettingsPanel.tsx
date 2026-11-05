@@ -248,7 +248,7 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
       </button>
       </div>
       {(downloadsOpen || modelsOpen) && <>
-      <h3>Whisper</h3>
+      <h3 className={styles.modelGroupHeading}>Whisper</h3>
       {downloadsOpen && <div>
         <p className={styles.note}>Download a model for offline use. Existing downloads are reused.</p>
         <div className={styles.modelActions}>
