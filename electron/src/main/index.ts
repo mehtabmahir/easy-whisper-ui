@@ -1,3 +1,5 @@
+import { ensureCleanupModel } from "./services/cleanupModel";
+import { cleanupModelsDirectory, listCleanupModels, deleteCleanupModel } from "./services/cleanupModelStorage";
 import { setCleanupApiKey, hasCleanupApiKey, cleanupTranscript } from "./services/transcriptCleanup";
 import type { CleanupEvent, CleanupPreferences, TranscriptAction } from "../types/easy-whisper";
 import { app, BrowserWindow, dialog, ipcMain, nativeImage, nativeTheme, screen, shell } from "electron";
@@ -32,6 +34,7 @@ const rendererHtmlPath = path.join(__dirname, "../renderer/index.html");
 const compileManager = new CompileManager();
 const transcriptionManager = new TranscriptionManager();
 const cleanupResults = new Map<string, CleanupEvent>();
+let cleanupDownloadAbort: AbortController | undefined;
 let transcriptActionAbort: AbortController | undefined;
 function publishCleanup(event: CleanupEvent) {
   cleanupResults.set(event.id, event);
@@ -49,7 +52,7 @@ let quitCleanupDone = false;
 
 
 async function runSetup(action: () => Promise<CompileResult>): Promise<CompileResult> {
-  if (quitting || setupBusy || transcriptionBusy || liveBusy || helpBusy) {
+  if (quitting || setupBusy || transcriptionBusy || liveBusy || helpBusy || transcriptActionAbort) {
     return { success: false, error: "Wait for setup or transcription to finish before changing the installation." };
   }
   setupBusy = true;
@@ -90,6 +93,7 @@ if (!gotInstanceLock) {
 
 app.on("before-quit", (event) => {
   transcriptActionAbort?.abort();
+  cleanupDownloadAbort?.abort();
   if (quitCleanupDone) return;
   event.preventDefault();
   if (quitting) return;
@@ -305,6 +309,18 @@ function registerIpcChannels(): void {
   ipcMain.handle("easy-whisper:open-audio-cache", () => openSettingsPath(openAudioCacheFolder));
   ipcMain.handle("easy-whisper:open-workspace-folder", () => openSettingsPath(openWorkspaceFolder));
   ipcMain.handle("easy-whisper:show-setup-log", () => openSettingsPath(showSetupLog));
+  ipcMain.handle("easy-whisper:list-cleanup-models", () => listCleanupModels());
+  ipcMain.handle("easy-whisper:delete-cleanup-model", (_event, id: string) => runSetup(async () => {
+    await deleteCleanupModel(id); return { success: true };
+  }));
+  ipcMain.handle("easy-whisper:download-cleanup-model", (_event, id: string) => runSetup(async () => {
+    const controller = new AbortController(); cleanupDownloadAbort = controller;
+    try {
+      await ensureCleanupModel(cleanupModelsDirectory(), controller.signal, message => broadcast("easy-whisper:cleanup-download", message), id);
+      return { success: true };
+    } finally { cleanupDownloadAbort = undefined; }
+  }));
+  ipcMain.handle("easy-whisper:cancel-cleanup-download", () => cleanupDownloadAbort?.abort());
   ipcMain.handle("easy-whisper:list-models", () => listDownloadedModels());
   ipcMain.handle("easy-whisper:download-model", (_event, model: unknown) => runSetup(async () => {
     await transcriptionManager.downloadModel(model);

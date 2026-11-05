@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CleanupPreferences, CompileProgressEvent, DownloadedModel, ModelDownloadProgress, UninstallInfo } from "../types/easy-whisper";
 import styles from "./styles/SettingsPanel.module.css";
 import { DOWNLOADABLE_MODELS } from "../main/services/modelCatalog";
+import CleanupModelManager from "./CleanupModelManager";
 import CleanupSettings from "./CleanupSettings";
 import LoadingBar from "./LoadingBar";
 import { setupProgress } from "./setupProgress";
@@ -84,6 +85,7 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
 
   const [clearingCache, setClearingCache] = useState(false);
   const [cacheResult, setCacheResult] = useState<string>();
+  const [llmBusy, setLlmBusy] = useState(false);
   const [models, setModels] = useState<DownloadedModel[]>();
   const [modelsOpen, setModelsOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState("");
@@ -93,7 +95,7 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
   const [downloadSelection, setDownloadSelection] = useState("base");
   const [downloading, setDownloading] = useState(false);
   const [downloadMessage, setDownloadMessage] = useState<string>();
-  const working = savingCachePreference || reinstalling || uninstalling || clearingCache || modelBusy || downloading || Boolean(downloadProgress);
+  const working = llmBusy || savingCachePreference || reinstalling || uninstalling || clearingCache || modelBusy || downloading || Boolean(downloadProgress);
   const closeBlocked = working && !reinstalling && !downloading && !downloadProgress;
 
   async function downloadModel() {
@@ -216,6 +218,7 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
       <label className={styles.modelRow}><input type="checkbox" checked={cleanupEnabled} disabled={busy || working}
         onChange={event => onCleanupEnabled(event.target.checked)}/><span>Clean up after transcription</span></label>
       <CleanupSettings preferences={cleanupPreferences} onPreferences={onCleanupPreferences} busy={busy || working} compact />
+
     </section>
     <section className={styles.uninstallSection}>
       <h3>Whisper</h3>
@@ -232,16 +235,20 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
         }}>Choose model file</button>
         <p className={styles.note}>{customModelPath?.split(/[\\/]/).pop() ?? 'No model selected'}</p>
       </div>}
+    </section>
+    <section className={styles.uninstallSection}>
       <div className={styles.modelActions}>
-      <button type="button" onClick={() => setDownloadsOpen(!downloadsOpen)}
+      <button type="button" onClick={() => { setDownloadsOpen(!downloadsOpen); setModelsOpen(false); }}
         disabled={working || !window.easyWhisper} aria-expanded={downloadsOpen}>
         {downloadsOpen ? "Close downloads" : "Download models"}
       </button>
-      <button type="button" onClick={() => modelsOpen ? setModelsOpen(false) : void showModels()}
+      <button type="button" onClick={() => { setDownloadsOpen(false); if (modelsOpen) setModelsOpen(false); else void showModels(); }}
         disabled={working || !window.easyWhisper} aria-expanded={modelsOpen}>
         {modelsOpen ? "Close model list" : "Delete models"}
       </button>
       </div>
+      {(downloadsOpen || modelsOpen) && <>
+      <h3>Whisper</h3>
       {downloadsOpen && <div>
         <p className={styles.note}>Download a model for offline use. Existing downloads are reused.</p>
         <div className={styles.modelActions}>
@@ -281,6 +288,11 @@ export default function SettingsPanel({ busy, progress, downloadProgress, onClos
         {busy && <p role="status">Finish setup or stop transcription first.</p>}
         {modelMessage && <p role="status">{modelMessage}</p>}
       </div>}
+      <div className={styles.uninstallSection}>
+        <h3>LLM</h3>
+      <CleanupModelManager mode={downloadsOpen ? "download" : "delete"} busy={busy || savingCachePreference || reinstalling || uninstalling || clearingCache || modelBusy || downloading || Boolean(downloadProgress)} onBusy={setLlmBusy} />
+      </div>
+      </>}
     </section>
     </> : <>
     <section>

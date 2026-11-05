@@ -4,6 +4,15 @@ import type { EasyWhisperApi } from "../types/easy-whisper";
 const api: EasyWhisperApi = {
   runTranscriptAction: (id, preferences, action) => ipcRenderer.invoke("easy-whisper:transcript-action", id, preferences, action),
   cancelTranscriptAction: () => ipcRenderer.invoke("easy-whisper:cancel-transcript-action"),
+  listCleanupModels: () => ipcRenderer.invoke("easy-whisper:list-cleanup-models"),
+  deleteCleanupModel: id => ipcRenderer.invoke("easy-whisper:delete-cleanup-model", id),
+  downloadCleanupModel: id => ipcRenderer.invoke("easy-whisper:download-cleanup-model", id),
+  cancelCleanupDownload: () => ipcRenderer.invoke("easy-whisper:cancel-cleanup-download"),
+  onCleanupDownload: callback => {
+    const handler = (_event: Electron.IpcRendererEvent, message: string) => callback(message);
+    ipcRenderer.on("easy-whisper:cleanup-download", handler);
+    return () => ipcRenderer.removeListener("easy-whisper:cleanup-download", handler);
+  },
   openCleanupModelFile: () => ipcRenderer.invoke("easy-whisper:open-cleanup-model"),
   setCleanupApiKey: key => ipcRenderer.invoke("easy-whisper:set-cleanup-key", key),
   hasCleanupApiKey: () => ipcRenderer.invoke("easy-whisper:has-cleanup-key"),

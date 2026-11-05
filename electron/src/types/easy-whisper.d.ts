@@ -129,6 +129,11 @@ export interface HardwareInfo {
 export type EasyWhisperApi = {
   runTranscriptAction: (id: string, preferences: CleanupPreferences, action: TranscriptAction) => Promise<void>;
   cancelTranscriptAction: () => Promise<void>;
+  listCleanupModels: () => Promise<DownloadedModel[]>;
+  deleteCleanupModel: (id: string) => Promise<CompileResult>;
+  downloadCleanupModel: (id: string) => Promise<CompileResult>;
+  cancelCleanupDownload: () => Promise<void>;
+  onCleanupDownload: (callback: (message: string) => void) => () => void;
   openCleanupModelFile: () => Promise<string | undefined>;
   setCleanupApiKey: (key: string) => Promise<void>;
   hasCleanupApiKey: () => Promise<boolean>;
