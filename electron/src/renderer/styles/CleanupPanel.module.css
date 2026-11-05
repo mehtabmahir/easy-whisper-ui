@@ -44,3 +44,10 @@
 .document li { padding-left: .2em; margin-bottom: .5em; }
 .document strong { font-weight: 650; }
 .document code { background: var(--inset); border-radius: 4px; padding: .1em .3em; font-size: .9em; }
+
+.contents { padding: 12px 24px; border-bottom: 1px solid var(--glass-border); font-size: 12px; max-height: 180px; overflow: auto; flex-shrink: 0; }
+.contents summary { cursor: pointer; color: var(--muted); }
+.contents ol { padding-left: 18px; }
+.contents li { margin: 5px 0; }
+.contents button { text-align: left; border: 0; background: transparent; padding: 2px 0; }
+.document h2, .document h3 { scroll-margin-top: 14px; }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Markdown from 'react-markdown';
 import type { CleanupEvent, CleanupPreferences } from '../types/easy-whisper';
 import styles from './styles/CleanupPanel.module.css';
@@ -7,6 +7,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
   results: CleanupEvent[]; preferences: CleanupPreferences;
   onPreferences: (preferences: CleanupPreferences) => void; onClose: () => void; busy: boolean;
 }) {
+  const documentRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState('');
   const [tab, setTab] = useState<'cleaned' | 'original'>('cleaned');
   const [settings, setSettings] = useState(false);
@@ -30,6 +31,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
     try { await navigator.clipboard.writeText(tab === 'original' ? result?.original ?? '' : result?.markdown ?? ''); setNotice('Copied to clipboard.'); }
     catch { setNotice('Could not copy. You can select and copy the text below.'); }
   };
+  const topics = (result?.markdown.match(/^#{2,3} .+$/gm) ?? []).map(line => line.replace(/^#{2,3} /, '').replace(/[*`]/g, ''));
   const fileName = (value: string) => value.split(/[\\/]/).pop() ?? value;
   const elapsed = result ? Math.max(0, Math.floor((now - result.startedAt) / 1000)) : 0;
   return <aside className={styles.panel} aria-label="Transcript reader" onKeyDown={event => { if (event.key === "Escape" && !(event.target instanceof HTMLSelectElement)) onClose(); }}>
@@ -71,7 +73,11 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
         <small>{result.completed} / {result.total || '…'} sections · You can read the original now.</small>
       </>}
     </div>}
-    <div className={styles.document} role="tabpanel" tabIndex={0} aria-label={tab === 'original' ? 'Original transcript' : 'Cleaned Markdown'}>
+    {tab === 'cleaned' && topics.length > 0 && <details className={styles.contents}>
+      <summary>On this page · {topics.length} topics</summary>
+      <ol>{topics.map((topic, index) => <li key={index}><button onClick={() => documentRef.current?.querySelectorAll('h2, h3')[index]?.scrollIntoView({ block: 'start' })}>{topic}</button></li>)}</ol>
+    </details>}
+    <div ref={documentRef} className={styles.document} role="tabpanel" tabIndex={0} aria-label={tab === 'original' ? 'Original transcript' : 'Cleaned Markdown'}>
       {!result ? <div className={styles.empty}><div className={styles.documentIcon}>Aa</div><h3>From spoken to readable.</h3><p>After transcription, a tiny model tidies punctuation and paragraphs into a separate Markdown file.</p><p>Your original is always kept.</p><button onClick={() => setSettings(true)}>Choose cleanup model</button></div>
         : tab === 'original' ? <><h3>{fileName(result.source)}</h3><div className={styles.original}>{result.original}</div></>
         : result.markdown ? <Markdown skipHtml components={{ a: ({ children }) => <span>{children}</span>, img: ({ alt }) => <span>{alt ?? ''}</span> }}>{result.markdown}</Markdown>

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { CleanupEvent, CleanupPreferences } from '../../types/easy-whisper';
 import { ensureCleanupModel } from './cleanupModel';
-import { CLEANUP_PROMPT, splitTranscript, reviewedText, markdownDocument, IncompleteCleanupError, hasRepetitionLoop, readableSection } from './cleanupText';
+import { CLEANUP_PROMPT, splitTranscript, reviewedText, markdownDocument, IncompleteCleanupError, hasRepetitionLoop, readableSection, OUTLINE_PROMPT, outlinePassages, structuredOriginal } from './cleanupText';
 
 // Keep native ESM import intact when the surrounding Electron main code compiles to CommonJS.
 const loadRuntime = new Function("return import('node-llama-cpp')") as () => Promise<typeof import('node-llama-cpp')>;
@@ -15,14 +15,14 @@ export function setCleanupApiKey(key: string): void {
 }
 export function hasCleanupApiKey(): boolean { return !!apiKey; }
 
-export async function cleanWithApi(text: string, model: string, key: string, signal: AbortSignal): Promise<string> {
+export async function cleanWithApi(text: string, model: string, key: string, signal: AbortSignal, prompt = CLEANUP_PROMPT): Promise<string> {
   if (!key) throw new Error('Add an OpenAI API key in Cleanup settings. Your original transcript is saved.');
   if (!model.trim() || model.length > 200) throw new Error('Enter an OpenAI text model ID in Cleanup settings.');
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST', redirect: 'error', signal: AbortSignal.any([signal, AbortSignal.timeout(120000)]),
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({ model, store: false, max_completion_tokens: 4096,
-      messages: [{ role: 'system', content: CLEANUP_PROMPT }, { role: 'user', content: text }] })
+      messages: [{ role: 'system', content: prompt }, { role: 'user', content: text }] })
   });
   // Never echo an API response body: it could contain transcript content or credentials.
   if (!response.ok) throw new Error(`OpenAI cleanup failed (HTTP ${response.status}). Check your key, model access, and billing. Original transcript saved.`);
@@ -45,6 +45,7 @@ export async function cleanupTranscript(input: {
   update({});
   let model: import('node-llama-cpp').LlamaModel | undefined;
   let context: import('node-llama-cpp').LlamaContext | undefined;
+  let outline: (text: string) => Promise<string>;
   let generate: (text: string, onText: (text: string) => void) => Promise<string>;
   try {
     const chunks = splitTranscript(original);
@@ -54,6 +55,7 @@ export async function cleanupTranscript(input: {
     const key = apiKey;
     if (preferences.provider === 'openai') {
       generate = text => cleanWithApi(text, preferences.apiModel, key, signal);
+      outline = text => cleanWithApi(text, preferences.apiModel, key, signal, OUTLINE_PROMPT);
     } else {
       const modelPath = await ensureCleanupModel(path.join(app.getPath('userData'), 'whisper-workspace', 'cleanup-models'), signal,
         message => update({ message }));
@@ -64,6 +66,22 @@ export async function cleanupTranscript(input: {
       signal.throwIfAborted();
       model = await llama.loadModel({ modelPath, loadSignal: signal });
       context = await model.createContext({ contextSize: 8192 });
+      outline = async text => {
+        const grammar = await llama.createGrammarForJsonSchema({ type: 'object', properties: {
+          title: { type: 'string' }
+        }, required: ['title'] });
+        const headings: string[] = [];
+        for (const passage of text.split(/\n\nPassage \d+: /)) {
+          signal.throwIfAborted();
+          const session = new runtime.LlamaChatSession({ contextSequence: context!.getSequence(),
+            systemPrompt: 'Write a specific 3 to 8 word topic heading for the transcript passage. Name the actual concept being discussed using its terminology. Do not use generic labels or answer questions. Return JSON with one title field. Example: {"title":"Producer and Consumer Lock Ownership"}.' });
+          try {
+            const response = await session.prompt(passage.replace(/^Passage \d+: /, ''), { signal, grammar, temperature: 0, maxTokens: 64 });
+            headings.push(JSON.parse(response).title);
+          } finally { session.dispose({ disposeSequence: true }); }
+        }
+        return JSON.stringify({ title: headings[0], headings });
+      };
       generate = async (text, onText) => {
         signal.throwIfAborted();
         const session = new runtime.LlamaChatSession({ contextSequence: context!.getSequence(), systemPrompt: CLEANUP_PROMPT });
@@ -107,7 +125,14 @@ export async function cleanupTranscript(input: {
       signal.throwIfAborted();
       const reviewed = reviewedText(chunk, result);
       if (reviewed.keptOriginal) preserved++;
-      paragraphs.push(readableSection(reviewed.text, index));
+      if (reviewed.keptOriginal) {
+        update({ message: `Organizing topics in section ${index + 1} of ${chunks.length}…`, markdown: markdownDocument(title, paragraphs, preserved) });
+        let plan = '';
+        try { plan = await outline(outlinePassages(chunk).map((part, i) => `Passage ${i + 1}: ${part}`).join('\n\n')); }
+        catch { signal.throwIfAborted(); }
+        signal.throwIfAborted();
+        paragraphs.push(structuredOriginal(chunk, plan));
+      } else paragraphs.push(readableSection(reviewed.text, index));
       update({ completed: index + 1, preserved, markdown: markdownDocument(title, paragraphs, preserved) });
     }
     signal.throwIfAborted();
@@ -120,7 +145,7 @@ export async function cleanupTranscript(input: {
         destination = `${outputBase}.cleaned-${n}.md`;
       }
     }
-    update({ status: 'complete', outputPath: destination, message: preserved ? `Saved · ${preserved} section(s) kept unchanged` : 'Markdown saved' });
+    update({ status: 'complete', outputPath: destination, message: preserved ? `Saved · ${preserved} section(s) kept their original wording` : 'Markdown saved' });
   } catch (error) {
     update({ status: signal.aborted ? 'stopped' : 'error', message: signal.aborted
       ? 'Cleanup stopped. Original transcript saved; draft below is incomplete.'

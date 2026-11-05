@@ -4,7 +4,7 @@ const Module = require('node:module');
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
-const { splitTranscript, reviewedText, markdownDocument, hasRepetitionLoop, readableSection } = require('../dist/main/services/cleanupText');
+const { splitTranscript, reviewedText, markdownDocument, hasRepetitionLoop, readableSection, structuredOriginal, outlinePassages } = require('../dist/main/services/cleanupText');
 const originalLoad = Module._load;
 Module._load = function(name, ...args) {
   if (name === 'electron') return { app: { getPath: () => os.tmpdir() } };
@@ -24,7 +24,7 @@ test('cleanup rejects summaries and altered numbers but accepts punctuation edit
   assert.equal(reviewedText('we ordered 45 boxes today', 'We ordered 45 boxes today.').keptOriginal, false);
   assert.equal(reviewedText('we ordered 45 boxes today', 'We ordered 54 boxes today.').keptOriginal, true);
   assert.equal(reviewedText('hello everyone we need to discuss the project and its budget', 'Project summary.').keptOriginal, true);
-  assert.match(markdownDocument('test [link](file)', ['Hello.'], 1), /1 section\(s\) kept unchanged/);
+  assert.match(markdownDocument('test [link](file)', ['Hello.'], 1), /1 section\(s\) keep original wording/);
 });
 test('API cleanup sends bounded requests without storage, rejects incomplete output and hides response errors', async () => {
   const fetch = global.fetch;
@@ -98,6 +98,16 @@ test('an hour-sized transcript completes after one section hits the output limit
     assert.equal(last.completed, splitTranscript(original).length);
     assert.equal(last.preserved, 1);
     assert.ok(calls > 25);
-    assert.match(await fs.readFile(last.outputPath, 'utf8'), /## Section 2/);
+    assert.match(await fs.readFile(last.outputPath, 'utf8'), /### /);
   } finally { global.fetch = fetch; setCleanupApiKey(''); await fs.rm(root, { recursive: true, force: true }); }
+});
+
+test('preserved wording still receives topic headings without losing content', () => {
+  const text = 'The producer updates the counter. The consumer waits for the lock. '.repeat(30);
+  const passages = outlinePassages(text);
+  const result = structuredOriginal(text, JSON.stringify({ title: 'Shared Counter Updates', headings: passages.map(() => 'Counter Lock Ownership') }));
+  assert.match(result, /^## Shared Counter Updates/);
+  assert.equal((result.match(/^### Counter Lock Ownership/gm) ?? []).length, passages.length);
+  assert.equal(result.replace(/^#{2,3} .+$/gm, '').replace(/\s/g, ''), text.replace(/\s/g, ''));
+  assert.doesNotMatch(structuredOriginal(text, 'invalid'), /## Section/);
 });
