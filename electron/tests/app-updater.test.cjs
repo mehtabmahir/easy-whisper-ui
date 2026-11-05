@@ -40,3 +40,15 @@ for (const scenario of ['success', 'corrupt', 'truncated', 'redirect', 'cancel',
   } finally {global.fetch=originalFetch; await fs.rm(directory,{recursive:true,force:true});}
  });
 }
+
+test('selects newest matching asset within an unchanged release tag', () => {
+ const r = release();
+ const patch = n => ({...r.assets[0], name:r.assets[0].name.replace('3.2.0',n), browser_download_url:r.assets[0].browser_download_url.replace('3.2.0',n)});
+ r.assets.push(patch('3.2.2'), patch('3.2.10'), patch('3.2.1'));
+ assert.equal(selectUpdate(r,'3.2.0','darwin','arm64').version,'3.2.10');
+ assert.equal(selectUpdate(r,'3.2.10','darwin','arm64'),undefined);
+ r.assets.push({...patch('99.0.0'),name:'EasyWhisperUI-99.0.0-macOS-x64.dmg'});
+ assert.equal(selectUpdate(r,'3.2.0','darwin','arm64').version,'3.2.10');
+ r.assets.find(a=>a.name.includes('3.2.10')).digest='';
+ assert.throws(()=>selectUpdate(r,'3.2.0','darwin','arm64'),/verification/);
+});

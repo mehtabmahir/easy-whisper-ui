@@ -13,15 +13,24 @@ function version(value: string): number[] | undefined {
 }
 export function selectUpdate(release: Release, current: string, platform: string, arch: string): { version: string; asset: Asset } | undefined {
   if (release.draft || release.prerelease) return;
-  const next = version(release.tag_name), installed = version(current);
-  if (!next || !installed) throw new Error('Could not compare release versions.');
-  const difference = next.findIndex((value, i) => value !== installed[i]);
-  if (difference < 0 || next[difference] < installed[difference]) return;
+  const installed = version(current);
+  if (!version(release.tag_name) || !installed) throw new Error('Could not compare release versions.');
   if (!['darwin', 'win32'].includes(platform) || !['arm64', 'x64'].includes(arch)) throw new Error('Updates are not available for this platform yet.');
-  const number = next.join('.');
-  const name = platform === 'darwin' ? `EasyWhisperUI-${number}-macOS-${arch}.dmg` : `EasyWhisperUI-Setup-${number}-win-${arch}.exe`;
-  const asset = release.assets?.find(item => item.name === name);
-  if (!asset) throw new Error(`Version ${number} has no installer for this device yet.`);
+  const compare = (a: number[], b: number[]) => {
+    const index = a.findIndex((value, i) => value !== b[i]);
+    return index < 0 ? 0 : a[index] - b[index];
+  };
+  const candidates = (release.assets ?? []).flatMap(asset => {
+    const match = /^EasyWhisperUI-(?:Setup-)?(\d+\.\d+\.\d+)-(?:macOS|win)-(?:arm64|x64)\.(?:dmg|exe)$/.exec(asset.name);
+    if (!match) return [];
+    const number = match[1], parsed = version(number)!;
+    const expected = platform === 'darwin' ? `EasyWhisperUI-${number}-macOS-${arch}.dmg` : `EasyWhisperUI-Setup-${number}-win-${arch}.exe`;
+    return asset.name === expected ? [{ asset, number, parsed }] : [];
+  }).sort((a, b) => compare(b.parsed, a.parsed));
+  if (!candidates.length) throw new Error('This release has no installer for this device yet.');
+  const { asset, number, parsed } = candidates[0];
+  if (compare(parsed, installed) <= 0) return;
+  const name = asset.name;
   if (!/^sha256:[a-f0-9]{64}$/i.test(asset.digest ?? '') || !Number.isSafeInteger(asset.size) || asset.size <= 0 || asset.size > 4 * 1024 ** 3) throw new Error('This release does not have valid download verification information.');
   const url = new URL(asset.browser_download_url);
   if (url.origin !== 'https://github.com' || url.username || url.password || url.search || url.hash ||
