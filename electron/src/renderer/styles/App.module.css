@@ -865,7 +865,7 @@
 .queueTrigger:hover { color: var(--text); }
 .fileQueue::backdrop { background: transparent; }
 
-.readerButton { justify-self: end; align-self: center; display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 6px 12px; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--button); color: var(--text); cursor: pointer; font-size: 13px; font-weight: 600; letter-spacing: -.01em; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 2px 8px rgba(0,0,0,.06); transition: background .16s ease, border-color .16s ease, box-shadow .16s ease; }
+.readerButton { grid-column: 2; justify-self: end; align-self: center; display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 6px 12px; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--button); color: var(--text); cursor: pointer; font-size: 13px; font-weight: 600; letter-spacing: -.01em; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 2px 8px rgba(0,0,0,.06); transition: background .16s ease, border-color .16s ease, box-shadow .16s ease; }
 .readerButton:hover { background: var(--hover); border-color: var(--accent); box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 3px 10px rgba(0,0,0,.1); }
 .readerButton:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .readerButton { transition: none; } }

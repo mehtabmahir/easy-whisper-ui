@@ -189,6 +189,25 @@ function App(): JSX.Element {
     setModelDownloadProgress(event.state === "downloading" ? event : undefined);
   }), []);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [clearCacheOnExit, setClearCacheOnExit] = useState(true);
+  const [cachePreferenceReady, setCachePreferenceReady] = useState(false);
+  const [savingCachePreference, setSavingCachePreference] = useState(false);
+  const [cachePreferenceError, setCachePreferenceError] = useState('');
+  useEffect(() => {
+    let active = true;
+    void window.easyWhisper?.getClearAudioCacheOnExit().then(value => {
+      if (active) { setClearCacheOnExit(value); setCachePreferenceReady(true); setCachePreferenceError(''); }
+    }).catch(() => { if (active) setCachePreferenceError('Could not load cache setting.'); });
+    return () => { active = false; };
+  }, [settingsOpen]);
+  const changeCacheOnExit = async (value: boolean) => {
+    if (!window.easyWhisper || savingCachePreference) return;
+    setSavingCachePreference(true);
+    try { await window.easyWhisper.setClearAudioCacheOnExit(value); setClearCacheOnExit(value); setCachePreferenceError(''); }
+    catch { setCachePreferenceError('Could not save cache setting. Please retry.'); }
+    finally { setSavingCachePreference(false); }
+  };
+
   const [faqOpen, setFaqOpen] = useState(false);
   const [creditsOpen, setCreditsOpen] = useState(false);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
@@ -1200,11 +1219,11 @@ function App(): JSX.Element {
             </div>
 
             <div className={styles.optionsRow}>
-              <label className={styles.checkbox}>
+              <label className={styles.checkbox} title="Use the CPU instead of GPU acceleration for transcription.">
                 <input type="checkbox" checked={cpuOnly} onChange={(event) => setCpuOnly(event.target.checked)} />
                 <span>CPU Only</span>
               </label>
-              <label className={styles.checkbox}>
+              <label className={styles.checkbox} title="Save the recognized text as a .txt file. Required for the transcript reader.">
                 <input
                   type="checkbox"
                   checked={true} disabled title="Text is saved for the transcript reader"
@@ -1212,7 +1231,7 @@ function App(): JSX.Element {
                 />
                 <span>Output .txt File</span>
               </label>
-              <label className={styles.checkbox}>
+              <label className={styles.checkbox} title="Save subtitles with timestamps as an .srt file.">
                 <input
                   type="checkbox"
                   checked={outputSrt}
@@ -1220,7 +1239,7 @@ function App(): JSX.Element {
                 />
                 <span>Output File with Timestamps (.srt)</span>
               </label>
-              <label className={styles.checkbox}>
+              <label className={styles.checkbox} title="Automatically open the reader during file transcription. Live transcription always opens it.">
                 <input
                   type="checkbox"
                   checked={openAfterComplete}
@@ -1232,6 +1251,12 @@ function App(): JSX.Element {
                 <input type="checkbox" checked={cleanupEnabled} onChange={event => setCleanupEnabled(event.target.checked)}/>
                 <span>AI Cleanup</span>
               </label>
+              <label className={styles.checkbox} title="Delete temporary converted audio when the app closes. Original files and transcripts are kept.">
+                <input type="checkbox" checked={clearCacheOnExit} disabled={!cachePreferenceReady || savingCachePreference}
+                  onChange={event => void changeCacheOnExit(event.target.checked)} />
+                <span>Clear cache on exit</span>
+              </label>
+              {cachePreferenceError && <span role="status">{cachePreferenceError}</span>}
               <button type="button" className={styles.readerButton} onClick={() => setCleanupOpen(!cleanupOpen)} aria-expanded={cleanupOpen}>Transcript reader ↗</button>
             </div>
 
