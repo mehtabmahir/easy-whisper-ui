@@ -1,3 +1,5 @@
+import type { HardwareInfo } from "../../types/easy-whisper";
+import { modelMemoryStatus } from "./modelCatalog";
 // Official Qwen GGUF releases, pinned by revision and SHA-256. Sizes are download bytes.
 export const CLEANUP_MODELS = [
   {
@@ -84,6 +86,6 @@ export const RETIRED_CLEANUP_MODELS = [
   }
 ] as const;
 
-export function recommendedCleanupModel(ramGiB: number) {
-  return [...CLEANUP_MODELS].reverse().find(model => Number.isFinite(ramGiB) && ramGiB >= model.ramGiB) ?? CLEANUP_MODELS[0];
+export function recommendedCleanupModel(hardware?: HardwareInfo) {
+  return [...CLEANUP_MODELS].reverse().find(model => ["green", "yellow"].includes(modelMemoryStatus(model.ramGiB, hardware))) ?? CLEANUP_MODELS[0];
 }

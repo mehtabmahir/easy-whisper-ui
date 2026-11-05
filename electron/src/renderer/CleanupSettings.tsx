@@ -1,3 +1,4 @@
+import { modelMemoryStatus } from "../main/services/modelCatalog";
 import { useEffect, useState } from 'react';
 import type { CleanupPreferences, HardwareInfo } from '../types/easy-whisper';
 import { CLEANUP_MODELS, cleanupModel } from '../main/services/cleanupModelCatalog';
@@ -9,6 +10,7 @@ export default function CleanupSettings({ preferences, onPreferences, busy, comp
   const [hardware, setHardware] = useState<HardwareInfo>();
   useEffect(() => { void window.easyWhisper?.getHardwareInfo().then(setHardware).catch(() => {}); }, []);
   const chosenModel = cleanupModel(preferences.localModel);
+  const memoryStatus = modelMemoryStatus(chosenModel.ramGiB, hardware);
   const [key, setKey] = useState('');
   const [keySaved, setKeySaved] = useState(false);
   const [notice, setNotice] = useState('');
@@ -33,9 +35,9 @@ export default function CleanupSettings({ preferences, onPreferences, busy, comp
         <label>Local model<select disabled={busy} value={chosenModel.id} onChange={event => onPreferences({ ...preferences, localModel: event.target.value })}>
           {CLEANUP_MODELS.map(model => <option key={model.id} value={model.id}>{model.label} · {(model.files.reduce((sum, file) => sum + file.bytes, 0) / 1e9).toFixed(2)} GB</option>)}
         </select></label>
-        <p className={hardware ? hardware.ramGiB < chosenModel.ramGiB ? styles.memoryWarning : styles.memoryFits : undefined}
-          role="status" title="Estimated system memory recommendation; actual use varies.">
-          {chosenModel.ramGiB} GB RAM suggested{hardware ? hardware.ramGiB < chosenModel.ramGiB ? ' · Low memory' : ' · Fits' : ''}<br /><span title="Relative quality estimate for built-in models; results vary.">Quality: {chosenModel.quality === 'High' ? 'High (Recommended)' : chosenModel.quality}</span>
+        <p className={memoryStatus === "unknown" ? undefined : memoryStatus === "red" ? styles.memoryWarning : styles.memoryFits}
+          role="status" title="Estimated memory recommendation. Uses detected VRAM, or 70% of system RAM for integrated/unified graphics. Actual use varies.">
+          {chosenModel.ramGiB} GB memory suggested{memoryStatus === 'unknown' ? ' · Unknown' : memoryStatus === 'red' ? ' · Low memory' : memoryStatus === 'yellow' ? ' · Tight fit' : ' · Fits'}<br /><span title="Relative quality estimate for built-in models; results vary.">Quality: {chosenModel.quality === 'High' ? 'High (Recommended)' : chosenModel.quality}</span>
         </p>
       </> : preferences.provider === 'custom' ? <>
         <p>Choose a GGUF instruction-tuned language model. Runs on this device. Whisper speech models cannot be used for cleanup.</p>

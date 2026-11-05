@@ -420,7 +420,7 @@ function App(): JSX.Element {
     if (api) void api.getHardwareInfo().then((info) => {
       if (!cancelled) {
         setHardware(info);
-        setCleanupPreferences(previous => previous.localModel ? previous : { ...previous, localModel: recommendedCleanupModel(info.ramGiB).id });
+        setCleanupPreferences(previous => previous.localModel ? previous : { ...previous, localModel: recommendedCleanupModel(info).id });
       }
     }).catch(() => { if (!cancelled) { setHardwareFailed(true); setCleanupPreferences(previous => previous.localModel ? previous : { ...previous, localModel: "qwen-3b" }); } });
     return () => { cancelled = true; };

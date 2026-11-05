@@ -41,7 +41,17 @@ test('multipart download verifies every shard and reuses completed files', async
   } finally { CLEANUP_MODELS.pop(); global.fetch = fetch; await fs.rm(root, { recursive: true, force: true }); }
 });
 
-test('automatic default chooses the largest model meeting the RAM recommendation', () => {
+test('automatic default reuses GPU memory rules without pooling adapters or falling back to system RAM', () => {
  const { recommendedCleanupModel } = require('../dist/main/services/cleanupModelCatalog');
- for (const [ram, id] of [[8, 'qwen-3b'], [11, 'qwen-3b'], [12, 'qwen-7b'], [15, 'qwen-7b'], [16, 'qwen-14b'], [32, 'qwen-14b'], [4, 'qwen-3b'], [NaN, 'qwen-3b']]) assert.equal(recommendedCleanupModel(ram).id, id);
+ const gpu = (memoryGiB, memoryKind = 'dedicated', name = 'NVIDIA GPU') => ({name, memoryGiB, memoryKind});
+ const pick = (gpus, ramGiB = 64) => recommendedCleanupModel({cpu: 'test', ramGiB, gpus}).id;
+ assert.equal(pick([gpu(8)]), 'qwen-3b');
+ assert.equal(pick([gpu(12)]), 'qwen-7b');
+ assert.equal(pick([gpu(16)]), 'qwen-14b');
+ assert.equal(pick([gpu(8), gpu(8)]), 'qwen-3b');
+ assert.equal(pick([gpu(undefined)]), 'qwen-3b');
+ assert.equal(pick([]), 'qwen-3b');
+ assert.equal(pick([gpu(32, 'unified', 'Apple M1')], 32), 'qwen-14b');
+ assert.equal(pick([gpu(1, 'dedicated', 'Intel UHD Graphics')], 24), 'qwen-14b');
+ assert.equal(pick([gpu(16, 'unified', 'Apple M1')], 16), 'qwen-3b');
 });
