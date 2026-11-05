@@ -51,7 +51,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
       <span className={styles.eyebrow}>CLEANUP SETTINGS</span>
       <label>Model<select disabled={busy} value={preferences.provider}
         onChange={event => void changeDestination({ ...preferences, provider: event.target.value as CleanupPreferences['provider'] })}>
-        <option value="local">Qwen 2.5 · 0.5B (built-in)</option><option value="custom">Custom model file</option><option value="openai">OpenAI API Key</option><option value="compatible">Other API Key</option>
+        <option value="local">Built-in · Qwen 0.5B</option><option value="custom">Custom model file</option><option value="openai">OpenAI API Key</option><option value="compatible">Other API Key</option>
       </select></label>
       {preferences.provider === 'local' ? <p>Qwen 2.5 · 0.5B. A one-time 491 MB download, then offline. Uses available graphics acceleration.</p> : preferences.provider === 'custom' ? <>
         <p>Choose a GGUF instruction-tuned language model. Runs on this device. Whisper speech models cannot be used for cleanup.</p>
@@ -63,7 +63,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
       </> : <>
         <p>Transcript text is sent to {preferences.provider === 'openai' ? 'OpenAI' : 'the provider at your endpoint'} for cleanup. API usage may be billed to your account. Audio stays on this device.</p>
         {preferences.provider === 'compatible' && <label>Chat completions endpoint<input type="url" disabled={busy} value={preferences.apiEndpoint ?? ''} placeholder="https://provider.example/v1/chat/completions" onChange={event => void changeDestination({ ...preferences, apiEndpoint: event.target.value })}/><small>Requires an OpenAI-compatible API.</small></label>}
-        <label>Model ID<input disabled={busy} value={preferences.apiModel} placeholder="Enter your provider’s model ID" onChange={event => onPreferences({ ...preferences, apiModel: event.target.value })}/></label>
+        <label>Model ID<input disabled={busy} value={preferences.apiModel} placeholder="Model ID" onChange={event => onPreferences({ ...preferences, apiModel: event.target.value })}/></label>
         <label>API key<input type="password" autoComplete="off" spellCheck={false} disabled={busy} value={key} placeholder={keySaved ? 'Key set for this session' : 'Paste your API key'} onChange={event => setKey(event.target.value)}/></label>
         <div className={styles.keyActions}><button disabled={busy || !key.trim()} onClick={() => void saveKey()}>Use key for this session</button>
           {keySaved && <button disabled={busy} onClick={() => { void window.easyWhisper?.setCleanupApiKey('').then(() => { setKeySaved(false); setNotice('Key removed.'); }); }}>Remove key</button>}</div>
