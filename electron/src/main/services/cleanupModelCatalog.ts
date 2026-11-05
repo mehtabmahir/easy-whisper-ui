@@ -1,11 +1,14 @@
 import type { HardwareInfo } from "../../types/easy-whisper";
 import { modelMemoryStatus } from "./modelCatalog";
+// Runtime estimates include quantized weights, an 8192-token KV cache, and working buffers.
+// Rounded up for headroom; backend allocations and other apps can change actual fit.
 // Official Qwen GGUF releases, pinned by revision and SHA-256. Sizes are download bytes.
 export const CLEANUP_MODELS = [
   {
     "id": "qwen-3b",
     "label": "Qwen 2.5 \u00b7 3B",
     "ramGiB": 8,
+    "runtimeGiB": 4,
     "quality": "Low",
     "description": "Balanced size and speed.",
     "repo": "Qwen/Qwen2.5-3B-Instruct-GGUF",
@@ -22,6 +25,7 @@ export const CLEANUP_MODELS = [
     "id": "qwen-7b",
     "label": "Qwen 2.5 \u00b7 7B",
     "ramGiB": 12,
+    "runtimeGiB": 6,
     "quality": "Medium",
     "description": "Recommended for technical summaries; slower than small models.",
     "repo": "Qwen/Qwen2.5-7B-Instruct-GGUF",
@@ -43,6 +47,7 @@ export const CLEANUP_MODELS = [
     "id": "qwen-14b",
     "label": "Qwen 2.5 \u00b7 14B",
     "ramGiB": 16,
+    "runtimeGiB": 10,
     "quality": "High",
     "description": "Largest option; heavily quantized to stay under 8 GB. Requires more memory and time.",
     "repo": "Qwen/Qwen2.5-14B-Instruct-GGUF",
@@ -87,5 +92,5 @@ export const RETIRED_CLEANUP_MODELS = [
 ] as const;
 
 export function recommendedCleanupModel(hardware?: HardwareInfo) {
-  return [...CLEANUP_MODELS].reverse().find(model => ["green", "yellow"].includes(modelMemoryStatus(model.ramGiB, hardware))) ?? CLEANUP_MODELS[0];
+  return [...CLEANUP_MODELS].reverse().find(model => ["green", "yellow"].includes(modelMemoryStatus(model.runtimeGiB, hardware))) ?? CLEANUP_MODELS[0];
 }

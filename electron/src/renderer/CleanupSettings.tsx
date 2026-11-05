@@ -10,7 +10,7 @@ export default function CleanupSettings({ preferences, onPreferences, busy, comp
   const [hardware, setHardware] = useState<HardwareInfo>();
   useEffect(() => { void window.easyWhisper?.getHardwareInfo().then(setHardware).catch(() => {}); }, []);
   const chosenModel = cleanupModel(preferences.localModel);
-  const memoryStatus = modelMemoryStatus(chosenModel.ramGiB, hardware);
+  const memoryStatus = modelMemoryStatus(chosenModel.runtimeGiB, hardware);
   const [key, setKey] = useState('');
   const [keySaved, setKeySaved] = useState(false);
   const [notice, setNotice] = useState('');
@@ -36,8 +36,8 @@ export default function CleanupSettings({ preferences, onPreferences, busy, comp
           {CLEANUP_MODELS.map(model => <option key={model.id} value={model.id}>{model.label} · {(model.files.reduce((sum, file) => sum + file.bytes, 0) / 1e9).toFixed(2)} GB</option>)}
         </select></label>
         <p className={memoryStatus === "unknown" ? undefined : memoryStatus === "red" ? styles.memoryWarning : styles.memoryFits}
-          role="status" title="Estimated memory recommendation. Uses detected VRAM, or 70% of system RAM for integrated/unified graphics. Actual use varies.">
-          {chosenModel.ramGiB} GB memory suggested{memoryStatus === 'unknown' ? ' · Unknown' : memoryStatus === 'red' ? ' · Low memory' : memoryStatus === 'yellow' ? ' · Tight fit' : ' · Fits'}<br /><span title="Relative quality estimate for built-in models; results vary.">Quality: {chosenModel.quality === 'High' ? 'High (Recommended)' : chosenModel.quality}</span>
+          role="status" title="Estimated runtime memory for model weights, an 8192-token context and working buffers. Uses detected VRAM, or 70% of system RAM for integrated/unified graphics. Actual use varies.">
+          ~{chosenModel.runtimeGiB} GB memory{memoryStatus === 'unknown' ? ' · Unknown' : memoryStatus === 'red' ? ' · Low memory' : memoryStatus === 'yellow' ? ' · Tight fit' : ' · Fits'}<br /><span title="Relative quality estimate for built-in models; results vary.">Quality: {chosenModel.quality === 'High' ? 'High (Recommended)' : chosenModel.quality}</span>
         </p>
       </> : preferences.provider === 'custom' ? <>
         <p>Choose a GGUF instruction-tuned language model. Runs on this device. Whisper speech models cannot be used for cleanup.</p>
