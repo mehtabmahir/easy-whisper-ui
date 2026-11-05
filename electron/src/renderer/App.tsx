@@ -1,3 +1,4 @@
+import { recommendedCleanupModel } from "../main/services/cleanupModelCatalog";
 import UpdatePanel from "./UpdatePanel";
 import type { AppUpdateState } from "../types/easy-whisper";
 import CleanupPanel from "./CleanupPanel";
@@ -156,7 +157,7 @@ function App(): JSX.Element {
   const [cleanupEnabled, setCleanupEnabled] = useState(persisted.cleanupEnabled ?? true);
   const [cleanupPreferences, setCleanupPreferences] = useState<CleanupPreferences>(() => {
     const preferences = persisted.cleanupPreferences ?? { provider: "local", apiModel: "" };
-    return { ...preferences, localModel: !preferences.localModel || ["qwen-0.5b", "qwen-1.5b"].includes(preferences.localModel) ? "qwen-3b" : preferences.localModel };
+    return { ...preferences, localModel: ["qwen-0.5b", "qwen-1.5b"].includes(preferences.localModel ?? "") ? "qwen-3b" : preferences.localModel };
   });
   const [cleanupOpen, setCleanupOpen] = useState(false);
   const [cleanupResults, setCleanupResults] = useState<CleanupEvent[]>([]);
@@ -417,8 +418,11 @@ function App(): JSX.Element {
   useEffect(() => {
     let cancelled = false;
     if (api) void api.getHardwareInfo().then((info) => {
-      if (!cancelled) setHardware(info);
-    }).catch(() => { if (!cancelled) setHardwareFailed(true); });
+      if (!cancelled) {
+        setHardware(info);
+        setCleanupPreferences(previous => previous.localModel ? previous : { ...previous, localModel: recommendedCleanupModel(info.ramGiB).id });
+      }
+    }).catch(() => { if (!cancelled) { setHardwareFailed(true); setCleanupPreferences(previous => previous.localModel ? previous : { ...previous, localModel: "qwen-3b" }); } });
     return () => { cancelled = true; };
   }, [api]);
 

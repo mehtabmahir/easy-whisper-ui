@@ -83,3 +83,7 @@ export const RETIRED_CLEANUP_MODELS = [
     ]
   }
 ] as const;
+
+export function recommendedCleanupModel(ramGiB: number) {
+  return [...CLEANUP_MODELS].reverse().find(model => Number.isFinite(ramGiB) && ramGiB >= model.ramGiB) ?? CLEANUP_MODELS[0];
+}

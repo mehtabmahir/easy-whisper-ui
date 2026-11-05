@@ -40,3 +40,8 @@ test('multipart download verifies every shard and reuses completed files', async
     await assert.rejects(fs.stat(path.join(root, files[1].name + '.partial')), /ENOENT/);
   } finally { CLEANUP_MODELS.pop(); global.fetch = fetch; await fs.rm(root, { recursive: true, force: true }); }
 });
+
+test('automatic default chooses the largest model meeting the RAM recommendation', () => {
+ const { recommendedCleanupModel } = require('../dist/main/services/cleanupModelCatalog');
+ for (const [ram, id] of [[8, 'qwen-3b'], [11, 'qwen-3b'], [12, 'qwen-7b'], [15, 'qwen-7b'], [16, 'qwen-14b'], [32, 'qwen-14b'], [4, 'qwen-3b'], [NaN, 'qwen-3b']]) assert.equal(recommendedCleanupModel(ram).id, id);
+});
