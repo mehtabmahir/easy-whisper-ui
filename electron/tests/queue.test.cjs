@@ -9,6 +9,7 @@ const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKi
 const exportsObject = {};
 vm.runInNewContext(code, { exports: exportsObject, require: name => {
   if (name === 'electron') return {};
+  if (name === './transcriptStream') return require('../dist/main/services/transcriptStream');
   if (name.startsWith('./')) return {};
   return require(name);
 }, AbortController, console, process, setTimeout, clearTimeout });

@@ -2,7 +2,9 @@
 
 <img src="resources/icon.png" alt="EasyWhisperUI logo" width="140" />
 
-Transcribe audio and video on your own hardware with Whisper and GPU acceleration. Works offline after downloading the required tools and models.
+**Watch your transcript appear. Turn it into something useful.**
+
+EasyWhisperUI brings local Whisper transcription, a real-time **Transcript Reader**, and **Local AI Summaries** together in one desktop app. Follow recordings as they transcribe, clean up the text, and create structured summaries or custom responses without leaving the reader. Local processing works offline after downloading the required tools and models.
 
 [![Donate via PayPal](https://img.shields.io/badge/Donate_via_PayPal-0070BA?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD)
 
@@ -12,13 +14,13 @@ Transcribe audio and video on your own hardware with Whisper and GPU acceleratio
 
 | Platform | Requirements | Download |
 | --- | --- | --- |
-| Windows | Windows 10/11, x64 | [3.1.0 installer](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.1/EasyWhisperUI-Setup-3.1.0-win-x64.exe) |
-| macOS | macOS 13+, Apple Silicon | [3.1.0 DMG](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.1/EasyWhisperUI-3.1.0-macOS-arm64.dmg) |
-| Linux | Beta; tested on Ubuntu | 3.1 pending; [previous releases](https://github.com/mehtabmahir/easy-whisper-ui/releases) |
+| Windows | Windows 10/11, x64 | [3.1.0 installer — 3.2 pending](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.1/EasyWhisperUI-Setup-3.1.0-win-x64.exe) |
+| macOS | macOS 13+, Apple Silicon | [3.2.0 DMG](https://github.com/mehtabmahir/easy-whisper-ui/releases/download/v3.2.0/EasyWhisperUI-3.2.0-macOS-arm64.dmg) |
+| Linux | Beta; tested on Ubuntu | 3.2 pending; [previous releases](https://github.com/mehtabmahir/easy-whisper-ui/releases) |
 
 Windows uses Vulkan on supported GPUs; macOS uses Metal. CPU-only processing is also available.
 
-[Release notes](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.1)
+[Release notes](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.2.0)
 
 <table>
   <tr>
@@ -39,13 +41,27 @@ I've heard your feedback, issues, and the many feature requests. Countless hours
 
 Special thanks to past contributors, such as [celerycoloured](https://github.com/celerycoloured) who authored the initial macOS release back when it was C++, and to everyone who has supported the project through donations, bug reports, and feature requests. Your contributions helped make EasyWhisperUI better.
 
+## The new Transcript Reader
+
+Follow file transcriptions as Whisper produces text, or start **Live** to see microphone speech appear in the reader. A spacious reading area, Markdown headings, topic navigation, and controls on the left keep the transcript easy to work with. The console remains available for raw output.
+
+After transcription, choose **Clean up**, **Summarize**, or **Custom request**. Compare AI output against the original, copy text, and open saved Markdown documents. The original transcript is preserved. For normal files, **Open transcript reader** controls automatic opening; live sessions always open it. Live overlap merging reduces repeated partial phrases without needing an AI model.
+
+## Local AI Summaries!
+
+Turn lectures, interviews and meetings into readable summaries with headings and key points. Use **Clean up** for a structured transcript or **Custom request** for your own instructions. Results save alongside the transcript as separate Markdown files.
+
+Choose Qwen 2.5 **1.5B, 3B, 7B or 14B** models, from **1.12 GB to 7.34 GB**. The default is 1.5B. Larger models can handle more demanding text but take more memory and time. You can also load a custom GGUF language model or use an OpenAI / OpenAI-compatible API key. Local models work offline after downloading; API providers receive transcript text and may charge for usage. Keys stay in memory for the session.
+
+Manage Whisper and AI models together under **Settings → Manage Models**. AI output can change meaning or miss details, so review important results against the original.
+
 ## Features
 
 - **Private, local transcription** — turn audio and video into text on your own computer.
 - **GPU acceleration** — Vulkan on Windows and Metal on Apple Silicon, with automatic verification and a CPU-only option.
 - **Languages and subtitles** — multilingual transcription, translation into English, and TXT/SRT exports.
-- **Batch processing** — drag in multiple files, skip individual items, or stop the queue.
-- **Live transcription** — transcribe microphone audio in real time (beta).
+- **Batch processing** — drag in multiple files, inspect the queue, remove waiting files, and retry failed transcriptions.
+- **Live transcription** — read microphone speech as it arrives, with overlapping phrases merged and merged/raw text saved.
 - **Model choice** — download, manage, or load custom models, with color-coded memory estimates.
 - **Clear download progress** — see size, speed and time remaining, and cancel downloads when needed.
 - **Light, Dark and Auto themes** — translucent backgrounds and a spacious output console.
@@ -53,24 +69,34 @@ Special thanks to past contributors, such as [celerycoloured](https://github.com
 - **Simple setup and repair** — guided installation and clean reinstall on Windows/Linux, preserving models and settings.
 - **Advanced controls** — extra Whisper arguments, built-in CLI help, and accessible setup logs.
 
-## Quick start
+## Installation
 
 1. Run the Windows installer, or open the Mac DMG and drag **EasyWhisperUI** into **Applications**.
 2. Launch the app and let initial setup finish. macOS includes Whisper and FFmpeg.
 3. Choose your model, input language, and output formats. Use a multilingual model for non-English audio; `.en` models are English-only. Missing models download automatically. For a local model, choose **custom → Select Model File**.
-4. Click **Open** or drop files into the window. Transcription starts automatically; exports are saved beside the original files.
+4. Enable **Open transcript reader**, then click **Open** or drop files into the window. Follow the text as it arrives; exports are saved beside the original files.
+5. After transcription, use **Clean up**, **Summarize**, or **Custom request** in the reader. Choose **AI Cleanup** before starting a file to run cleanup automatically afterward.
 
 To translate into English, choose a multilingual model such as `medium`, select the source language, and add `--translate` in **Arguments**.
 
-## Using your transcript
+## Requirements
 
-Give the TXT file to your favorite LLM for summaries, study notes, or a cleaned-up transcript. Export SRT to add subtitles in a video editor or player.
+- **macOS:** Apple Silicon, macOS 13 or newer. Whisper, Metal support and FFmpeg are bundled.
+- **Windows:** Windows 10/11 x64. Initial setup downloads dependencies and builds Whisper. Current Vulkan-capable graphics drivers enable GPU acceleration; native Acrylic blur requires Windows 11 22H2 or newer.
+- **Local AI:** suggested system memory is 6 GB for 1.5B, 8 GB for 3B, 12 GB for 7B, and 16 GB for 14B. Estimates vary with other apps and GPU memory; download size is not runtime memory use. The reader and ordinary transcription do not require a language model.
+- **Linux:** support remains beta; 3.2 installers and in-app updates are pending.
+
+## App updates
+
+Windows and macOS builds with the updater check for newer stable GitHub releases after launch. You can also use **Settings → Maintenance → Check for updates**. Choose **Update** to download and verify the installer. The app waits for active work, opens the installer, then quits. On macOS, drag the updated app into Applications. Older public builds without the updater need a manual upgrade first.
+
+See the [v3.2.0 release notes](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.2.0#issues-addressed) for the full list of addressed issues and remaining limitations.
 
 ## Troubleshooting
 
-On Windows/Linux, try **Settings → Clean reinstall**. On Mac, restart the app. If the problem continues, use **Settings → Show log file** and [open an issue](https://github.com/mehtabmahir/easy-whisper-ui/issues/new) with the error, log, OS, CPU, GPU, RAM, app version, and model. If no setup log exists, copy the console error.
+On Windows/Linux, try **Settings → Clean reinstall**. On Mac, restart the app. If the problem continues, use **Settings → Maintenance → View logs** and [open an issue](https://github.com/mehtabmahir/easy-whisper-ui/issues/new) with the error, log, OS, CPU, GPU, RAM, app version, and model. If no setup log exists, copy the console error.
 
-The Mac app is ad-hoc signed and not notarized. If macOS blocks it, try **System Settings → Privacy & Security → Open Anyway**. For a “damaged” message, follow the [release's first-opening instructions](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.1#macos-first-opening).
+The Mac app is ad-hoc signed and not notarized. If macOS blocks it, try **System Settings → Privacy & Security → Open Anyway**. For a “damaged” message, follow the [release's first-opening instructions](https://github.com/mehtabmahir/easy-whisper-ui/releases/tag/v3.2.0#macos-first-opening).
 
 ## Development
 
@@ -138,9 +164,3 @@ SDL2 (bundled on macOS)
 License: zlib
 https://www.libsdl.org/
 ```
-
-### App updates
-
-Windows and macOS builds check GitHub for a newer stable release after launch. You can also use **Settings → Maintenance → Check for updates**. Choose **Update** to download and verify the installer. The app waits for active work, opens the installer, then quits. On macOS, drag the updated app into Applications from the DMG. Linux updates remain manual.
-
-Release maintainers: publish a higher app version with the existing platform/architecture artifact names (`EasyWhisperUI-VERSION-macOS-ARCH.dmg` or `EasyWhisperUI-Setup-VERSION-win-ARCH.exe`). The GitHub release asset must expose a SHA-256 digest; missing or mismatched verification information prevents installation.
