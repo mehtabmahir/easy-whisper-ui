@@ -931,6 +931,9 @@ function App(): JSX.Element {
         downloadProgress={modelDownloadProgress} progress={compileInfo} onClose={() => setSettingsOpen(false)} />}
       {faqOpen && <FaqPanel onClose={() => setFaqOpen(false)} />}
       {creditsOpen && <CreditsPanel onClose={() => setCreditsOpen(false)} />}
+      {cleanupOpen && <CleanupPanel results={cleanupResults} preferences={cleanupPreferences}
+        onPreferences={setCleanupPreferences} onClose={() => setCleanupOpen(false)} busy={isProcessing}
+      />}
       <div className={`${styles.windowContainer} ${showLoader || recoveryOpen || settingsOpen || faqOpen || creditsOpen ? styles.modalBackground : ""}`} style={showLoader || recoveryOpen ? { pointerEvents: 'none', userSelect: 'none' } : {}}>
         <div className={`${styles.titlebar} ${isMac ? styles.macTitlebar : ""}`}>
         <div className={styles.titleDragRegion}>
@@ -1006,7 +1009,7 @@ function App(): JSX.Element {
           </div>
         </header>
 
-        <section className={`${styles.workspace} ${cleanupOpen ? styles.workspaceWithCleanup : ""}`}>
+        <section className={styles.workspace}>
           <aside className={styles.leftPanel}>
             <div className={styles.buttonStack}>
               <button
@@ -1220,16 +1223,13 @@ function App(): JSX.Element {
                 />
                 <span>{cleanupEnabled ? "Open in transcript reader" : "Open Transcription"}</span>
               </label>
-            </div>
-
-            <div className={styles.cleanupControls}>
-              <label className={styles.checkbox} title="Keep the original and create a cleaned Markdown copy. Local mode downloads a 491 MB model once.">
+              <label className={styles.checkbox} title="Create a separate Markdown copy. Local mode downloads a 491 MB model once; the original is always kept.">
                 <input type="checkbox" checked={cleanupEnabled} onChange={event => { setCleanupEnabled(event.target.checked); if (event.target.checked) setCleanupOpen(true); }}/>
                 <span>Clean up transcript</span>
               </label>
-              <button type="button" onClick={() => setCleanupOpen(!cleanupOpen)} aria-expanded={cleanupOpen}>Transcript reader</button>
-              {cleanupEnabled && <small>{cleanupPreferences.provider === "local" ? "Local AI · 491 MB on first use" : "OpenAI · transcript text sent to your API account"} · Original .txt always kept</small>}
+              <button type="button" className={styles.readerButton} onClick={() => setCleanupOpen(!cleanupOpen)} aria-expanded={cleanupOpen}>Transcript reader ↗</button>
             </div>
+
             <div className={styles.queueStatus}>
               <span>Processing: {getFileName(queueState.processing)}</span>
               <div className={styles.queueDropdown}>
@@ -1280,9 +1280,7 @@ function App(): JSX.Element {
               </div>
             </div>
           </main>
-          {cleanupOpen && <CleanupPanel results={cleanupResults} preferences={cleanupPreferences}
-            onPreferences={setCleanupPreferences} onClose={() => setCleanupOpen(false)} busy={isProcessing}
-          />}
+
         </section>
       </div>
     </div>

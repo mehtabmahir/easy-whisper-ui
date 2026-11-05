@@ -1,4 +1,4 @@
-.panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border-radius: 22px; border: 1px solid var(--glass-border); background: var(--glass); box-shadow: var(--glass-shadow); backdrop-filter: blur(28px) saturate(125%); }
+.panel { position: fixed; z-index: 30; top: 68px; right: 24px; bottom: 24px; width: min(520px, calc(100vw - 48px)); display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border-radius: 22px; border: 1px solid var(--glass-border); background: var(--glass); box-shadow: var(--glass-shadow); backdrop-filter: blur(28px) saturate(125%); }
 .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 24px 24px 18px; }
 .eyebrow { font-size: 10px; letter-spacing: .15em; color: var(--muted); font-weight: 600; }
 .header h2 { margin: 5px 0 0; font-size: 23px; letter-spacing: -.04em; font-weight: 550; }
@@ -35,3 +35,5 @@
 .keyActions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .history { width: calc(100% - 40px); margin: 0 20px 14px; }
 @media (prefers-reduced-motion: no-preference) { .panel { animation: reveal .25s ease-out; } @keyframes reveal { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } } }
+
+@media (max-height: 600px) { .panel { top: 52px; bottom: 12px; } .header { padding-top: 16px; } }

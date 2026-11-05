@@ -32,7 +32,7 @@ export default function CleanupPanel({ results, preferences, onPreferences, onCl
   };
   const fileName = (value: string) => value.split(/[\\/]/).pop() ?? value;
   const elapsed = result ? Math.max(0, Math.floor((now - result.startedAt) / 1000)) : 0;
-  return <aside className={styles.panel} aria-label="Transcript reader">
+  return <aside className={styles.panel} aria-label="Transcript reader" onKeyDown={event => { if (event.key === "Escape" && !(event.target instanceof HTMLSelectElement)) onClose(); }}>
     <header className={styles.header}>
       <div><span className={styles.eyebrow}>YOUR TRANSCRIPT</span><h2>A clearer read.</h2></div>
       <div className={styles.actions}>

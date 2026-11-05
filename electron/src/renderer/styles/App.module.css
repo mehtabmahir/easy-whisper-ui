@@ -865,14 +865,6 @@
 .queueTrigger:hover { color: var(--text); }
 .fileQueue::backdrop { background: transparent; }
 
-.cleanupControls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 12px 0 4px; }
-.cleanupControls button { margin-left: auto; padding: 5px 9px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--button); color: var(--text); cursor: pointer; font-size: 11px; }
-.cleanupControls small { flex-basis: 100%; color: var(--muted); font-size: 10px; }
-.workspaceWithCleanup { grid-template-columns: 220px minmax(260px,.85fr) minmax(360px,1.15fr); gap: 16px; }
-.workspaceWithCleanup .leftPanel { padding: 18px; }
-.workspaceWithCleanup .rightPanel { --panel-padding: 18px; }
-.workspaceWithCleanup .optionsRow { grid-template-columns: 1fr; gap: 8px; }
-@media (max-width: 1000px) { .workspaceWithCleanup { grid-template-columns: 220px minmax(0,1fr); } .workspaceWithCleanup > aside:last-child { grid-column: 1 / -1; min-height: 550px; } }
-@media (max-width: 700px) { .workspaceWithCleanup { grid-template-columns: 1fr; } }
-
+.readerButton { justify-self: start; align-self: center; padding: 3px 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; }
+.readerButton:hover { color: var(--text); }
 .cleanupStage { padding: 9px 0; font-size: 12px; color: var(--muted); }

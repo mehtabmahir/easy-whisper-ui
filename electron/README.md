@@ -208,7 +208,7 @@ creates a separate `.cleaned.md` beside it. Repeated runs use numbered filenames
 instead of overwriting previous Markdown. Cleanup does not change subtitle timing
 or rewrite the original transcript. Live microphone transcription is unchanged.
 
-The in-app **Transcript reader** opens beside the controls. Switch between
+The in-app **Transcript reader** opens as a floating glass card over the right side, without resizing the controls. Switch between
 **Cleaned** and **Original**, watch section progress and elapsed time, copy text,
 or reveal the saved Markdown. The last eight results remain available for this
 session. Drafts are incomplete until the panel says **Markdown saved**. Stop/Skip
@@ -240,7 +240,7 @@ not a summary generator or a tool-using agent.
 
 Validation: `npm run build`, `npm run typecheck`, then
 `node --test tests/*.cjs`. An opt-in native smoke test is available with
-`node tests/cleanup-smoke.cjs /path/to/test-profile`; it uses/downloads the tiny model
+`node tests/cleanup-smoke.js /path/to/test-profile`; it uses/downloads the tiny model
 inside that profile and writes only a synthetic transcript there.
 
 Model: https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF (Apache-2.0).
