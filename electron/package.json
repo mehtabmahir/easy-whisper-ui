@@ -59,6 +59,8 @@
     "appId": "com.easywhisper.ui",
     "productName": "EasyWhisperUI",
     "files": [
+      "!node_modules/@node-llama-cpp/win-x64-cuda{,/**}",
+      "!node_modules/@node-llama-cpp/win-x64-cuda-ext{,/**}",
       "dist/main/**/*",
       "dist/preload/**/*",
       "dist/renderer/**/*",

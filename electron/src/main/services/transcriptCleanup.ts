@@ -78,7 +78,7 @@ export async function cleanupTranscript(input: {
       signal.throwIfAborted();
       update({ message: 'Loading model…' });
       const runtime = await loadRuntime();
-      const llama = await runtime.getLlama({ build: 'never' });
+      const llama = await runtime.getLlama({ build: 'never', ...(process.platform === 'win32' ? { gpu: { type: 'auto' as const, exclude: ['cuda' as const] } } : {}) });
       signal.throwIfAborted();
       model = await llama.loadModel({ modelPath, loadSignal: signal });
       context = await model.createContext({ contextSize: 8192 });
