@@ -20,6 +20,8 @@ import { resolveBinary } from "./binaryResolver";
 import { DOWNLOADABLE_MODELS, isEnglishOnlyModel } from "./modelCatalog";
 
 interface QueueItem {
+  id: string;
+  error?: string;
   file: string;
   settings: ModelSettings;
 }
@@ -39,6 +41,7 @@ const MODEL_BASE_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/mai
 export class TranscriptionManager extends EventEmitter {
   private queue: QueueItem[] = [];
   private current?: QueueItem;
+  private failed: QueueItem[] = [];
   private activeProcess?: ChildProcessWithoutNullStreams;
   private processing = false;
   private currentAbort?: AbortController;
@@ -117,7 +120,7 @@ export class TranscriptionManager extends EventEmitter {
     if (this.clearingCache || this.shuttingDown) return;
     const entries = request.files
       .filter((file) => !!file)
-      .map((file) => ({ file, settings: { ...request.settings } }));
+      .map((file) => ({ id: randomUUID(), file, settings: { ...request.settings } }));
 
     if (entries.length === 0) {
       return;
@@ -129,6 +132,23 @@ export class TranscriptionManager extends EventEmitter {
     if (!this.processing) {
       void this.processNext();
     }
+  }
+
+  async removeQueueItem(id: string): Promise<void> {
+    this.queue = this.queue.filter(item => item.id !== id);
+    this.failed = this.failed.filter(item => item.id !== id);
+    if (this.current?.id === id) await this.skipCurrent();
+    this.emitQueue();
+  }
+
+  retryQueueItem(id: string, settings: ModelSettings): void {
+    if (this.shuttingDown || this.clearingCache) return;
+    const index = this.failed.findIndex(item => item.id === id);
+    if (index < 0) return;
+    const [item] = this.failed.splice(index, 1);
+    this.queue.push({ ...item, error: undefined, settings: { ...settings } });
+    this.emitQueue();
+    if (!this.processing) void this.processNext();
   }
 
   async cancelAll(): Promise<void> {
@@ -180,6 +200,7 @@ export class TranscriptionManager extends EventEmitter {
       this.emitConsole({ source: "transcription", message: `Completed: ${path.basename(nextItem.file)}` });
     } catch (error) {
       const err = error as Error;
+      if (!controller.signal.aborted) this.failed.push({ ...nextItem, error: err.message });
       this.emitConsole({ source: "transcription", message: controller.signal.aborted
         ? `Stopped: ${path.basename(nextItem.file)}` : `Error processing ${nextItem.file}: ${err.message}` });
     } finally {
@@ -579,6 +600,11 @@ export class TranscriptionManager extends EventEmitter {
   private emitQueue(): void {
     const awaiting = [...this.queue.map((item) => item.file)];
     const state: QueueState = {
+      items: [
+        ...(this.current ? [{ id: this.current.id, file: this.current.file, status: "processing" as const }] : []),
+        ...this.queue.map(item => ({ id: item.id, file: item.file, status: "waiting" as const })),
+        ...this.failed.map(item => ({ id: item.id, file: item.file, status: "failed" as const, error: item.error }))
+      ],
       awaiting,
       processing: this.current?.file,
       isProcessing: this.processing

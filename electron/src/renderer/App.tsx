@@ -162,7 +162,7 @@ function App(): JSX.Element {
   const [lastBackend, setLastBackend] = useState<string>();
   const [consoleLines, setConsoleLines] = useState<string[]>([]);
   const [helpText, setHelpText] = useState<string | null>(null);
-  const [queueState, setQueueState] = useState<QueueState>({ awaiting: [], isProcessing: false });
+  const [queueState, setQueueState] = useState<QueueState>({ items: [], awaiting: [], isProcessing: false });
   const [compileInfo, setCompileInfo] = useState<CompileProgressEvent>(() => ({
     step: "idle",
     message: "Whisper binaries not compiled",
@@ -1202,6 +1202,26 @@ function App(): JSX.Element {
               <span>Processing: {getFileName(queueState.processing)}</span>
               <span>Queued: {queuedCount}</span>
             </div>
+
+            {queueState.items.length > 0 && (
+              <ul aria-label="Transcription queue" className={styles.fileQueue}>
+                {queueState.items.map(item => (
+                  <li key={item.id} className={styles.fileQueueItem}>
+                    <div className={styles.fileQueueDetails}>
+                      <span title={item.file}>{getFileName(item.file)}</span>
+                      <small>{item.status === "failed" ? "Failed" : item.status === "processing" ? "Transcribing" : "Waiting"}</small>
+                      {item.error && <small className={styles.queueError}>{item.error}</small>}
+                    </div>
+                    {item.status === "failed" && <button type="button" disabled={isCompiling || liveActive}
+                      onClick={() => { if (ensureCustomModelReady()) void api?.retryQueueItem(item.id, buildSettings()).catch(error => appendConsole(String(error))); }}
+                      title="Retry using current settings">Retry</button>}
+                    <button type="button" aria-label={"Remove " + getFileName(item.file) + " from queue"}
+                      title={item.status === "processing" ? "Stop and remove this file" : "Remove from queue"}
+                      onClick={() => void api?.removeQueueItem(item.id).catch(error => appendConsole(String(error)))}>×</button>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {showOperationStatus && operationStatus}
             <div className={styles.consoleBlock}>

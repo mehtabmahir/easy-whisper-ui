@@ -437,6 +437,11 @@ function registerIpcChannels(): void {
     await liveManager.stop();
   });
 
+  ipcMain.handle("easy-whisper:remove-queue-item", (_event, id: string) => transcriptionManager.removeQueueItem(id));
+  ipcMain.handle("easy-whisper:retry-queue-item", (_event, id: string, settings: TranscriptionRequest["settings"]) => {
+    if (!setupBusy && !quitting) transcriptionManager.retryQueueItem(id, settings);
+  });
+
   ipcMain.handle("easy-whisper:skip-current", () => transcriptionManager.skipCurrent());
   ipcMain.handle("easy-whisper:help", async () => {
     if (setupBusy || helpBusy) return { success: false, error: "Wait for setup or the current help request to finish." };

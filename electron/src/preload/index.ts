@@ -37,6 +37,8 @@ const api: EasyWhisperApi = {
     void ipcRenderer.invoke("easy-whisper:enqueue", request);
   },
   cancelAll: () => ipcRenderer.invoke("easy-whisper:cancel-all"),
+  removeQueueItem: (id) => ipcRenderer.invoke("easy-whisper:remove-queue-item", id),
+  retryQueueItem: (id, settings) => ipcRenderer.invoke("easy-whisper:retry-queue-item", id, settings),
   skipCurrent: () => ipcRenderer.invoke("easy-whisper:skip-current"),
   showHelp: () => ipcRenderer.invoke("easy-whisper:help"),
   onQueueState: (callback) => {

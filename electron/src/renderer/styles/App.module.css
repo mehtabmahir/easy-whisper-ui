@@ -824,3 +824,11 @@
 .modelMemoryHint.vramFits { color: var(--success-text); }
 
 .leftPanel { padding-bottom: 8px; }
+
+.fileQueue { list-style: none; margin: 12px 0; padding: 0; max-height: 240px; overflow-y: auto; }
+.fileQueueItem { display: flex; align-items: center; gap: 8px; padding: 10px 4px; border-bottom: 1px solid currentColor; }
+.fileQueueDetails { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.fileQueueDetails > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fileQueueDetails small { opacity: .8; overflow-wrap: anywhere; }
+.fileQueueItem button { flex-shrink: 0; cursor: pointer; min-width: 30px; min-height: 30px; }
+.queueError { color: #e36b6b; }

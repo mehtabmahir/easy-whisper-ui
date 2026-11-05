@@ -46,7 +46,15 @@ export interface TranscriptionRequest {
   settings: ModelSettings;
 }
 
+export interface QueueEntry {
+  id: string;
+  file: string;
+  status: "waiting" | "processing" | "failed";
+  error?: string;
+}
+
 export interface QueueState {
+  items: QueueEntry[];
   awaiting: string[];
   processing?: string;
   isProcessing: boolean;
@@ -119,6 +127,8 @@ export type EasyWhisperApi = {
   enqueueTranscriptions: (request: TranscriptionRequest) => void;
   cancelAll: () => Promise<void>;
   skipCurrent: () => Promise<void>;
+  removeQueueItem: (id: string) => Promise<void>;
+  retryQueueItem: (id: string, settings: ModelSettings) => Promise<void>;
   showHelp: () => Promise<CompileResult & { output?: string }>;
   onQueueState: (callback: (state: QueueState) => void) => () => void;
   onConsoleEvent: (callback: (event: ConsoleEvent) => void) => () => void;
