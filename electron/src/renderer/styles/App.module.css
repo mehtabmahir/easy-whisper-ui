@@ -825,7 +825,26 @@
 
 .leftPanel { padding-bottom: 8px; }
 
-.fileQueue { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: min(340px, 75vw); list-style: none; margin: 0; padding: 6px 10px; max-height: 220px; overflow-y: auto; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--titlebar); backdrop-filter: blur(24px); color: var(--text); box-shadow: 0 8px 24px #0004; font-size: 12px; }
+.fileQueue {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  width: min(340px, 75vw);
+  list-style: none;
+  margin: 0;
+  padding: 6px 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(125%);
+  -webkit-backdrop-filter: blur(24px) saturate(125%);
+  color: var(--text);
+  box-shadow: var(--glass-shadow);
+  font-size: 12px;
+}
 .fileQueueItem { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--glass-border); }
 .fileQueueDetails { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
 .fileQueueDetails > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
